@@ -1,0 +1,165 @@
+{% extends 'pos/base.html' %}
+
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 sm:px-6">
+        <div class="flex justify-between items-center">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">
+                Customer Management
+            </h3>
+            <div>
+                <a href="{% url 'add_customer' %}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                    <i class="fas fa-plus mr-1"></i> Add Customer
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+        <div class="flex space-x-2">
+            <input type="text" id="search-input" placeholder="Search customers..." 
+                   class="px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            
+            <select id="balance-filter" class="px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <option value="">All Customers</option>
+                <option value="credit" {% if balance_filter == "credit" %}selected{% endif %}>With Credit</option>
+                <option value="zero" {% if balance_filter == "zero" %}selected{% endif %}>Zero Balance</option>
+            </select>
+        </div>
+        
+        <div>
+            <a href="?export=csv" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                <i class="fas fa-file-export mr-1"></i> Export
+            </a>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Credit Limit
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Balance
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for customer in customers %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ customer.name }}
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    {{ customer.address|truncatechars:30|default:"No address" }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">{{ customer.phone|default:"-" }}</div>
+                        <div class="text-xs text-gray-500">{{ customer.email|default:"-" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        KSh {{ customer.credit_limit|default:"0" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm {% if customer.balance > 0 %}text-red-600{% else %}text-gray-500{% endif %}">
+                            KSh {{ customer.balance|default:"0" }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="{% url 'edit_customer' customer.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'customer_detail' customer.id %}" class="text-green-600 hover:text-green-900">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                        No customers found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if is_paginated %}
+    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+        <div class="flex-1 flex justify-between items-center">
+            <span class="text-sm text-gray-700">
+                Showing <span class="font-medium">{{ page_obj.start_index }}</span> to 
+                <span class="font-medium">{{ page_obj.end_index }}</span> of 
+                <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+            </span>
+            <div class="flex space-x-1">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                </a>
+                {% endif %}
+                
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const balanceFilter = document.getElementById('balance-filter');
+    
+    function applyFilters() {
+        const params = new URLSearchParams();
+        
+        if (searchInput.value) {
+            params.set('search', searchInput.value);
+        }
+        
+        if (balanceFilter.value) {
+            params.set('balance', balanceFilter.value);
+        }
+        
+        window.location.search = params.toString();
+    }
+    
+    searchInput.addEventListener('change', applyFilters);
+    balanceFilter.addEventListener('change', applyFilters);
+    
+    // Set current filter values from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('search')) {
+        searchInput.value = urlParams.get('search');
+    }
+    if (urlParams.has('balance')) {
+        balanceFilter.value = urlParams.get('balance');
+    }
+});
+</script>
+{% endblock %}

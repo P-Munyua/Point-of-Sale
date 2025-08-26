@@ -1,0 +1,347 @@
+{% extends 'pos/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Pending Sales</h2>
+        <div>
+            <a href="{% url 'pos' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to POS
+            </a>
+            <button id="refresh-pending" class="btn btn-outline-secondary">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Created</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pending-sales-table-body">
+                        {% for sale in pending_sales %}
+                        <tr id="sale-row-{{ sale.id }}" data-sale-id="{{ sale.id }}">
+                            <td>{{ sale.id }}</td>
+                            <td>{{ sale.created_at|date:"M d, Y H:i" }}</td>
+                            <td>{{ sale.customer.name|default:"Walk-in" }}</td>
+                            <td>{{ sale.data.items|length }} items</td>
+                            <td>KSh {{ sale.data.total|floatformat:2 }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button onclick="loadPendingSaleToPOS({{ sale.id }})" 
+                                            class="btn btn-outline-primary" 
+                                            title="Load to POS">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </button>
+                                    <button onclick="completePendingSale({{ sale.id }})" 
+                                            class="btn btn-outline-success"
+                                            title="Complete sale">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button onclick="deletePendingSale({{ sale.id }})" 
+                                            class="btn btn-outline-danger"
+                                            title="Delete sale">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-clipboard-list fa-2x mb-2 text-muted"></i>
+                                <p class="mb-0">No pending sales found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load pending sale to POS interface
+function loadPendingSaleToPOS(saleId) {
+    fetch(`/pos/load_pending_sale/${saleId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Clear current cart
+                clearCart();
+                
+                // Set customer if exists
+                if (data.sale_data.customer_id) {
+                    document.getElementById('customer-select').value = data.sale_data.customer_id;
+                    const event = new Event('change');
+                    document.getElementById('customer-select').dispatchEvent(event);
+                }
+                
+                // Add items to cart
+                data.sale_data.items.forEach(item => {
+                    addToCart({
+                        id: item.id,
+                        name: item.name || 'Product ' + item.id,
+                        price: parseFloat(item.price),
+                        quantity: parseInt(item.quantity),
+                        batch_id: item.batch_id || null,
+                        discount_amount: parseFloat(item.discount_amount || 0),
+                        discount_percent: parseFloat(item.discount_percent || 0)
+                    });
+                });
+                
+                // Set sale type if exists
+                if (data.sale_data.sale_type) {
+                    document.querySelector(`.sale-type-btn[data-type="${data.sale_data.sale_type}"]`).click();
+                }
+                
+                // Show success message
+                showAlert('Pending sale loaded to POS', 'success');
+                
+                // Redirect to POS page
+                window.location.href = "{% url 'pos' %}";
+            } else {
+                throw new Error(data.message || 'Failed to load sale');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error loading sale: ' + error.message, 'danger');
+        });
+}
+
+// Complete a pending sale
+function completePendingSale(saleId) {
+    if (!confirm('Are you sure you want to complete this sale? This action cannot be undone.')) return;
+
+    showAlert('Processing sale completion...', 'info');
+    
+    fetch(`/pos/complete_pending_sale/${saleId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => { throw new Error(text) });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Remove the completed sale from the table
+            const row = document.getElementById(`sale-row-${saleId}`);
+            if (row) {
+                row.remove();
+                
+                // Check if table is empty now
+                if (document.querySelectorAll('#pending-sales-table-body tr').length === 0) {
+                    document.getElementById('pending-sales-table-body').innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-clipboard-list fa-2x mb-2 text-muted"></i>
+                                <p class="mb-0">No pending sales found</p>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            showAlert('Sale completed successfully!', 'success');
+            
+            // Open receipt in new tab if sale ID exists
+            if (data.sale_id) {
+                window.open(`/pos/receipt/${data.sale_id}/`, '_blank');
+            }
+            
+            // Verify deletion by checking if the row still exists in the DOM
+            setTimeout(() => {
+                if (document.getElementById(`sale-row-${saleId}`)) {
+                    showAlert('Warning: Sale might not have been properly removed', 'warning');
+                }
+            }, 1000);
+        } else {
+            throw new Error(data.message || 'Failed to complete sale');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error completing sale: ' + error.message, 'danger');
+    });
+}
+
+// Delete a pending sale
+function deletePendingSale(saleId) {
+    if (!confirm('Are you sure you want to permanently delete this pending sale?')) return;
+
+    showAlert('Deleting pending sale...', 'info');
+    
+    fetch(`/pos/delete_pending_sale/${saleId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => { throw new Error(text) });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const row = document.getElementById(`sale-row-${saleId}`);
+            if (row) {
+                row.remove();
+                
+                // Check if table is empty now
+                if (document.querySelectorAll('#pending-sales-table-body tr').length === 0) {
+                    document.getElementById('pending-sales-table-body').innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-clipboard-list fa-2x mb-2 text-muted"></i>
+                                <p class="mb-0">No pending sales found</p>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+            showAlert('Pending sale deleted successfully', 'success');
+        } else {
+            throw new Error(data.message || 'Failed to delete sale');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error deleting sale: ' + error.message, 'danger');
+    });
+}
+
+// Show alert message
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    `;
+    
+    const container = document.getElementById('alert-container');
+    container.innerHTML = ''; // Clear previous alerts
+    container.appendChild(alertDiv);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+// Refresh pending sales list
+document.getElementById('refresh-pending').addEventListener('click', function() {
+    showAlert('Refreshing pending sales list...', 'info');
+    
+    fetch('/pos/pending_sales_list/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.getElementById('pending-sales-table-body');
+                tbody.innerHTML = '';
+                
+                if (data.pending_sales.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-clipboard-list fa-2x mb-2 text-muted"></i>
+                                <p class="mb-0">No pending sales found</p>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    data.pending_sales.forEach(sale => {
+                        const row = document.createElement('tr');
+                        row.id = `sale-row-${sale.id}`;
+                        row.innerHTML = `
+                            <td>${sale.id}</td>
+                            <td>${new Date(sale.created_at).toLocaleString()}</td>
+                            <td>${sale.customer || 'Walk-in'}</td>
+                            <td>${sale.items_count} items</td>
+                            <td>KSh ${parseFloat(sale.total).toFixed(2)}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button onclick="loadPendingSaleToPOS(${sale.id})" 
+                                            class="btn btn-outline-primary" 
+                                            title="Load to POS">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </button>
+                                    <button onclick="completePendingSale(${sale.id})" 
+                                            class="btn btn-outline-success"
+                                            title="Complete sale">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button onclick="deletePendingSale(${sale.id})" 
+                                            class="btn btn-outline-danger"
+                                            title="Delete sale">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+                
+                showAlert('Pending sales list refreshed', 'success');
+            } else {
+                throw new Error('Failed to load pending sales');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error refreshing list: ' + error.message, 'danger');
+        });
+});
+</script>
+
+<style>
+    .table td, .table th {
+        vertical-align: middle;
+    }
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    #alert-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        width: 300px;
+    }
+    .table-responsive {
+        min-height: 300px;
+    }
+    .no-pending-sales td {
+        padding: 2rem !important;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}

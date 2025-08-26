@@ -1,0 +1,222 @@
+{% extends 'pos/base.html' %}
+
+{% block title %}{% if form.instance.id %}Edit{% else %}Add{% endif %} Product{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2>{% if form.instance.id %}Edit{% else %}Add{% endif %} Product</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'product_list' %}">Products</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% if form.instance.id %}Edit{% else %}Add{% endif %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Product Details</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_name">Name*</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.name.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_barcode">Barcode</label>
+                            {{ form.barcode }}
+                            {% if form.barcode.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.barcode.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_category">Category</label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.category.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_supplier">Supplier</label>
+                            {{ form.supplier }}
+                            {% if form.supplier.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.supplier.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_description">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.description.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_purchase_price">Purchase Price*</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">KSh</span>
+                                </div>
+                                {{ form.purchase_price }}
+                            </div>
+                            {% if form.purchase_price.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.purchase_price.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_selling_price">Selling Price*</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">KSh</span>
+                                </div>
+                                {{ form.selling_price }}
+                            </div>
+                            {% if form.selling_price.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.selling_price.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_wholesale_price">Wholesale Price</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">KSh</span>
+                                </div>
+                                {{ form.wholesale_price }}
+                            </div>
+                            {% if form.wholesale_price.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.wholesale_price.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_wholesale_min_quantity">Wholesale Min Quantity</label>
+                            {{ form.wholesale_min_quantity }}
+                            {% if form.wholesale_min_quantity.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.wholesale_min_quantity.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_quantity">Quantity*</label>
+                            {{ form.quantity }}
+                            {% if form.quantity.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.quantity.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_reorder_level">Reorder Level</label>
+                            {{ form.reorder_level }}
+                            {% if form.reorder_level.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.reorder_level.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_image">Product Image</label>
+                            {{ form.image }}
+                            {% if form.image.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.image.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                            {% if form.instance.image %}
+                            <div class="mt-2">
+                                <img src="{{ form.instance.image.url }}" alt="Current image" style="max-height: 100px;">
+                                <div class="form-check mt-2">
+                                    <input type="checkbox" name="image-clear" id="image-clear_id" class="form-check-input">
+                                    <label for="image-clear_id" class="form-check-label">Clear image</label>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="id_is_active">Active Product</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <a href="{% url 'product_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize select2 for better dropdowns
+    $('select').select2({
+        theme: 'bootstrap4'
+    });
+    
+    // Format currency fields
+    $('.currency-input').each(function() {
+        $(this).on('blur', function() {
+            var value = parseFloat($(this).val()).toFixed(2);
+            if (!isNaN(value)) {
+                $(this).val(value);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

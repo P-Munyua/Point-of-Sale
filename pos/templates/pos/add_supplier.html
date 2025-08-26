@@ -1,0 +1,284 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Add Supplier{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <!-- Header with gradient background -->
+    <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="p-2 rounded-lg bg-white bg-opacity-20">
+                    <i class="fas fa-truck text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-white">Add New Supplier</h2>
+                    <p class="text-blue-100 text-sm">Complete all required fields</p>
+                </div>
+            </div>
+            <a href="{% url 'supplier_list' %}" class="text-white hover:text-blue-100 text-sm">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Suppliers
+            </a>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="px-6 py-6">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">
+                            {{ form.non_field_errors }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left Column -->
+                <div class="space-y-4">
+                    <!-- Supplier Name -->
+                    <div>
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Supplier Name <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Person -->
+                    <div>
+                        <label for="{{ form.contact_person.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Contact Person
+                        </label>
+                        <div class="relative">
+                            {{ form.contact_person }}
+                            {% if form.contact_person.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.contact_person.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Email -->
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Email Address
+                        </label>
+                        <div class="relative">
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="space-y-4">
+                    <!-- Phone -->
+                    <div>
+                        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Phone Number <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.phone.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Address -->
+                    <div>
+                        <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Physical Address
+                        </label>
+                        <div class="relative">
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.address.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-6">
+                <a href="{% url 'supplier_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-save mr-1"></i> Save Supplier
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="success-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+        <div class="text-center">
+            <div class="text-green-500 text-5xl mb-4">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Supplier Saved Successfully!</h3>
+            <p class="text-sm text-gray-500 mb-4">The new supplier has been added to your system.</p>
+            <div class="flex justify-center space-x-3">
+                <a href="{% url 'supplier_list' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    View Suppliers
+                </a>
+                <button id="new-supplier" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Add Another
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div id="error-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+        <div class="text-center">
+            <div class="text-red-500 text-5xl mb-4">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2" id="error-title">Error Saving Supplier</h3>
+            <p class="text-sm text-gray-500 mb-4" id="error-message"></p>
+            <div class="flex justify-center">
+                <button id="close-error" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Style all form inputs consistently
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+        input.classList.add(
+            'block', 'w-full', 'px-3', 'py-2', 'border', 
+            'border-gray-300', 'rounded-md', 'shadow-sm', 
+            'focus:outline-none', 'focus:ring-blue-500', 
+            'focus:border-blue-500', 'transition', 'duration-150',
+            'ease-in-out'
+        );
+    });
+
+    // Style textarea specifically
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+        textarea.classList.add('min-h-[100px]');
+    }
+
+    // Form submission handling
+    const form = document.querySelector('form');
+    const saveBtn = document.querySelector('button[type="submit"]');
+    const successModal = document.getElementById('success-modal');
+    const errorModal = document.getElementById('error-modal');
+    const errorMessage = document.getElementById('error-message');
+    const newSupplierBtn = document.getElementById('new-supplier');
+    const closeErrorBtn = document.getElementById('close-error');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Basic validation
+        const name = document.getElementById('{{ form.name.id_for_label }}').value.trim();
+        const phone = document.getElementById('{{ form.phone.id_for_label }}').value.trim();
+        
+        if (!name) {
+            showError('Supplier name is required');
+            return;
+        }
+        
+        if (!phone) {
+            showError('Phone number is required');
+            return;
+        }
+
+        // Disable button to prevent multiple submissions
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Saving...';
+
+        // Submit form
+        this.submit();
+    });
+
+    // New supplier button
+    newSupplierBtn.addEventListener('click', function() {
+        successModal.classList.add('hidden');
+        window.location.reload();
+    });
+
+    // Close error modal
+    closeErrorBtn.addEventListener('click', function() {
+        errorModal.classList.add('hidden');
+    });
+
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorModal.classList.remove('hidden');
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save Supplier';
+    }
+
+    // Remove error state when user starts typing
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.classList.contains('border-red-500')) {
+                this.classList.replace('border-red-500', 'border-gray-300');
+                const errorMsg = this.parentNode.querySelector('.text-red-600');
+                if (errorMsg) errorMsg.remove();
+            }
+        });
+    });
+});
+</script>
+
+<style>
+    /* Custom styling for form elements */
+    input, textarea {
+        transition: all 0.2s ease;
+    }
+    
+    input:focus, textarea:focus {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .border-red-500 {
+        border-color: #ef4444 !important;
+    }
+    
+    .border-red-500:focus {
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+    
+    /* Smooth transitions for error messages */
+    .text-red-600 {
+        animation: fadeIn 0.2s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,528 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    /* Main Card Styles */
+    .main-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: none;
+        overflow: hidden;
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #4361ee, #3a0ca3);
+        color: white;
+        border-bottom: none;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    /* Filter Card Styles */
+    .filter-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+    
+    .filter-section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .filter-section-title i {
+        margin-right: 0.5rem;
+        color: #4361ee;
+    }
+    
+    /* Table Styles */
+    .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .data-table thead th {
+        background: #f8f9fa;
+        color: #495057;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e9ecef;
+        position: sticky;
+        top: 0;
+    }
+    
+    .data-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+    
+    .data-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .data-table tbody tr:hover {
+        background-color: rgba(67, 97, 238, 0.03);
+    }
+    
+    /* Badge Styles */
+    .badge-payment {
+        padding: 0.35rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-cash { background: #e6f7e6; color: #28a745; border: 1px solid #c3e6cb; }
+    .badge-mpesa { background: #e6f7f8; color: #17a2b8; border: 1px solid #bee5eb; }
+    .badge-card { background: #fff8e6; color: #ffc107; border: 1px solid #ffeeba; }
+    .badge-credit { background: #fde8e8; color: #dc3545; border: 1px solid #f5c6cb; }
+    
+    /* Stat Card Styles */
+    .stat-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 1.5rem;
+        border: none;
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-icon {
+        font-size: 1.5rem;
+        opacity: 0.8;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #343a40;
+        margin: 0.5rem 0;
+    }
+    
+    .stat-title {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+    
+    .stat-subtitle {
+        font-size: 0.75rem;
+        color: #adb5bd;
+    }
+    
+    /* No Data Styles */
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin: 2rem 0;
+    }
+    
+    .no-data-icon {
+        font-size: 3rem;
+        color: #dee2e6;
+        margin-bottom: 1rem;
+    }
+    
+    /* Button Styles */
+    .btn-export {
+        background: #20c997;
+        border-color: #20c997;
+        color: white;
+    }
+    
+    .btn-export:hover {
+        background: #1aa179;
+        border-color: #1aa179;
+        color: white;
+    }
+    
+    /* Form Control Styles */
+    .form-control, .select2-container--default .select2-selection--single {
+        border-radius: 8px;
+        border: 1px solid #e1e5eb;
+        padding: 0.5rem 0.75rem;
+        height: auto;
+    }
+    
+    .form-control:focus, .select2-container--default.select2-container--focus .select2-selection--single {
+        border-color: #4361ee;
+        box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+    }
+    
+    /* Date Range Picker */
+    .date-range-container {
+        display: flex;
+        align-items: center;
+    }
+    
+    .date-range-separator {
+        margin: 0 0.5rem;
+        color: #6c757d;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .stat-card {
+            margin-bottom: 1rem;
+        }
+        
+        .filter-card {
+            padding: 1rem;
+        }
+        
+        .data-table td, .data-table th {
+            padding: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="main-card card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0"><i class="fas fa-calendar-alt mr-2"></i>Daily Sales Report</h4>
+                    <p class="mb-0 opacity-75">Detailed overview of all sales transactions</p>
+                </div>
+                <div>
+                    <button class="btn btn-light btn-sm mr-2" onclick="window.print()">
+                        <i class="fas fa-print mr-1"></i>Print
+                    </button>
+                    <button class="btn btn-export btn-sm" onclick="exportSales()">
+                        <i class="fas fa-file-export mr-1"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <!-- Filter Card -->
+            <div class="filter-card">
+                <div class="filter-section-title">
+                    <i class="fas fa-filter"></i> Filter Options
+                </div>
+                
+                <form method="get" id="filterForm">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="font-weight-600">Date Range</label>
+                                <div class="date-range-container">
+                                    <input type="text" class="form-control datepicker" name="date_from" 
+                                           placeholder="Start date" value="{{ date_from }}" autocomplete="off">
+                                    <span class="date-range-separator">to</span>
+                                    <input type="text" class="form-control datepicker" name="date_to" 
+                                           placeholder="End date" value="{{ date_to }}" autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label class="font-weight-600">Payment Method</label>
+                                <select class="form-control" name="payment_method">
+                                    <option value="">All Methods</option>
+                                    {% for value, label in payment_methods %}
+                                    <option value="{{ value }}" {% if selected_payment_method == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="font-weight-600">Customer</label>
+                                <select class="form-control select2" name="customer">
+                                    <option value="">All Customers</option>
+                                    {% for customer in customers %}
+                                    <option value="{{ customer.id }}" {% if selected_customer == customer.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ customer.name }} ({{ customer.phone }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label class="font-weight-600">Min Amount</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">KSh</span>
+                                    </div>
+                                    <input type="number" class="form-control" name="min_amount" 
+                                           placeholder="0" value="{{ selected_min_amount }}" min="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-group w-100">
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class="fas fa-filter mr-1"></i> Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Summary Stats -->
+            <div class="row">
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="stat-title">Total Sales</div>
+                                    <div class="stat-value">KSh {{ totals.total_sales|default:0|floatformat:2 }}</div>
+                                    <div class="stat-subtitle">{{ date_from|date:"M j" }} - {{ date_to|date:"M j, Y" }}</div>
+                                </div>
+                                <div class="stat-icon text-primary">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="stat-title">Items Sold</div>
+                                    <div class="stat-value">{{ totals.total_items|default:0 }}</div>
+                                    <div class="stat-subtitle">{{ totals.transaction_count|default:0 }} transactions</div>
+                                </div>
+                                <div class="stat-icon text-success">
+                                    <i class="fas fa-shopping-basket"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="stat-title">Average Sale</div>
+                                    <div class="stat-value">
+                                        KSh {{ average_sale|floatformat:2 }}
+                                    </div>
+                                    <div class="stat-subtitle">Per transaction</div>
+                                </div>
+                                <div class="stat-icon text-info">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="stat-title">Top Customer</div>
+                                    <div class="stat-value">
+                                        {% if top_customer %}
+                                            {{ top_customer.customer__name|truncatechars:15 }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </div>
+                                    <div class="stat-subtitle">
+                                        {% if top_customer %}
+                                            KSh {{ top_customer.total|floatformat:2 }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="stat-icon text-warning">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sales Table -->
+            <div class="mt-4">
+                {% if sales %}
+                <div class="table-responsive">
+                    <table class="table data-table">
+                        <thead>
+                            <tr>
+                                <th>Receipt #</th>
+                                <th>Date & Time</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Amount</th>
+                                <th>Payment</th>
+                                <th>Cashier</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in sales %}
+                            <tr>
+                                <td class="font-weight-bold">#{{ sale.sale_number }}</td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span>{{ sale.date|date:"M j, Y" }}</span>
+                                        <small class="text-muted">{{ sale.date|time:"H:i" }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if sale.customer %}
+                                    <div class="d-flex flex-column">
+                                        <span>{{ sale.customer.name }}</span>
+                                        <small class="text-muted">{{ sale.customer.phone }}</small>
+                                    </div>
+                                    {% else %}
+                                    Walk-in
+                                    {% endif %}
+                                </td>
+                                <td>{{ sale.items.count }}</td>
+                                <td class="font-weight-bold">KSh {{ sale.total|floatformat:2 }}</td>
+                                <td>
+                                    {% if sale.is_credit %}
+                                    <span class="badge badge-payment badge-credit">Credit</span>
+                                    {% else %}
+                                    <span class="badge badge-payment badge-{{ sale.payment_method }}">
+                                        {{ sale.get_payment_method_display }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ sale.user.get_full_name|default:sale.user.username }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" title="Print Receipt">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="text-muted">
+                        Showing <strong>{{ sales.start_index }}</strong> to <strong>{{ sales.end_index }}</strong> of <strong>{{ sales.paginator.count }}</strong> records
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm">
+                            {% if sales.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if payment_method %}&payment_method={{ payment_method }}{% endif %}{% if customer %}&customer={{ customer }}{% endif %}{% if min_amount %}&min_amount={{ min_amount }}{% endif %}">&laquo; First</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ sales.previous_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if payment_method %}&payment_method={{ payment_method }}{% endif %}{% if customer %}&customer={{ customer }}{% endif %}{% if min_amount %}&min_amount={{ min_amount }}{% endif %}">Previous</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in sales.paginator.page_range %}
+                            {% if sales.number == num %}
+                            <li class="page-item active">
+                                <a class="page-link" href="#">{{ num }}</a>
+                            </li>
+                            {% elif num > sales.number|add:'-3' and num < sales.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if payment_method %}&payment_method={{ payment_method }}{% endif %}{% if customer %}&customer={{ customer }}{% endif %}{% if min_amount %}&min_amount={{ min_amount }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                            
+                            {% if sales.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ sales.next_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if payment_method %}&payment_method={{ payment_method }}{% endif %}{% if customer %}&customer={{ customer }}{% endif %}{% if min_amount %}&min_amount={{ min_amount }}{% endif %}">Next</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ sales.paginator.num_pages }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if payment_method %}&payment_method={{ payment_method }}{% endif %}{% if customer %}&customer={{ customer }}{% endif %}{% if min_amount %}&min_amount={{ min_amount }}{% endif %}">Last &raquo;</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <div class="no-data-icon">
+                        <i class="fas fa-calendar-times"></i>
+                    </div>
+                    <h4>No Sales Found</h4>
+                    <p class="text-muted">Try adjusting your filters or select a different date range</p>
+                    <a href="{% url 'daily_sales_report' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-sync-alt mr-1"></i> Reset Filters
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+$(document).ready(function() {
+    // Initialize datepicker
+    $(".datepicker").flatpickr({
+        dateFormat: "Y-m-d",
+        allowInput: true
+    });
+    
+    // Initialize select2 for customer dropdown
+    $('.select2').select2({
+        placeholder: "Select customer",
+        allowClear: true,
+        width: '100%'
+    });
+});
+
+// Export sales function
+function exportSales() {
+    // Get current filter parameters
+    const params = new URLSearchParams(window.location.search);
+    
+    // Redirect to export URL with current filters
+    window.location.href = "{% url 'export_daily_sales' %}?" + params.toString();
+}
+
+// Preserve filters when paginating
+$(document).on('click', '.pagination a', function(e) {
+    e.preventDefault();
+    const url = $(this).attr('href');
+    $('#filterForm').attr('action', url).submit();
+});
+</script>
+{% endblock %}

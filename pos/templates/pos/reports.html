@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2>Reports</h2>
+        </div>
+        <div class="col-md-6 text-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{% url 'sales_report' %}?export=pdf">Sales PDF</a>
+                    <a class="dropdown-item" href="{% url 'sales_report' %}?export=excel">Sales Excel</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{% url 'inventory_report' %}?export=pdf">Inventory PDF</a>
+                    <a class="dropdown-item" href="{% url 'inventory_report' %}?export=excel">Inventory Excel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sales Report Card -->
+        <div class="col-xl-6 col-md-12 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Sales Report</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'sales_report' %}">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="salesStartDate">Start Date</label>
+                                <input type="date" name="start_date" class="form-control" id="salesStartDate" value="{{ sales_start_date }}">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="salesEndDate">End Date</label>
+                                <input type="date" name="end_date" class="form-control" id="salesEndDate" value="{{ sales_end_date }}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="salesPaymentMethod">Payment Method</label>
+                            <select name="payment_method" class="form-control" id="salesPaymentMethod">
+                                <option value="">All Methods</option>
+                                <option value="cash" {% if sales_payment_method == "cash" %}selected{% endif %}>Cash</option>
+                                <option value="mpesa" {% if sales_payment_method == "mpesa" %}selected{% endif %}>M-Pesa</option>
+                                <option value="card" {% if sales_payment_method == "card" %}selected{% endif %}>Credit Card</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Generate Report</button>
+                    </form>
+                    
+                    {% if sales_report_data %}
+                    <div class="mt-4">
+                        <h5>Sales Summary</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Total Sales</th>
+                                        <th>Cash Sales</th>
+                                        <th>M-Pesa Sales</th>
+                                        <th>Credit Sales</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>{{ sales_report_data.total_sales }}</td>
+                                        <td>{{ sales_report_data.cash_sales }}</td>
+                                        <td>{{ sales_report_data.mpesa_sales }}</td>
+                                        <td>{{ sales_report_data.credit_sales }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Report Card -->
+        <div class="col-xl-6 col-md-12 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Inventory Report</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'inventory_report' %}">
+                        <div class="form-group">
+                            <label for="inventoryCategory">Category</label>
+                            <select name="category" class="form-control" id="inventoryCategory">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if inventory_category == category.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="inventoryStock">Stock Level</label>
+                            <select name="stock" class="form-control" id="inventoryStock">
+                                <option value="">All Levels</option>
+                                <option value="low" {% if inventory_stock == "low" %}selected{% endif %}>Low Stock</option>
+                                <option value="out" {% if inventory_stock == "out" %}selected{% endif %}>Out of Stock</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Generate Report</button>
+                    </form>
+                    
+                    {% if inventory_report_data %}
+                    <div class="mt-4">
+                        <h5>Inventory Summary</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Total Products</th>
+                                        <th>In Stock</th>
+                                        <th>Low Stock</th>
+                                        <th>Out of Stock</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>{{ inventory_report_data.total_products }}</td>
+                                        <td>{{ inventory_report_data.in_stock }}</td>
+                                        <td>{{ inventory_report_data.low_stock }}</td>
+                                        <td>{{ inventory_report_data.out_of_stock }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profit & Loss Report -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Profit & Loss Report</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'profit_loss_report' %}">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="profitStartDate">Start Date</label>
+                                <input type="date" name="start_date" class="form-control" id="profitStartDate" value="{{ profit_start_date }}">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="profitEndDate">End Date</label>
+                                <input type="date" name="end_date" class="form-control" id="profitEndDate" value="{{ profit_end_date }}">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Generate Report</button>
+                    </form>
+                    
+                    {% if profit_loss_data %}
+                    <div class="mt-4">
+                        <h5>Profit & Loss Summary</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Total Sales</th>
+                                        <th>Cost of Goods Sold</th>
+                                        <th>Gross Profit</th>
+                                        <th>Total Expenses</th>
+                                        <th>Net Profit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>{{ profit_loss_data.total_sales }}</td>
+                                        <td>{{ profit_loss_data.cogs }}</td>
+                                        <td class="{% if profit_loss_data.gross_profit < 0 %}text-danger{% else %}text-success{% endif %}">
+                                            {{ profit_loss_data.gross_profit }}
+                                        </td>
+                                        <td>{{ profit_loss_data.total_expenses }}</td>
+                                        <td class="{% if profit_loss_data.net_profit < 0 %}text-danger{% else %}text-success{% endif %}">
+                                            {{ profit_loss_data.net_profit }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h5>Expenses by Category</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for expense in profit_loss_data.expenses_by_category %}
+                                        <tr>
+                                            <td>{{ expense.category }}</td>
+                                            <td>{{ expense.amount }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Set default dates for reports
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // Format date as YYYY-MM-DD
+    function formatDate(date) {
+        const d = new Date(date);
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        const year = d.getFullYear();
+        
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+        
+        return [year, month, day].join('-');
+    }
+    
+    // Set default start date to first day of current month if not set
+    if (!$('#salesStartDate').val()) {
+        $('#salesStartDate').val(formatDate(firstDay));
+    }
+    
+    // Set default end date to today if not set
+    if (!$('#salesEndDate').val()) {
+        $('#salesEndDate').val(formatDate(today));
+    }
+    
+    // Same for profit/loss report
+    if (!$('#profitStartDate').val()) {
+        $('#profitStartDate').val(formatDate(firstDay));
+    }
+    
+    if (!$('#profitEndDate').val()) {
+        $('#profitEndDate').val(formatDate(today));
+    }
+});
+</script>
+{% endblock %}

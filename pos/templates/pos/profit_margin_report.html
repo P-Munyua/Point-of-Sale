@@ -1,0 +1,197 @@
+{% extends 'pos/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Profit Margin Report</h1>
+        <div>
+            <a href="?export=csv" class="btn btn-sm btn-success">
+                <i class="fas fa-download fa-sm"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Options</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-3">
+                        <label class="form-label">Start Date:</label>
+                        <input type="date" name="start_date" value="{{ start_date }}" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">End Date:</label>
+                        <input type="date" name="end_date" value="{{ end_date }}" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary btn-sm form-control">
+                            <i class="fas fa-filter fa-sm"></i> Apply Filter
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Revenue</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_revenue|floatformat:2|intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Total Cost</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_cost|floatformat:2|intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Profit</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_profit|floatformat:2|intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Average Margin</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ avg_margin|floatformat:2 }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percent fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Profit Margin by Product</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-center">Quantity Sold</th>
+                            <th class="text-right">Cost</th>
+                            <th class="text-right">Revenue</th>
+                            <th class="text-right">Profit</th>
+                            <th class="text-center">Margin %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in profit_data %}
+                        <tr>
+                            <td>{{ item.product }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-right">KSh {{ item.cost|floatformat:2|intcomma }}</td>
+                            <td class="text-right">KSh {{ item.revenue|floatformat:2|intcomma }}</td>
+                            <td class="text-right {% if item.profit > 0 %}text-success{% elif item.profit < 0 %}text-danger{% endif %}">
+                                KSh {{ item.profit|floatformat:2|intcomma }}
+                            </td>
+                            <td class="text-center {% if item.margin > 30 %}text-success{% elif item.margin > 15 %}text-warning{% else %}text-danger{% endif %} font-weight-bold">
+                                {{ item.margin|floatformat:2 }}%
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">No profit data available for the selected period.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="font-weight-bold">
+                        <tr>
+                            <td>Totals</td>
+                            <td class="text-center">{{ profit_data|sum_attribute:'quantity' }}</td>
+                            <td class="text-right">KSh {{ total_cost|floatformat:2|intcomma }}</td>
+                            <td class="text-right">KSh {{ total_revenue|floatformat:2|intcomma }}</td>
+                            <td class="text-right">KSh {{ total_profit|floatformat:2|intcomma }}</td>
+                            <td class="text-center">{{ avg_margin|floatformat:2 }}%</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.thead-dark th {
+    background-color: #4e73df;
+    color: white;
+    border-color: #4e73df;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.margin-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.margin-high { background-color: #28a745; }
+.margin-medium { background-color: #ffc107; }
+.margin-low { background-color: #dc3545; }
+</style>
+{% endblock %}

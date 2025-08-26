@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimart POS - {% block title %}{% endblock %}</title>
+    
+    <!-- CSS Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --sidebar-width: 220px;
+            --sidebar-collapsed-width: 70px;
+            --topbar-height: 50px;
+            --transition-speed: 0.2s;
+            --text-size: 0.85rem;
+        }
+        
+        /* Layout */
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all var(--transition-speed) ease;
+            z-index: 100;
+            overflow-y: auto;
+            font-size: var(--text-size);
+        }
+        
+        .sidebar-collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+        
+        .content-area {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            transition: margin-left var(--transition-speed) ease;
+        }
+        
+        .content-collapsed {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+        
+        /* Sidebar styles */
+        .sidebar-item {
+            transition: all 0.15s ease;
+            padding: 0.4rem 0.5rem;
+        }
+        
+        .sidebar-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-group-title {
+            transition: all 0.15s ease;
+            padding: 0.4rem 0.5rem;
+        }
+        
+        /* Active state */
+        .active-nav-item {
+            background-color: rgba(59, 130, 246, 0.2);
+            border-left: 3px solid #3b82f6;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar-open {
+                transform: translateX(0);
+            }
+            
+            .content-area {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 90;
+                display: none;
+            }
+            
+            .sidebar-overlay-open {
+                display: block;
+            }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #a0aec0;
+            border-radius: 2px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans text-sm leading-tight">
+    <!-- Sidebar Overlay (mobile only) -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+    
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar bg-blue-800 text-white shadow-lg">
+        <!-- Sidebar Header -->
+        <div class="flex items-center justify-between p-3 border-b border-blue-700">
+            <div class="flex items-center">
+                <i class="fas fa-store text-lg mr-2"></i>
+                <span class="font-semibold whitespace-nowrap">Minimart</span>
+            </div>
+            <button id="sidebar-toggle" class="text-white focus:outline-none text-sm">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <!-- Sidebar Content -->
+        <div class="p-2 overflow-y-auto">
+            <!-- Dashboard -->
+            <div class="mb-4">
+                <a href="{% url 'dashboard' %}" class="flex items-center sidebar-item {% if request.path == '/' %}active-nav-item{% endif %}">
+                    <i class="fas fa-tachometer-alt mr-3 w-4 text-center"></i>
+                    <span class="whitespace-nowrap">Dashboard</span>
+                </a>
+            </div>
+            
+            <!-- POS -->
+            <div class="mb-4">
+                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
+                    <i class="fas fa-cash-register mr-3 w-4 text-center"></i>
+                    <span class="whitespace-nowrap">POS</span>
+                </div>
+                <div class="pl-1">
+                    <a href="{% url 'pos' %}" class="flex items-center sidebar-item {% if 'pos' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-shopping-cart mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">POS Terminal</span>
+                    </a>
+                    <a href="{% url 'credit_payments' %}" class="flex items-center sidebar-item {% if 'credit' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-credit-card mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Credit Sales</span>
+                    </a>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Products -->
+            <div class="mb-4">
+                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
+                    <i class="fas fa-boxes mr-3 w-4 text-center"></i>
+                    <span class="whitespace-nowrap">Products</span>
+                </div>
+                <div class="pl-1">
+                    <a href="{% url 'product_list' %}" class="flex items-center sidebar-item {% if 'products' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-box mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">All Products</span>
+                    </a>
+                    <a href="{% url 'add_product' %}" class="flex items-center sidebar-item {% if 'add-product' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-plus-circle mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Add Product</span>
+                    </a>
+                    <a href="{% url 'batch_list' %}" class="flex items-center sidebar-item {% if 'batches' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-box-open mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Batches</span>
+                    </a>
+                    <a href="{% url 'inventory_report' %}" class="flex items-center sidebar-item {% if 'inventory' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-clipboard-list mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Inventory</span>
+                    </a>
+                    <a href="{% url 'stock_journal_list' %}" class="flex items-center sidebar-item {% if 'inventory' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-clipboard-list mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Stock Journal</span>
+                    </a>
+                  
+            </div>
+            
+            <!-- Sales -->
+            <div class="mb-4">
+                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
+                    <i class="fas fa-chart-line mr-3 w-4 text-center"></i>
+                    <span class="whitespace-nowrap">Sales</span>
+                </div>
+                <div class="pl-1">
+                    <a href="{% url 'sales_report' %}" class="flex items-center sidebar-item {% if 'sales' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-receipt mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">All Sales</span>
+                    </a>
+                 
+                    <a href="{% url 'daily_sales_summary' %}" class="flex items-center sidebar-item {% if 'daily-sales' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-calendar-day mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Daily Summary</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Customers -->
+            <div class="mb-4">
+                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
+                    <i class="fas fa-users mr-3 w-4 text-center"></i>
+                    <span class="whitespace-nowrap">Customers</span>
+                </div>
+                <div class="pl-1">
+                    <a href="{% url 'customer_list' %}" class="flex items-center sidebar-item {% if 'customers' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-address-book mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">All Customers</span>
+                    </a>
+                    <a href="{% url 'add_customer' %}" class="flex items-center sidebar-item {% if 'add-customer' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-user-plus mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Add Customer</span>
+                    </a>
+                  
+                </div>
+            </div>
+            
+            <!-- Purchases -->
+            <div class="mb-4">
+                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
+                    <i class="fas fa-shopping-cart mr-3 w-4 text-center"></i>
+                    <span class="whitespace-nowrap">Purchases</span>
+                </div>
+                <div class="pl-1">
+                    <a href="{% url 'purchase_list' %}" class="flex items-center sidebar-item {% if 'purchases' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-truck-loading mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">All Purchases</span>
+                    </a>
+                    <a href="{% url 'add_purchase' %}" class="flex items-center sidebar-item {% if 'add-purchase' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-cart-plus mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Add Purchase</span>
+                    </a>
+                  
+                    <a href="{% url 'pending_purchases' %}" class="flex items-center sidebar-item {% if 'pending-purchases' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-pause-circle mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Pending</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Suppliers -->
+            <div class="mb-4">
+                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
+                    <i class="fas fa-truck mr-3 w-4 text-center"></i>
+                    <span class="whitespace-nowrap">Suppliers</span>
+                </div>
+                <div class="pl-1">
+                    <a href="{% url 'supplier_list' %}" class="flex items-center sidebar-item {% if 'suppliers' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-list mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">All Suppliers</span>
+                    </a>
+                    <a href="{% url 'add_supplier' %}" class="flex items-center sidebar-item {% if 'add-supplier' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-plus mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Add Supplier</span>
+                    </a>
+                
+                </div>
+            </div>
+            
+            <!-- Expenses -->
+            <div class="mb-4">
+                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
+                    <i class="fas fa-receipt mr-3 w-4 text-center"></i>
+                    <span class="whitespace-nowrap">Expenses</span>
+                </div>
+                <div class="pl-1">
+                    <a href="{% url 'expense_list' %}" class="flex items-center sidebar-item {% if 'expenses' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-list mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">All Expenses</span>
+                    </a>
+                    <a href="{% url 'add_expense' %}" class="flex items-center sidebar-item {% if 'add-expense' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-plus mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Add Expense</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Reports -->
+            <div class="mb-4">
+                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
+                    <i class="fas fa-chart-bar mr-3 w-4 text-center"></i>
+                    <span class="whitespace-nowrap">Reports</span>
+                </div>
+                <div class="pl-1">
+                    <a href="{% url 'reports' %}" class="flex items-center sidebar-item {% if 'reports' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-file-alt mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">All Reports</span>
+                    </a>
+                    <a href="{% url 'profit_loss_report' %}" class="flex items-center sidebar-item {% if 'profit-loss' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-chart-pie mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Profit & Loss</span>
+                    </a>
+                    <a href="{% url 'stock_value_report' %}" class="flex items-center sidebar-item {% if 'stock-value' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-dollar-sign mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Stock Value</span>
+                    </a>
+                    <a href="{% url 'daily_sales_report' %}" class="flex items-center sidebar-item {% if 'daily-report' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-calendar-alt mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Daily Sales</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- System -->
+            <div class="mb-4">
+                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
+                    <i class="fas fa-cog mr-3 w-4 text-center"></i>
+                    <span class="whitespace-nowrap">System</span>
+                </div>
+                <div class="pl-1">
+                    <a href="{% url 'bulk_upload' %}" class="flex items-center sidebar-item {% if 'bulk-upload' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-file-import mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Bulk Upload</span>
+                    </a>
+                    <a href="{% url 'company_settings' %}" class="flex items-center sidebar-item {% if 'settings' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-building mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Company</span>
+                    </a>
+                    <a href="{% url 'discount_list' %}" class="flex items-center sidebar-item {% if 'discounts' in request.path %}active-nav-item{% endif %}">
+                        <i class="fas fa-percent mr-3 w-4 text-center"></i>
+                        <span class="whitespace-nowrap">Discounts</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div id="content-area" class="content-area">
+        <!-- Top bar -->
+        <div class="flex items-center justify-between border-b border-gray-300 px-4 py-2 bg-white shadow-sm h-[var(--topbar-height)]">
+            <div class="flex items-center">
+                <button id="mobile-sidebar-toggle" class="mr-3 text-gray-600 focus:outline-none lg:hidden">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="font-semibold text-sm">{% block page_title %}{% endblock %}</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="relative group">
+                    <span class="text-xs cursor-pointer">
+                        <i class="fas fa-user mr-1"></i> {{ request.user.username }}
+                    </span>
+                    <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block text-xs">
+                        <a href="#" class="block px-3 py-1 text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-user-cog mr-2 w-4"></i> Profile
+                        </a>
+                        <a href="#" class="block px-3 py-1 text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-cog mr-2 w-4"></i> Settings
+                        </a>
+                        <a href="{% url 'logout' %}" class="block px-3 py-1 text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-sign-out-alt mr-2 w-4"></i> Logout
+                        </a>
+                    </div>
+                </div>
+                <span class="text-xs"><i class="fas fa-calendar mr-1"></i> {% now "d/m/Y" %}</span>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <main class="container mx-auto p-3 pb-14">
+            {% block content %}{% endblock %}
+        </main>
+        
+        <!-- Status bar -->
+        <div class="fixed bottom-0 left-0 right-0 flex justify-between items-center border-t border-gray-300 bg-gray-100 px-3 py-1 text-xs no-print shadow-inner h-[var(--topbar-height)]">
+            <div><i class="fas fa-phone-alt mr-1"></i> Support: 0115314636</div>
+            <div class="flex space-x-3">
+                <span><i class="fas fa-database mr-1"></i> {{ request.user.company.name|default:"My Business" }}</span>
+                <span><i class="fas fa-clock mr-1"></i> {% now "H:i" %}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Sidebar functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const contentArea = document.getElementById('content-area');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            
+            // Toggle sidebar
+            function toggleSidebar() {
+                sidebar.classList.toggle('sidebar-collapsed');
+                contentArea.classList.toggle('content-collapsed');
+            }
+            
+            // Toggle mobile sidebar
+            function toggleMobileSidebar() {
+                sidebar.classList.toggle('sidebar-open');
+                sidebarOverlay.classList.toggle('sidebar-overlay-open');
+            }
+            
+            // Event listeners
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
+            sidebarOverlay.addEventListener('click', toggleMobileSidebar);
+            
+            // Auto-close mobile sidebar on larger screens
+            function handleResize() {
+                if (window.innerWidth > 1024) {
+                    sidebar.classList.remove('sidebar-open');
+                    sidebarOverlay.classList.remove('sidebar-overlay-open');
+                }
+            }
+            
+            window.addEventListener('resize', handleResize);
+            
+            // Collapse/expand sidebar groups
+            document.querySelectorAll('.sidebar-group-title').forEach(title => {
+                title.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const icon = this.querySelector('i');
+                    
+                    if (content.style.display === 'none') {
+                        content.style.display = 'block';
+                        icon.classList.remove('fa-chevron-right');
+                        icon.classList.add('fa-chevron-down');
+                    } else {
+                        content.style.display = 'none';
+                        icon.classList.remove('fa-chevron-down');
+                        icon.classList.add('fa-chevron-right');
+                    }
+                });
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

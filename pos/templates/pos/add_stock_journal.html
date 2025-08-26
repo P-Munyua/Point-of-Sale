@@ -1,0 +1,281 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-800">Record Stock Movement</h2>
+        <a href="{% url 'stock_journal_list' %}" class="text-blue-600 hover:text-blue-800 text-sm">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Journal
+        </a>
+    </div>
+
+    <form method="post" id="stock-journal-form" class="px-6 py-4">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Product *</label>
+                <div class="relative">
+                    <select name="product" id="id_product" class="hidden" required>
+                        {% if form.product.value %}
+                        <option value="{{ form.product.value }}" selected>{{ form.product.value }}</option>
+                        {% endif %}
+                    </select>
+                    <div class="relative">
+                        <input type="text" id="product-search" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                               placeholder="Search products..." value="{% if form.product.value %}{{ form.product.value }}{% endif %}" required
+                               data-search-url="{% url 'search_products' %}">
+                        <div id="product-results" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 hidden max-h-60 overflow-auto"></div>
+                    </div>
+                </div>
+                {% if form.product.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.product.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Batch (optional)</label>
+                {{ form.batch }}
+                {% if form.batch.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.batch.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Movement Type *</label>
+                <div class="relative">
+                    {{ form.movement_type }}
+                </div>
+                {% if form.movement_type.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.movement_type.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                <div class="relative">
+                    {{ form.quantity }}
+                </div>
+                {% if form.quantity.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.quantity.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Reference (optional)</label>
+                <div class="relative">
+                    {{ form.reference }}
+                </div>
+                {% if form.reference.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.reference.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+            <div class="relative">
+                {{ form.notes }}
+            </div>
+            {% if form.notes.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ form.notes.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div class="flex justify-end space-x-2">
+            <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="fas fa-times mr-1"></i> Reset
+            </button>
+            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <i class="fas fa-save mr-1"></i> Save Movement
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Success Modal -->
+<div id="success-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+        <div class="text-center">
+            <div class="text-green-500 text-5xl mb-4">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Movement Recorded Successfully!</h3>
+            <p class="text-sm text-gray-500 mb-4">Your stock movement has been recorded and inventory updated.</p>
+            <div class="flex justify-center">
+                <a href="{% url 'stock_journal_list' %}" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium text-sm mr-2">
+                    View Journal
+                </a>
+                <button id="new-movement" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md font-medium text-sm">
+                    New Movement
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div id="error-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+        <div class="text-center">
+            <div class="text-red-500 text-5xl mb-4">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2" id="error-title">Error Recording Movement</h3>
+            <p class="text-sm text-gray-500 mb-4" id="error-message"></p>
+            <div class="flex justify-center">
+                <button id="close-error" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium text-sm">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM elements
+    const productSearch = document.getElementById('product-search');
+    const productResults = document.getElementById('product-results');
+    const productSelect = document.getElementById('id_product');
+    const batchSelect = document.getElementById('id_batch');
+    const movementTypeSelect = document.getElementById('id_movement_type');
+    const quantityInput = document.getElementById('id_quantity');
+    const referenceInput = document.getElementById('id_reference');
+    const notesInput = document.getElementById('id_notes');
+    const saveBtn = document.querySelector('button[type="submit"]');
+    const stockJournalForm = document.getElementById('stock-journal-form');
+    const successModal = document.getElementById('success-modal');
+    const errorModal = document.getElementById('error-modal');
+    const errorMessage = document.getElementById('error-message');
+    const newMovementBtn = document.getElementById('new-movement');
+    const closeErrorBtn = document.getElementById('close-error');
+    
+    let productSearchTimeout;
+    
+    // Style form elements
+    movementTypeSelect.className = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500';
+    quantityInput.className = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500';
+    referenceInput.className = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500';
+    notesInput.className = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500';
+    batchSelect.className = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500';
+
+    // Product search functionality
+    productSearch.addEventListener('input', function() {
+        clearTimeout(productSearchTimeout);
+        const query = this.value.trim();
+        const searchUrl = this.dataset.searchUrl;
+        
+        if (query.length < 2) {
+            productResults.classList.add('hidden');
+            return;
+        }
+        
+        productSearchTimeout = setTimeout(() => {
+            fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    productResults.innerHTML = '';
+                    
+                    if (data.length > 0) {
+                        data.forEach(product => {
+                            const div = document.createElement('div');
+                            div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer';
+                            div.innerHTML = `
+                                <div class="font-medium">${product.name}</div>
+                                <div class="text-sm text-gray-600">Price: KSh ${product.price}</div>
+                                ${product.barcode ? `<div class="text-xs text-gray-500">Barcode: ${product.barcode}</div>` : ''}
+                            `;
+                            div.addEventListener('click', function() {
+                                productSelect.innerHTML = `<option value="${product.id}" selected>${product.name}</option>`;
+                                productSearch.value = product.name;
+                                productResults.classList.add('hidden');
+                                
+                                // Load batches for this product
+                                fetch(`/pos/ajax/get-batches/?product_id=${product.id}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        batchSelect.innerHTML = data.options;
+                                    })
+                                    .catch(error => {
+                                        console.error('Error fetching batches:', error);
+                                        batchSelect.innerHTML = '<option value="">---------</option>';
+                                    });
+                            });
+                            productResults.appendChild(div);
+                        });
+                        productResults.classList.remove('hidden');
+                    } else {
+                        const noResults = document.createElement('div');
+                        noResults.className = 'px-4 py-2 text-gray-500';
+                        noResults.textContent = 'No products found';
+                        productResults.appendChild(noResults);
+                        productResults.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Product search error:', error);
+                    productResults.innerHTML = '';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'px-4 py-2 text-red-500';
+                    errorDiv.textContent = 'Search failed. Please try again.';
+                    productResults.appendChild(errorDiv);
+                    productResults.classList.remove('hidden');
+                });
+        }, 300);
+    });
+
+    // Form submission
+    stockJournalForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!productSelect.value) {
+            showError('Please select a product');
+            return;
+        }
+        
+        if (!movementTypeSelect.value) {
+            showError('Please select a movement type');
+            return;
+        }
+        
+        if (!quantityInput.value || parseFloat(quantityInput.value) <= 0) {
+            showError('Please enter a valid quantity');
+            return;
+        }
+        
+        // Disable button to prevent multiple submissions
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Processing...';
+        
+        // Submit form
+        this.submit();
+    });
+
+    // New movement button
+    newMovementBtn.addEventListener('click', function() {
+        successModal.classList.add('hidden');
+        window.location.reload();
+    });
+
+    // Close error modal
+    closeErrorBtn.addEventListener('click', function() {
+        errorModal.classList.add('hidden');
+    });
+
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorModal.classList.remove('hidden');
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save Movement';
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!productSearch.contains(e.target) && !productResults.contains(e.target)) {
+            productResults.classList.add('hidden');
+        }
+    });
+});
+</script>
+{% endblock %}

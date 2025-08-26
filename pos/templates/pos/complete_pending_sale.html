@@ -1,0 +1,46 @@
+{% extends 'pos/base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Complete Pending Sale #{{ pending_sale.id }}</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            Sale Details
+        </div>
+        <div class="card-body">
+            <p><strong>Customer:</strong> {{ pending_sale.customer.name|default:"Walk-in" }}</p>
+            <p><strong>Created:</strong> {{ pending_sale.created_at|date:"M d, Y H:i" }}</p>
+            <p><strong>User:</strong> {{ pending_sale.user.username }}</p>
+            
+            <h5>Items:</h5>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pending_sale.data.items %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.price }}</td>
+                        <td>{{ item.total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Confirm Completion</button>
+        <a href="{% url 'pending_sales_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

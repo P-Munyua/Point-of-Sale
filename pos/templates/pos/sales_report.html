@@ -1,0 +1,319 @@
+{% extends 'pos/base.html' %}
+
+{% block title %}Sales Report{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 bg-blue-600">
+        <div class="flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-white">Sales Report</h2>
+            <div class="flex space-x-2">
+                <a href="{% url 'daily_sales_report' %}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-calendar-day mr-1"></i> Daily Sales
+                </a>
+                <a href="{% url 'profit_loss_report' %}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-chart-line mr-1"></i> Profit & Loss
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
+        <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+            <div>
+                <label class="block text-xs font-medium text-gray-700">From:</label>
+                <input type="date" id="start-date" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700">To:</label>
+                <input type="date" id="end-date" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700">Payment:</label>
+                <select id="payment-method" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <option value="">All Methods</option>
+                    <option value="cash">Cash</option>
+                    <option value="mpesa">M-Pesa</option>
+                    <option value="card">Credit Card</option>
+                    <option value="bank">Bank Transfer</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700">Type:</label>
+                <select id="sale-type" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <option value="">All Types</option>
+                    <option value="retail">Retail</option>
+                    <option value="wholesale">Wholesale</option>
+                </select>
+            </div>
+            <button id="apply-filters" class="mt-6 sm:mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Apply
+            </button>
+        </div>
+        
+        <div class="flex space-x-2">
+            <div class="bg-blue-50 px-3 py-1 rounded-md text-xs">
+                <span class="font-medium">Total Sales:</span> KSh {{ total_sales|floatformat:2 }}
+            </div>
+            <div class="bg-green-50 px-3 py-1 rounded-md text-xs">
+                <span class="font-medium">Items Sold:</span> {{ total_items }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Sale #
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Items
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Payment
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for sale in sales %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ sale.sale_number }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ sale.date|date:"d/m/Y H:i" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ sale.customer.name|default:"Walk-in" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ sale.items.count }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        KSh {{ sale.total|floatformat:2 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if sale.payment_method == 'cash' %}bg-green-100 text-green-800
+                            {% elif sale.payment_method == 'mpesa' %}bg-blue-100 text-blue-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ sale.get_payment_method_display }}
+                        </span>
+                        {% if sale.is_credit %}
+                        <span class="ml-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            Credit
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if sale.is_completed %}bg-green-100 text-green-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {% if sale.is_completed %}Completed{% else %}Pending{% endif %}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="{% url 'view_sale' sale.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'print_receipt' sale.id %}" class="text-green-600 hover:text-green-900" target="_blank">
+                            <i class="fas fa-print"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
+                        No sales found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if is_paginated %}
+    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+        <div class="flex-1 flex justify-between items-center">
+            <span class="text-sm text-gray-700">
+                Showing <span class="font-medium">{{ page_obj.start_index }}</span> to 
+                <span class="font-medium">{{ page_obj.end_index }}</span> of 
+                <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+            </span>
+            <div class="flex space-x-1">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                </a>
+                {% endif %}
+                
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h4 class="font-medium text-gray-900 mb-2">Sales by Payment Method</h4>
+        <canvas id="paymentChart" height="200"></canvas>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h4 class="font-medium text-gray-900 mb-2">Sales Trend (Last 7 Days)</h4>
+        <canvas id="salesTrendChart" height="200"></canvas>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h4 class="font-medium text-gray-900 mb-2">Top Selling Products</h4>
+        <canvas id="topProductsChart" height="200"></canvas>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Apply filters
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    const startDateInput = document.getElementById('start-date');
+    const endDateInput = document.getElementById('end-date');
+    const paymentMethodSelect = document.getElementById('payment-method');
+    const saleTypeSelect = document.getElementById('sale-type');
+    
+    function applyFilters() {
+        const params = new URLSearchParams();
+        
+        if (startDateInput.value) {
+            params.set('start_date', startDateInput.value);
+        }
+        
+        if (endDateInput.value) {
+            params.set('end_date', endDateInput.value);
+        }
+        
+        if (paymentMethodSelect.value) {
+            params.set('payment_method', paymentMethodSelect.value);
+        }
+        
+        if (saleTypeSelect.value) {
+            params.set('sale_type', saleTypeSelect.value);
+        }
+        
+        window.location.search = params.toString();
+    }
+    
+    applyFiltersBtn.addEventListener('click', applyFilters);
+    
+    // Set current filter values from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('start_date')) {
+        startDateInput.value = urlParams.get('start_date');
+    }
+    if (urlParams.has('end_date')) {
+        endDateInput.value = urlParams.get('end_date');
+    }
+    if (urlParams.has('payment_method')) {
+        paymentMethodSelect.value = urlParams.get('payment_method');
+    }
+    if (urlParams.has('sale_type')) {
+        saleTypeSelect.value = urlParams.get('sale_type');
+    }
+    
+    // Charts
+    const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+    const paymentChart = new Chart(paymentCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ payment_methods|safe }},
+            datasets: [{
+                data: {{ payment_totals|safe }},
+                backgroundColor: [
+                    '#10B981', // Cash - green
+                    '#3B82F6', // M-Pesa - blue
+                    '#F59E0B', // Card - yellow
+                    '#64748B', // Bank - gray
+                    '#EF4444'  // Credit - red
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+    
+    const trendCtx = document.getElementById('salesTrendChart').getContext('2d');
+    const trendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ trend_dates|safe }},
+            datasets: [{
+                label: 'Daily Sales',
+                data: {{ trend_values|safe }},
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: '#3B82F6',
+                borderWidth: 2,
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    const productsCtx = document.getElementById('topProductsChart').getContext('2d');
+    const productsChart = new Chart(productsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ top_products_names|safe }},
+            datasets: [{
+                label: 'Quantity Sold',
+                data: {{ top_products_quantities|safe }},
+                backgroundColor: '#10B981',
+                borderColor: '#047857',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            indexAxis: 'y',
+        }
+    });
+});
+</script>
+{% endblock %}

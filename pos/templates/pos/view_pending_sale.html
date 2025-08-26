@@ -1,0 +1,294 @@
+{% extends 'pos/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Pending Sale #{{ pending_sale.id }}</h2>
+        <div>
+            <a href="{% url 'pending_sales_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <!-- Sale details sections remain the same -->
+    <!-- ... -->
+
+    <div class="d-flex justify-content-between">
+        <button onclick="confirmDeletePendingSale({{ pending_sale.id }})" 
+                class="btn btn-danger">
+            <i class="fas fa-trash"></i> Delete Sale
+        </button>
+        
+        <div class="btn-group">
+            <button onclick="loadToPOS({{ pending_sale.id }})" 
+                    class="btn btn-primary">
+                <i class="fas fa-shopping-cart"></i> Load to POS
+            </button>
+            <button onclick="confirmCompletePendingSale({{ pending_sale.id }})" 
+                    class="btn btn-success">
+                <i class="fas fa-check"></i> Complete Sale
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Show confirmation dialog before completing sale
+function confirmCompletePendingSale(saleId) {
+    Swal.fire({
+        title: 'Complete Sale',
+        text: "Are you sure you want to complete this sale? This will process the payment and remove it from pending sales.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, complete it!',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        allowOutsideClick: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            completePendingSale(saleId);
+        }
+    });
+}
+
+
+
+// Complete a pending sale - IMPROVED VERSION
+function completePendingSale(saleId) {
+    const loadingSwal = Swal.fire({
+        title: 'Processing Sale',
+        html: 'Completing transaction and updating records...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch(`/pos/complete_pending_sale/${saleId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})  // Explicit empty body
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errData => {
+                throw new Error(errData.message || 'Server error');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success && data.pending_sale_deleted) {
+            loadingSwal.close();
+            
+            // Success - show confirmation and redirect
+            Swal.fire({
+                title: 'Success!',
+                text: 'Sale completed and pending record removed',
+                icon: 'success',
+                showConfirmButton: true,
+                showCancelButton: true,
+                confirmButtonText: 'View Receipt',
+                cancelButtonText: 'Back to List'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.open(`/pos/receipt/${data.sale_id}/`, '_blank');
+                }
+                // Force refresh the pending sales list
+                window.location.href = "{% url 'pending_sales_list' %}";
+            });
+        } else {
+            throw new Error(data.message || 'Pending sale not properly deleted');
+        }
+    })
+    .catch(error => {
+        loadingSwal.close();
+        console.error('Error:', error);
+        
+        Swal.fire({
+            title: 'Error!',
+            html: `<p>Failed to complete sale</p>
+                  <p class="text-danger">${error.message}</p>
+                  <p>Please try again or contact support.</p>`,
+            icon: 'error',
+            confirmButtonText: 'OK'
+        }).then(() => {
+            // Reload the page to get fresh data
+            window.location.reload();
+        });
+    });
+}
+
+// Delete a pending sale - IMPROVED VERSION
+function deletePendingSale(saleId) {
+    const loadingSwal = Swal.fire({
+        title: 'Deleting...',
+        html: 'Removing pending sale',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch(`/pos/delete_pending_sale/${saleId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Server error');
+        }
+        return data;
+    })
+    .then(data => {
+        if (data.success) {
+            loadingSwal.close();
+            return Swal.fire({
+                title: 'Deleted!',
+                text: 'Pending sale has been removed',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            throw new Error(data.message || 'Deletion failed');
+        }
+    })
+    .then(() => {
+        window.location.href = "{% url 'pending_sales_list' %}";
+    })
+    .catch(error => {
+        loadingSwal.close();
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error!',
+            html: `Failed to delete sale:<br><small>${error.message}</small>`,
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    });
+}
+
+
+// Delete a pending sale - IMPROVED VERSION
+function deletePendingSale(saleId) {
+    const loadingSwal = Swal.fire({
+        title: 'Deleting...',
+        html: 'Removing pending sale',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch(`/pos/delete_pending_sale/${saleId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Server error');
+        }
+        return data;
+    })
+    .then(data => {
+        if (data.success) {
+            loadingSwal.close();
+            return Swal.fire({
+                title: 'Deleted!',
+                text: 'Pending sale has been removed',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            throw new Error(data.message || 'Deletion failed');
+        }
+    })
+    .then(() => {
+        window.location.href = "{% url 'pending_sales_list' %}";
+    })
+    .catch(error => {
+        loadingSwal.close();
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error!',
+            html: `Failed to delete sale:<br><small>${error.message}</small>`,
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    });
+}
+
+// Load to POS function remains the same
+function loadToPOS(saleId) {
+    const loadingSwal = Swal.fire({
+        title: 'Loading...',
+        html: 'Preparing POS data',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch(`/pos/load_pending_sale/${saleId}/`)
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Server error');
+        }
+        return data;
+    })
+    .then(data => {
+        if (data.success) {
+            sessionStorage.setItem('pendingSaleData', JSON.stringify(data.sale_data));
+            window.location.href = "{% url 'pos' %}";
+        } else {
+            throw new Error(data.message || 'Loading failed');
+        }
+    })
+    .catch(error => {
+        loadingSwal.close();
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error!',
+            html: `Failed to load to POS:<br><small>${error.message}</small>`,
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    });
+}
+</script>
+
+<style>
+    /* Your existing styles remain the same */
+    #alert-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        width: 300px;
+    }
+    .btn-group .btn {
+        margin-left: 5px;
+    }
+    .swal2-popup {
+        font-size: 1.6rem;
+    }
+</style>
+{% endblock %}

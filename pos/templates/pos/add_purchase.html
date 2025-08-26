@@ -1,0 +1,549 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-800">Create New Purchase</h2>
+        <a href="{% url 'purchase_list' %}" class="text-blue-600 hover:text-blue-800 text-sm">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Purchases
+        </a>
+    </div>
+
+    <form method="post" id="purchase-form" action="{% url 'add_purchase' %}" class="px-6 py-4">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Supplier *</label>
+                <select name="supplier" id="supplier-select" class="hidden" required>
+                    {% if selected_supplier %}
+                    <option value="{{ selected_supplier.id }}" selected>{{ selected_supplier }}</option>
+                    {% endif %}
+                </select>
+                <div class="relative">
+                    <input type="text" id="supplier-search" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Search supplier..." value="{% if selected_supplier %}{{ selected_supplier }}{% endif %}" required
+                           data-search-url="{% url 'search_suppliers' %}">
+                    <div id="supplier-results" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 hidden max-h-60 overflow-auto"></div>
+                </div>
+                {% if form.supplier.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.supplier.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
+                <input type="text" name="invoice_number" id="invoice-number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                       value="{% if form.invoice_number.value %}{{ form.invoice_number.value }}{% else %}{{ invoice_number }}{% endif %}">
+                {% if form.invoice_number.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.invoice_number.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-700 mb-3">Purchase Items</h3>
+            <div class="mb-3">
+                <div class="relative">
+                    <input type="text" id="product-search" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Search products by name or barcode..." autocomplete="off"
+                           data-search-url="{% url 'search_products' %}">
+                    <div id="product-results" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 hidden max-h-60 overflow-auto"></div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-container" class="bg-white divide-y divide-gray-200">
+                        <!-- Items will be added dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-3 flex justify-between items-center">
+                <button type="button" id="add-item" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-plus mr-1"></i> Add Item
+                </button>
+                <span id="item-count" class="text-sm text-gray-500">0 items</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Subtotal</h4>
+                <p class="text-xl font-semibold" id="subtotal-display">KSh 0.00</p>
+            </div>
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <h4 class="text-sm font-medium text-blue-700 mb-2">Total Amount</h4>
+                <p class="text-2xl font-bold text-blue-600" id="total-display">KSh 0.00</p>
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-2">
+            <button type="button" id="save-as-pending" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                    data-save-pending-url="{% url 'save_purchase_as_pending' %}">
+                <i class="fas fa-save mr-1"></i> Save as Pending
+            </button>
+            <button type="submit" id="save-purchase" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <i class="fas fa-save mr-1"></i> Save Purchase
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Success Modal -->
+<div id="success-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+        <div class="text-center">
+            <div class="text-green-500 text-5xl mb-4">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Purchase Saved Successfully!</h3>
+            <p class="text-sm text-gray-500 mb-4">Your purchase has been recorded and inventory updated.</p>
+            <div class="flex justify-center">
+                <a href="{% url 'purchase_list' %}" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium text-sm mr-2">
+                    View Purchases
+                </a>
+                <button id="new-purchase" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md font-medium text-sm">
+                    New Purchase
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div id="error-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+        <div class="text-center">
+            <div class="text-red-500 text-5xl mb-4">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2" id="error-title">Error Saving Purchase</h3>
+            <p class="text-sm text-gray-500 mb-4" id="error-message"></p>
+            <div class="flex justify-center">
+                <button id="close-error" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium text-sm">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM elements
+    const supplierSearch = document.getElementById('supplier-search');
+    const supplierResults = document.getElementById('supplier-results');
+    const supplierSelect = document.getElementById('supplier-select');
+    const productSearch = document.getElementById('product-search');
+    const productResults = document.getElementById('product-results');
+    const itemsContainer = document.getElementById('items-container');
+    const itemCount = document.getElementById('item-count');
+    const subtotalDisplay = document.getElementById('subtotal-display');
+    const totalDisplay = document.getElementById('total-display');
+    const savePurchaseBtn = document.getElementById('save-purchase');
+    const saveAsPendingBtn = document.getElementById('save-as-pending');
+    const purchaseForm = document.getElementById('purchase-form');
+    const successModal = document.getElementById('success-modal');
+    const errorModal = document.getElementById('error-modal');
+    const errorMessage = document.getElementById('error-message');
+    const newPurchaseBtn = document.getElementById('new-purchase');
+    const closeErrorBtn = document.getElementById('close-error');
+    
+    let supplierSearchTimeout;
+    let productSearchTimeout;
+    let items = [];
+    
+    // Supplier search functionality
+    supplierSearch.addEventListener('input', function() {
+        clearTimeout(supplierSearchTimeout);
+        const query = this.value.trim();
+        const searchUrl = this.dataset.searchUrl;
+        
+        if (query.length < 2) {
+            supplierResults.classList.add('hidden');
+            return;
+        }
+        
+        supplierSearchTimeout = setTimeout(() => {
+            fetch(`${searchUrl}?search=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    supplierResults.innerHTML = '';
+                    
+                    if (data.length > 0) {
+                        data.forEach(supplier => {
+                            const div = document.createElement('div');
+                            div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer';
+                            div.textContent = supplier.text;
+                            div.addEventListener('click', function() {
+                                supplierSelect.innerHTML = `<option value="${supplier.id}" selected>${supplier.text}</option>`;
+                                supplierSearch.value = supplier.text;
+                                supplierResults.classList.add('hidden');
+                                updateSaveButtonState();
+                            });
+                            supplierResults.appendChild(div);
+                        });
+                        supplierResults.classList.remove('hidden');
+                    } else {
+                        const noResults = document.createElement('div');
+                        noResults.className = 'px-4 py-2 text-gray-500';
+                        noResults.textContent = 'No suppliers found';
+                        supplierResults.appendChild(noResults);
+                        supplierResults.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Supplier search error:', error);
+                    supplierResults.innerHTML = '';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'px-4 py-2 text-red-500';
+                    errorDiv.textContent = 'Search failed. Please try again.';
+                    supplierResults.appendChild(errorDiv);
+                    supplierResults.classList.remove('hidden');
+                });
+        }, 300);
+    });
+
+    // Product search functionality
+    productSearch.addEventListener('input', function() {
+        clearTimeout(productSearchTimeout);
+        const query = this.value.trim();
+        const searchUrl = this.dataset.searchUrl;
+        
+        if (query.length < 2) {
+            productResults.classList.add('hidden');
+            return;
+        }
+        
+        productSearchTimeout = setTimeout(() => {
+            fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    productResults.innerHTML = '';
+                    
+                    if (data.length > 0) {
+                        data.forEach(product => {
+                            const div = document.createElement('div');
+                            div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer';
+                            div.innerHTML = `
+                                <div class="font-medium">${product.name}</div>
+                                <div class="text-sm text-gray-600">Selling: KSh ${product.price} | Cost: KSh ${product.purchase_price}</div>
+                                ${product.barcode ? `<div class="text-xs text-gray-500">Barcode: ${product.barcode}</div>` : ''}
+                            `;
+                            div.addEventListener('click', function() {
+                                addProductToPurchase({
+                                    id: product.id,
+                                    name: product.name,
+                                    price: product.price,
+                                    purchase_price: product.purchase_price,
+                                    barcode: product.barcode
+                                });
+                                productSearch.value = '';
+                                productResults.classList.add('hidden');
+                            });
+                            productResults.appendChild(div);
+                        });
+                        productResults.classList.remove('hidden');
+                    } else {
+                        const noResults = document.createElement('div');
+                        noResults.className = 'px-4 py-2 text-gray-500';
+                        noResults.textContent = 'No products found';
+                        productResults.appendChild(noResults);
+                        productResults.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Product search error:', error);
+                    productResults.innerHTML = '';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'px-4 py-2 text-red-500';
+                    errorDiv.textContent = 'Search failed. Please try again.';
+                    productResults.appendChild(errorDiv);
+                    productResults.classList.remove('hidden');
+                });
+        }, 300);
+    });
+
+    function addProductToPurchase(product) {
+        // Check if product already exists in items
+        const existingItem = items.find(item => item.product_id == product.id);
+        
+        if (existingItem) {
+            // If exists, just increase quantity
+            existingItem.quantity += 1;
+            existingItem.total = existingItem.quantity * existingItem.price;
+        } else {
+            // Add new item
+            items.push({
+                product_id: product.id,
+                product_name: product.name,
+                quantity: 1,
+                price: parseFloat(product.purchase_price),
+                total: parseFloat(product.purchase_price),
+                batch_number: '',
+                expiry_date: ''
+            });
+        }
+        
+        updateItemsDisplay();
+    }
+
+    function updateItemsDisplay() {
+        itemsContainer.innerHTML = '';
+        let subtotal = 0;
+        
+        items.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.className = 'item-row';
+            row.dataset.index = index;
+            row.innerHTML = `
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
+                    <div class="font-medium">${item.product_name}</div>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <input type="number" class="item-quantity w-full px-2 py-1 border rounded" 
+                           name="items[${index}][quantity]" value="${item.quantity}" min="1" data-index="${index}">
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <input type="number" class="item-price w-full px-2 py-1 border rounded" 
+                           name="items[${index}][price]" value="${item.price.toFixed(2)}" min="0.01" step="0.01" data-index="${index}">
+                    <div class="text-xs text-gray-500 mt-1">Cost: KSh ${item.price.toFixed(2)}</div>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <span class="item-total">KSh ${item.total.toFixed(2)}</span>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" class="item-batch w-full px-2 py-1 border rounded" 
+                               name="items[${index}][batch_number]" placeholder="Batch #" value="${item.batch_number || ''}" data-index="${index}">
+                        <input type="date" class="item-expiry w-full px-2 py-1 border rounded" 
+                               name="items[${index}][expiry_date]" value="${item.expiry_date || ''}" data-index="${index}">
+                    </div>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <button type="button" class="remove-item text-red-600 hover:text-red-800" data-index="${index}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            itemsContainer.appendChild(row);
+            
+            subtotal += item.total;
+        });
+        
+        // Update counts and totals
+        itemCount.textContent = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
+        updateTotals(subtotal);
+        
+        // Update save button state
+        updateSaveButtonState();
+    }
+
+    function updateTotals(subtotal) {
+        const total = subtotal;
+        
+        subtotalDisplay.textContent = `KSh ${subtotal.toFixed(2)}`;
+        totalDisplay.textContent = `KSh ${total.toFixed(2)}`;
+    }
+
+    // Handle quantity, price, batch and expiry changes
+    itemsContainer.addEventListener('change', function(e) {
+        if (e.target.classList.contains('item-quantity') || 
+            e.target.classList.contains('item-price') ||
+            e.target.classList.contains('item-batch') ||
+            e.target.classList.contains('item-expiry')) {
+            
+            const index = parseInt(e.target.dataset.index);
+            const item = items[index];
+            
+            if (e.target.classList.contains('item-quantity')) {
+                const newQuantity = parseInt(e.target.value) || 1;
+                item.quantity = newQuantity > 0 ? newQuantity : 1;
+                e.target.value = item.quantity;
+            } 
+            else if (e.target.classList.contains('item-price')) {
+                const newPrice = parseFloat(e.target.value) || 0;
+                item.price = newPrice > 0 ? newPrice : 0;
+                e.target.value = item.price.toFixed(2);
+            }
+            else if (e.target.classList.contains('item-batch')) {
+                item.batch_number = e.target.value;
+            }
+            else if (e.target.classList.contains('item-expiry')) {
+                item.expiry_date = e.target.value;
+            }
+            
+            if (e.target.classList.contains('item-quantity') || e.target.classList.contains('item-price')) {
+                item.total = item.quantity * item.price;
+                
+                // Update the total display for this row
+                const row = e.target.closest('.item-row');
+                if (row) {
+                    row.querySelector('.item-total').textContent = `KSh ${item.total.toFixed(2)}`;
+                }
+            }
+            
+            // Recalculate totals
+            const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+            updateTotals(subtotal);
+        }
+    });
+
+    // Handle item removal
+    itemsContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-item')) {
+            const index = parseInt(e.target.closest('.remove-item').dataset.index);
+            items.splice(index, 1);
+            updateItemsDisplay();
+        }
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!supplierSearch.contains(e.target) && !supplierResults.contains(e.target)) {
+            supplierResults.classList.add('hidden');
+        }
+        if (!productSearch.contains(e.target) && !productResults.contains(e.target)) {
+            productResults.classList.add('hidden');
+        }
+    });
+
+    function updateSaveButtonState() {
+        savePurchaseBtn.disabled = items.length === 0 || !supplierSelect.value;
+        saveAsPendingBtn.disabled = items.length === 0 || !supplierSelect.value;
+    }
+
+    // Form submission
+    purchaseForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (items.length === 0) {
+            showError('Please add at least one item to the purchase');
+            return;
+        }
+        
+        if (!supplierSelect.value) {
+            showError('Please select a supplier');
+            return;
+        }
+        
+        // Disable button to prevent multiple submissions
+        savePurchaseBtn.disabled = true;
+        savePurchaseBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Processing...';
+        
+        // Submit form
+        purchaseForm.submit();
+    });
+
+    // Updated Save as Pending functionality
+saveAsPendingBtn.addEventListener('click', async function() {
+    if (items.length === 0) {
+        showError('Please add at least one item to the purchase');
+        return;
+    }
+    
+    if (!supplierSelect.value) {
+        showError('Please select a supplier');
+        return;
+    }
+
+    // Disable button to prevent multiple clicks
+    saveAsPendingBtn.disabled = true;
+    saveAsPendingBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Saving...';
+
+    try {
+        // Prepare the request data
+        const requestData = {
+            supplier: supplierSelect.value,
+            invoice_number: document.getElementById('invoice-number').value,
+            items: items.map(item => ({
+                product_id: item.product_id,
+                quantity: item.quantity,
+                price: item.price,
+                batch_number: item.batch_number || '',
+                expiry_date: item.expiry_date || ''
+            })),
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        };
+
+        // Get the correct URL (handle development vs production)
+        const saveUrl = "{% url 'save_purchase_as_pending'%}";
+        const fullUrl = window.location.origin + saveUrl;
+        
+        console.log('Attempting to save to:', fullUrl);  // Debug log
+
+        // Send the request with error handling
+        const response = await fetch(fullUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(requestData),
+            credentials: 'include'  // Important for cookies/sessions
+        }).catch(error => {
+            console.error('Network error:', error);
+            throw new Error('Network connection failed. Please check your internet connection and try again.');
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server response error:', errorText);
+            throw new Error(errorText || 'Server returned an error');
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = data.redirect_url || "{% url 'purchase_list' %}";
+        } else {
+            throw new Error(data.message || 'Failed to save as pending');
+        }
+    } catch (error) {
+        console.error('Save as pending error:', error);
+        showError(error.message);
+    } finally {
+        saveAsPendingBtn.disabled = false;
+        saveAsPendingBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save as Pending';
+    }
+});
+
+    // New purchase button
+    newPurchaseBtn.addEventListener('click', function() {
+        successModal.classList.add('hidden');
+        window.location.reload();
+    });
+
+    // Close error modal
+    closeErrorBtn.addEventListener('click', function() {
+        errorModal.classList.add('hidden');
+    });
+
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorModal.classList.remove('hidden');
+        savePurchaseBtn.disabled = false;
+        savePurchaseBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save Purchase';
+        saveAsPendingBtn.disabled = false;
+        saveAsPendingBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save as Pending';
+    }
+
+    // Initialize save button state
+    updateSaveButtonState();
+});
+</script>
+{% endblock %}

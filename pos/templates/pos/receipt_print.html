@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Receipt - {{ receipt.receipt_number }}</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            width: 80mm;
+            margin: 0 auto;
+            padding: 5px;
+        }
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .receipt-header h2 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .receipt-info {
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 5px;
+        }
+        .receipt-info h3 {
+            margin: 0;
+            font-size: 12px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        th, td {
+            padding: 2px 0;
+        }
+        th {
+            text-align: left;
+            border-bottom: 1px dashed #000;
+        }
+        .receipt-totals {
+            border-top: 1px dashed #000;
+            padding-top: 5px;
+            margin-bottom: 10px;
+        }
+        .receipt-totals p {
+            margin: 2px 0;
+        }
+        .receipt-footer {
+            text-align: center;
+            font-size: 10px;
+            margin-top: 10px;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                width: 80mm;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-header">
+        <h2>{{ company.name }}</h2>
+        <p>{{ company.address }}</p>
+        <p>Phone: {{ company.phone }}</p>
+        <p>VAT: {{ company.vat_number }}</p>
+    </div>
+    
+    <div class="receipt-info">
+        <h3>RECEIPT: {{ receipt.receipt_number }}</h3>
+        <p>Date: {{ receipt.content.date }}</p>
+        <p>Customer: {{ receipt.content.customer }}</p>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in receipt.content.items %}
+            <tr>
+                <td>{{ item.name }}{% if item.batch %} ({{ item.batch }}){% endif %}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="receipt-totals">
+        <p>Subtotal: {{ receipt.content.subtotal }}</p>
+        <p>Discount: {{ receipt.content.discount }}</p>
+        <p>Total: {{ receipt.content.total }}</p>
+        <p>Payment Method: {{ receipt.content.payment_method }}</p>
+        
+        {% for method, amount in receipt.content.payment_details.items %}
+            {% if amount != "0.00" %}
+            <p>{{ method|title }}: {{ amount }}</p>
+            {% endif %}
+        {% endfor %}
+        
+        <p>Amount Paid: {{ receipt.content.amount_paid }}</p>
+        {% if receipt.content.change != "0.00" %}
+            <p>Change: {{ receipt.content.change }}</p>
+        {% endif %}
+        {% if receipt.content.balance != "0.00" %}
+            <p>Balance Due: {{ receipt.content.balance }}</p>
+        {% endif %}
+    </div>
+    
+    <div class="receipt-footer">
+        <p>Thank you for your business!</p>
+        <p>Generated on: {{ receipt.created_at|date:"Y-m-d H:i" }}</p>
+        <p>Cashier: {{ receipt.created_by.get_full_name }}</p>
+    </div>
+    
+    <div class="no-print" style="text-align: center; margin-top: 20px;">
+        <button onclick="window.print()" class="btn btn-primary">Print Receipt</button>
+        <button onclick="window.close()" class="btn btn-secondary">Close</button>
+    </div>
+    
+    <script>
+        // Auto-print if print_directly is True
+        {% if print_directly %}
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+                // Close the window after printing (may not work in all browsers)
+                setTimeout(function() { window.close(); }, 500);
+            }, 500);
+        };
+        {% endif %}
+    </script>
+</body>
+</html>

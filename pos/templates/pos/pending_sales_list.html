@@ -1,0 +1,384 @@
+{% extends 'pos/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Pending Sales</h2>
+        <div>
+            <a href="{% url 'pos' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to POS
+            </a>
+            <button id="refresh-pending" class="btn btn-outline-secondary">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Created</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pending-sales-table-body">
+                        {% for sale in pending_sales %}
+                        <tr id="sale-row-{{ sale.id }}" data-sale-id="{{ sale.id }}">
+                            <td>{{ sale.id }}</td>
+                            <td>{{ sale.created_at|date:"M d, Y H:i" }}</td>
+                            <td>{{ sale.customer.name|default:"Walk-in" }}</td>
+                            <td>{{ sale.data.items|length }} items</td>
+                            <td>KSh {{ sale.data.total|floatformat:2 }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button onclick="loadPendingSaleToPOS({{ sale.id }})" 
+                                            class="btn btn-outline-primary" 
+                                            title="Load to POS">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </button>
+                                    <button onclick="completePendingSale({{ sale.id }})" 
+                                            class="btn btn-outline-success"
+                                            title="Complete sale">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button onclick="confirmDeletePendingSale({{ sale.id }})" 
+                                            class="btn btn-outline-danger"
+                                            title="Delete sale">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-clipboard-list fa-2x mb-2 text-muted"></i>
+                                <p class="mb-0">No pending sales found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Show confirmation dialog before deleting
+function confirmDeletePendingSale(saleId) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "This will permanently delete the pending sale!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            deletePendingSale(saleId);
+        }
+    });
+}
+
+// Load pending sale to POS interface
+function loadPendingSaleToPOS(saleId) {
+    showLoader();
+    fetch(`/pos/load_pending_sale/${saleId}/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoader();
+            if (data.success) {
+                // Clear current cart
+                clearCart();
+                
+                // Set customer if exists
+                if (data.sale_data.customer_id) {
+                    $('#customer-select').val(data.sale_data.customer_id).trigger('change');
+                }
+                
+                // Add items to cart
+                data.sale_data.items.forEach(item => {
+                    addToCart({
+                        id: item.id,
+                        name: item.name || 'Product ' + item.id,
+                        price: parseFloat(item.price),
+                        quantity: parseInt(item.quantity),
+                        batch_id: item.batch_id || null,
+                        discount_amount: parseFloat(item.discount_amount || 0),
+                        discount_percent: parseFloat(item.discount_percent || 0)
+                    });
+                });
+                
+                // Show success message
+                showAlert('Pending sale loaded to POS', 'success');
+                
+                // Redirect to POS page
+                window.location.href = "{% url 'pos' %}";
+            } else {
+                throw new Error(data.message || 'Failed to load sale');
+            }
+        })
+        .catch(error => {
+            hideLoader();
+            console.error('Error:', error);
+            showAlert('Error loading sale: ' + error.message, 'danger');
+        });
+}
+
+// Complete a pending sale
+function completePendingSale(saleId) {
+    Swal.fire({
+        title: 'Complete Sale',
+        text: "Are you sure you want to complete this sale?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, complete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoader();
+            fetch(`/pos/complete_pending_sale/${saleId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoader();
+                if (data.success) {
+                    // Remove from table
+                    const row = document.querySelector(`tr[data-sale-id="${saleId}"]`);
+                    if (row) row.remove();
+                    
+                    // Show success message
+                    showAlert('Sale completed successfully', 'success');
+                    
+                    // Open receipt in new tab
+                    if (data.sale_id) {
+                        window.open(`/pos/receipt/${data.sale_id}/`, '_blank');
+                    }
+                    
+                    // Check if table is empty now
+                    checkEmptyTable();
+                } else {
+                    throw new Error(data.message || 'Failed to complete sale');
+                }
+            })
+            .catch(error => {
+                hideLoader();
+                console.error('Error:', error);
+                showAlert('Error completing sale: ' + error.message, 'danger');
+            });
+        }
+    });
+}
+
+// Delete a pending sale
+function deletePendingSale(saleId) {
+    showLoader();
+    fetch(`/pos/delete_pending_sale/${saleId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => { throw new Error(text) });
+        }
+        return response.json();
+    })
+    .then(data => {
+        hideLoader();
+        if (data.success) {
+            // Remove from table
+            const row = document.querySelector(`tr[data-sale-id="${saleId}"]`);
+            if (row) row.remove();
+            
+            // Show success message
+            showAlert('Pending sale deleted successfully', 'success');
+            
+            // Check if table is empty now
+            checkEmptyTable();
+        } else {
+            throw new Error(data.message || 'Failed to delete sale');
+        }
+    })
+    .catch(error => {
+        hideLoader();
+        console.error('Error:', error);
+        showAlert('Error deleting sale: ' + error.message, 'danger');
+    });
+}
+
+// Check if table is empty and show message
+function checkEmptyTable() {
+    const tbody = document.getElementById('pending-sales-table-body');
+    if (tbody.querySelectorAll('tr[data-sale-id]').length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <i class="fas fa-clipboard-list fa-2x mb-2 text-muted"></i>
+                    <p class="mb-0">No pending sales found</p>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Show loader
+function showLoader() {
+    Swal.fire({
+        title: 'Processing...',
+        html: 'Please wait',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+}
+
+// Hide loader
+function hideLoader() {
+    Swal.close();
+}
+
+// Show alert message
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    `;
+    
+    const container = document.getElementById('alert-container');
+    container.innerHTML = ''; // Clear previous alerts
+    container.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+// Refresh pending sales list
+document.getElementById('refresh-pending').addEventListener('click', function() {
+    showLoader();
+    fetch('/pos/pending_sales_list/')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoader();
+            if (data.success) {
+                const tbody = document.getElementById('pending-sales-table-body');
+                tbody.innerHTML = '';
+                
+                if (data.pending_sales.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-clipboard-list fa-2x mb-2 text-muted"></i>
+                                <p class="mb-0">No pending sales found</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                data.pending_sales.forEach(sale => {
+                    const row = document.createElement('tr');
+                    row.id = `sale-row-${sale.id}`;
+                    row.dataset.saleId = sale.id;
+                    row.innerHTML = `
+                        <td>${sale.id}</td>
+                        <td>${new Date(sale.created_at).toLocaleString()}</td>
+                        <td>${sale.customer || 'Walk-in'}</td>
+                        <td>${sale.items_count} items</td>
+                        <td>KSh ${parseFloat(sale.total).toFixed(2)}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button onclick="loadPendingSaleToPOS(${sale.id})" 
+                                        class="btn btn-outline-primary" 
+                                        title="Load to POS">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </button>
+                                <button onclick="completePendingSale(${sale.id})" 
+                                        class="btn btn-outline-success"
+                                        title="Complete sale">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button onclick="confirmDeletePendingSale(${sale.id})" 
+                                        class="btn btn-outline-danger"
+                                        title="Delete sale">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                showAlert('Pending sales list refreshed', 'info');
+            } else {
+                throw new Error('Failed to load pending sales');
+            }
+        })
+        .catch(error => {
+            hideLoader();
+            console.error('Error:', error);
+            showAlert('Error refreshing list: ' + error.message, 'danger');
+        });
+});
+</script>
+
+<style>
+    .table td, .table th {
+        vertical-align: middle;
+    }
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+    }
+    #alert-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        width: 300px;
+    }
+    .swal2-popup {
+        font-size: 1.6rem;
+    }
+</style>
+{% endblock %}

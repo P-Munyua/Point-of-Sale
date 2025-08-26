@@ -1,0 +1,434 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between py-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p class="mt-1 text-sm text-gray-500">Overview of your business performance</p>
+        </div>
+        <div class="relative">
+            <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="fas fa-calendar mr-2"></i> Last 30 Days
+                <i class="fas fa-chevron-down ml-2"></i>
+            </button>
+            <div class="origin-top-right absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden">
+                <div class="py-1">
+                    <a href="?range=7" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Last 7 Days</a>
+                    <a href="?range=30" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Last 30 Days</a>
+                    <a href="?range=90" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Last 90 Days</a>
+                    <a href="?range=ytd" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Year to Date</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Today's Sales -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                        <i class="fas fa-shopping-cart text-white"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">Today's Sales</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">${{ today_sales|floatformat:2 }}</div>
+                        </dd>
+                        <div class="mt-1 text-xs text-gray-500">
+                            {% if today_vs_yesterday > 0 %}
+                                <span class="text-green-600"><i class="fas fa-arrow-up"></i> {{ today_vs_yesterday|floatformat:2 }}%</span> vs yesterday
+                            {% else %}
+                                <span class="text-red-600"><i class="fas fa-arrow-down"></i> {{ today_vs_yesterday_abs|floatformat:2 }}%</span> vs yesterday
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Sales -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
+                        <i class="fas fa-chart-line text-white"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">Monthly Sales</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">${{ monthly_sales|floatformat:2 }}</div>
+                        </dd>
+                        <div class="mt-1 text-xs text-gray-500">
+                            {% if monthly_vs_last > 0 %}
+                                <span class="text-green-600"><i class="fas fa-arrow-up"></i> {{ monthly_vs_last|floatformat:2 }}%</span> vs last month
+                            {% else %}
+                                <span class="text-red-600"><i class="fas fa-arrow-down"></i> {{ monthly_vs_last_abs|floatformat:2 }}%</span> vs last month
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+                        <i class="fas fa-exclamation-triangle text-white"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">Low Stock Items</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">{{ low_stock_count }}</div>
+                        </dd>
+                        <div class="mt-1 text-xs text-blue-500">
+                            <a href="{% url 'product_list' %}?stock=low" class="hover:underline">View all</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Outstanding Credit -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-red-500 rounded-md p-3">
+                        <i class="fas fa-credit-card text-white"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">Outstanding Credit</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">${{ outstanding_credit|floatformat:2 }}</div>
+                        </dd>
+                        <div class="mt-1 text-xs text-blue-500">
+                            <a href="{% url 'credit_payments' %}" class="hover:underline">View details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <!-- Sales Trend Chart -->
+        <div class="bg-white overflow-hidden shadow rounded-lg lg:col-span-2">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Sales Trend (Last 30 Days)</h3>
+                    <div class="relative">
+                        <button type="button" class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="origin-top-right absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden">
+                            <div class="py-1">
+                                <a href="?chart=7d" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Last 7 Days</a>
+                                <a href="?chart=30d" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Last 30 Days</a>
+                                <a href="?chart=90d" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Last 90 Days</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="h-80">
+                        <canvas id="salesTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Methods Chart -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg font-medium text-gray-900">Payment Methods</h3>
+                <div class="mt-4">
+                    <div class="h-64">
+                        <canvas id="paymentMethodsChart"></canvas>
+                    </div>
+                    <div class="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2">
+                        {% for method in payment_methods %}
+                            <div class="flex items-center text-sm">
+                                <span class="inline-block w-3 h-3 rounded-full mr-1" style="background-color: {{ method.color }}"></span>
+                                {{ method.name }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Movement Row -->
+    <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <!-- Fast Moving Products -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Fast Moving Products</h3>
+                    <a href="{% url 'product_list' %}?sort=sales" class="text-sm text-blue-600 hover:text-blue-800">View All</a>
+                </div>
+                <div class="mt-4">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sold</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for product in fast_moving_products %}
+                                <tr>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ product.name }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ product.total_sold }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${{ product.total_revenue|floatformat:2 }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                        {% if product.trend > 0 %}
+                                            <span class="text-green-600"><i class="fas fa-arrow-up"></i> {{ product.trend|floatformat:1 }}%</span>
+                                        {% else %}
+                                            <span class="text-red-600"><i class="fas fa-arrow-down"></i> {{ product.abs_trend|floatformat:1 }}%</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slow Moving Products -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Slow Moving Products</h3>
+                    <a href="{% url 'product_list' %}?sort=slow" class="text-sm text-blue-600 hover:text-blue-800">View All</a>
+                </div>
+                <div class="mt-4">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">In Stock</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Sold</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Since</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for product in slow_moving_products %}
+                                <tr>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ product.name }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ product.quantity }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                        {% if product.last_sale_date %}
+                                            {{ product.last_sale_date|date:"M d, Y" }}
+                                        {% else %}
+                                            Never
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                        {% if product.days_since_sale == None %}
+                                            <span class="text-red-600">Never sold</span>
+                                        {% else %}
+                                            {{ product.days_since_sale.days }} days
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sales -->
+    <div class="mt-5 bg-white overflow-hidden shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-medium text-gray-900">Recent Sales</h3>
+                <a href="{% url 'sales_report' %}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    View All Sales
+                </a>
+            </div>
+            <div class="mt-4">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sale #</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for sale in recent_sales %}
+                            <tr>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">{{ sale.sale_number }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ sale.date|date:"d/m/Y H:i" }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ sale.customer.name|default:"Walk-in" }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${{ sale.total|floatformat:2 }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ sale.get_payment_method_display }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    {% if sale.is_completed %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                                    {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'view_sale' sale.id %}" class="text-blue-600 hover:text-blue-900">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Sales Trend Chart
+document.addEventListener('DOMContentLoaded', function() {
+    const salesTrendCtx = document.getElementById('salesTrendChart');
+    const salesTrendChart = new Chart(salesTrendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ sales_trend_labels|safe }},
+            datasets: [{
+                label: "Sales",
+                lineTension: 0.3,
+                backgroundColor: "rgba(59, 130, 246, 0.05)",
+                borderColor: "rgba(59, 130, 246, 1)",
+                pointRadius: 3,
+                pointBackgroundColor: "rgba(59, 130, 246, 1)",
+                pointBorderColor: "rgba(59, 130, 246, 1)",
+                pointHoverRadius: 3,
+                pointHoverBackgroundColor: "rgba(59, 130, 246, 1)",
+                pointHoverBorderColor: "rgba(59, 130, 246, 1)",
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                data: {{ sales_trend_data|safe }},
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyColor: "#6b7280",
+                    borderColor: '#e5e7eb',
+                    borderWidth: 1,
+                    padding: 15,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return '$' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 7
+                    }
+                },
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    },
+                    grid: {
+                        color: "#f3f4f6",
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    }
+                }
+            }
+        }
+    });
+
+    // Payment Methods Chart
+    const paymentMethodsCtx = document.getElementById('paymentMethodsChart');
+    const paymentMethodsChart = new Chart(paymentMethodsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ payment_method_labels|safe }},
+            datasets: [{
+                data: {{ payment_method_data|safe }},
+                backgroundColor: {{ payment_method_colors|safe }},
+                hoverBackgroundColor: {{ payment_method_colors_hover|safe }},
+                hoverBorderColor: "rgba(229, 231, 235, 1)",
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyColor: "#6b7280",
+                    borderColor: '#e5e7eb',
+                    borderWidth: 1,
+                    padding: 15,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return '$' + context.parsed.toLocaleString();
+                        }
+                    }
+                }
+            },
+            cutout: '70%',
+        }
+    });
+
+    // Dropdown toggle functionality
+    document.querySelectorAll('[data-dropdown-toggle]').forEach(button => {
+        button.addEventListener('click', () => {
+            const dropdown = document.getElementById(button.getAttribute('data-dropdown-toggle'));
+            dropdown.classList.toggle('hidden');
+        });
+    });
+});
+</script>
+{% endblock %}

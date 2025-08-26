@@ -1,0 +1,91 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Product Categories{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="mb-0">
+                <i class="fas fa-tags text-primary"></i> Product Categories
+            </h2>
+        </div>
+        <div class="col-md-6 text-right">
+            <a href="{% url 'add_category' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Category
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header bg-white py-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <form method="get" class="form-inline">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="Search categories..." value="{{ request.GET.search }}">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-md-6 text-right">
+                    <span class="badge badge-pill badge-info">
+                        Total: {{ categories.count }} categories
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="thead-light">
+                        <tr>
+                            <th width="40%">Name</th>
+                            <th>Description</th>
+                            <th>Products</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td class="font-weight-bold">{{ category.name }}</td>
+                            <td>{{ category.description|default:"-"|truncatechars:50 }}</td>
+                            <td>
+                                <span class="badge badge-pill badge-primary">
+                                    {{ category.product_set.count }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="#" class="btn btn-outline-primary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-outline-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4">
+                                <i class="fas fa-folder-open fa-2x text-muted mb-3"></i>
+                                <h5>No categories found</h5>
+                                <p class="text-muted">Add your first category to get started</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

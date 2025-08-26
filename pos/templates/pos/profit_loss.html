@@ -1,0 +1,309 @@
+{% extends 'pos/base.html' %}
+
+{% block title %}Profit & Loss Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2>Profit & Loss Report</h2>
+        </div>
+        <div class="col-md-6 text-right">
+            <form method="get" class="form-inline float-right">
+                <div class="form-group mr-2">
+                    <label for="start_date" class="mr-2">From:</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control" 
+                           value="{{ request.GET.start_date }}">
+                </div>
+                <div class="form-group mr-2">
+                    <label for="end_date" class="mr-2">To:</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control"
+                           value="{{ request.GET.end_date }}">
+                </div>
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a href="?export=pdf" class="btn btn-secondary ml-2">Export PDF</a>
+                <a href="?export=excel" class="btn btn-success ml-2">Export Excel</a>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Financial Summary</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Total Sales</strong></td>
+                            <td class="text-right">{{ total_sales|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cost of Goods Sold</strong></td>
+                            <td class="text-right">{{ cogs|floatformat:2 }}</td>
+                        </tr>
+                        <tr class="table-info">
+                            <td><strong>Gross Profit</strong></td>
+                            <td class="text-right font-weight-bold">{{ gross_profit|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Expenses</strong></td>
+                            <td class="text-right">{{ total_expenses|floatformat:2 }}</td>
+                        </tr>
+                        <tr class="{% if net_profit >= 0 %}table-success{% else %}table-danger{% endif %}">
+                            <td><strong>Net Profit</strong></td>
+                            <td class="text-right font-weight-bold">{{ net_profit|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Expenses Breakdown -->
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Expenses Breakdown</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="expensesChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        {% for expense in expenses_by_category %}
+                        <span class="mr-2">
+                            <i class="fas fa-circle" style="color: {{ expense.color }}"></i> {{ expense.category }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profit Trend -->
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Profit Trend</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="profitTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .card {
+        border-radius: 10px;
+    }
+    .table th {
+        font-weight: 600;
+    }
+    .chart-area, .chart-pie {
+        position: relative;
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Expenses Pie Chart
+var ctx = document.getElementById("expensesChart");
+var expensesChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {% for expense in expenses_by_category %}
+                "{{ expense.category }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for expense in expenses_by_category %}
+                    {{ expense.amount }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                {% for expense in expenses_by_category %}
+                    "{{ expense.color }}",
+                {% endfor %}
+            ],
+            hoverBackgroundColor: [
+                {% for expense in expenses_by_category %}
+                    "{{ expense.hover_color }}",
+                {% endfor %}
+            ],
+            hoverBorderColor: "rgba(234, 236, 244, 1)",
+        }],
+    },
+    options: {
+        maintainAspectRatio: false,
+        tooltips: {
+            backgroundColor: "rgb(255,255,255)",
+            bodyFontColor: "#858796",
+            borderColor: '#dddfeb',
+            borderWidth: 1,
+            xPadding: 15,
+            yPadding: 15,
+            displayColors: false,
+            caretPadding: 10,
+        },
+        legend: {
+            display: false
+        },
+        cutoutPercentage: 80,
+    },
+});
+
+// Profit Trend Chart
+var ctx2 = document.getElementById("profitTrendChart");
+var profitTrendChart = new Chart(ctx2, {
+    type: 'line',
+    data: {
+        labels: [
+            {% for month in profit_trend %}
+                "{{ month.month|date:'M Y' }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            label: "Sales",
+            lineTension: 0.3,
+            backgroundColor: "rgba(78, 115, 223, 0.05)",
+            borderColor: "rgba(78, 115, 223, 1)",
+            pointRadius: 3,
+            pointBackgroundColor: "rgba(78, 115, 223, 1)",
+            pointBorderColor: "rgba(78, 115, 223, 1)",
+            pointHoverRadius: 3,
+            pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+            pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+            pointHitRadius: 10,
+            pointBorderWidth: 2,
+            data: [
+                {% for month in profit_trend %}
+                    {{ month.sales }},
+                {% endfor %}
+            ],
+        },
+        {
+            label: "Expenses",
+            lineTension: 0.3,
+            backgroundColor: "rgba(220, 53, 69, 0.05)",
+            borderColor: "rgba(220, 53, 69, 1)",
+            pointRadius: 3,
+            pointBackgroundColor: "rgba(220, 53, 69, 1)",
+            pointBorderColor: "rgba(220, 53, 69, 1)",
+            pointHoverRadius: 3,
+            pointHoverBackgroundColor: "rgba(220, 53, 69, 1)",
+            pointHoverBorderColor: "rgba(220, 53, 69, 1)",
+            pointHitRadius: 10,
+            pointBorderWidth: 2,
+            data: [
+                {% for month in profit_trend %}
+                    {{ month.expenses }},
+                {% endfor %}
+            ],
+        },
+        {
+            label: "Net Profit",
+            lineTension: 0.3,
+            backgroundColor: "rgba(40, 167, 69, 0.05)",
+            borderColor: "rgba(40, 167, 69, 1)",
+            pointRadius: 3,
+            pointBackgroundColor: "rgba(40, 167, 69, 1)",
+            pointBorderColor: "rgba(40, 167, 69, 1)",
+            pointHoverRadius: 3,
+            pointHoverBackgroundColor: "rgba(40, 167, 69, 1)",
+            pointHoverBorderColor: "rgba(40, 167, 69, 1)",
+            pointHitRadius: 10,
+            pointBorderWidth: 2,
+            data: [
+                {% for month in profit_trend %}
+                    {{ month.profit }},
+                {% endfor %}
+            ],
+        }],
+    },
+    options: {
+        maintainAspectRatio: false,
+        layout: {
+            padding: {
+                left: 10,
+                right: 25,
+                top: 25,
+                bottom: 0
+            }
+        },
+        scales: {
+            xAxes: [{
+                gridLines: {
+                    display: false,
+                    drawBorder: false
+                },
+                ticks: {
+                    maxTicksLimit: 7
+                }
+            }],
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true,
+                    callback: function(value) {
+                        return 'KSh ' + value.toLocaleString();
+                    }
+                },
+                gridLines: {
+                    color: "rgb(234, 236, 244)",
+                    zeroLineColor: "rgb(234, 236, 244)",
+                    drawBorder: false,
+                    borderDash: [2],
+                    zeroLineBorderDash: [2]
+                }
+            }],
+        },
+        legend: {
+            display: true,
+            position: 'bottom'
+        },
+        tooltips: {
+            backgroundColor: "rgb(255,255,255)",
+            bodyFontColor: "#858796",
+            titleMarginBottom: 10,
+            titleFontColor: '#6e707e',
+            titleFontSize: 14,
+            borderColor: '#dddfeb',
+            borderWidth: 1,
+            xPadding: 15,
+            yPadding: 15,
+            displayColors: false,
+            intersect: false,
+            mode: 'index',
+            caretPadding: 10,
+            callbacks: {
+                label: function(tooltipItem, chart) {
+                    var datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || '';
+                    return datasetLabel + ': KSh ' + tooltipItem.yLabel.toLocaleString();
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

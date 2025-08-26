@@ -1,0 +1,468 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Inventory Management{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <!-- Header -->
+    <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="p-2 rounded-lg bg-white bg-opacity-20">
+                    <i class="fas fa-boxes text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-white">Inventory Dashboard</h2>
+                    <p class="text-blue-100 text-sm">Manage your product inventory</p>
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <button class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        data-bs-toggle="modal" data-bs-target="#exportModal">
+                    <i class="fas fa-file-export mr-1"></i> Export
+                </button>
+                <a href="{% url 'add_product' %}" 
+                   class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-plus mr-1"></i> Add Product
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="px-6 py-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Total Products -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Products</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ total_products }}</p>
+                </div>
+                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                    <i class="fas fa-box"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- In Stock Value -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">In Stock Value</p>
+                    <p class="text-2xl font-semibold text-gray-900">KSh {{ total_value|floatformat:2 }}</p>
+                </div>
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-coins"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Items -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Low Stock Items</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ low_stock_count }}</p>
+                </div>
+                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Out of Stock -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Out of Stock</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ out_of_stock_count }}</p>
+                </div>
+                <div class="p-3 rounded-full bg-red-100 text-red-600">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="px-6 py-4 border-t border-gray-200">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select name="category" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Stock Status</label>
+                <select name="stock" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All Stock Status</option>
+                    <option value="low" {% if request.GET.stock == 'low' %}selected{% endif %}>Low Stock</option>
+                    <option value="out" {% if request.GET.stock == 'out' %}selected{% endif %}>Out of Stock</option>
+                    <option value="active" {% if request.GET.stock == 'active' %}selected{% endif %}>Active Only</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                <select name="supplier" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All Suppliers</option>
+                    {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}" {% if request.GET.supplier == supplier.id|stringformat:"s" %}selected{% endif %}>
+                        {{ supplier.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-filter mr-1"></i> Filter
+                </button>
+                {% if request.GET.category or request.GET.stock or request.GET.supplier %}
+                <a href="{% url 'inventory_report' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-sync-alt mr-1"></i> Reset
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="px-6 py-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Product Inventory</h3>
+            <div class="relative">
+                <button id="actionsDropdownButton" class="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-cog mr-1"></i> Actions
+                    <i class="fas fa-chevron-down ml-1"></i>
+                </button>
+                <div id="actionsDropdown" class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                    <div class="py-1">
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-bs-toggle="modal" data-bs-target="#bulkUpdateModal">
+                            <i class="fas fa-edit mr-2"></i> Bulk Update
+                        </a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-bs-toggle="modal" data-bs-target="#printBarcodeModal">
+                            <i class="fas fa-barcode mr-2"></i> Print Barcodes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200" id="inventoryTable">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barcode</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Reorder</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Retail</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Wholesale</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for product in products %}
+                    <tr class="{% if product.quantity <= 0 %}bg-red-50{% elif product.quantity <= product.reorder_level %}bg-yellow-50{% endif %} hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                {% if product.image %}
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <img class="h-10 w-10 rounded-full object-cover" src="{{ product.image.url }}" alt="{{ product.name }}">
+                                </div>
+                                {% else %}
+                                <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-box text-gray-400"></i>
+                                </div>
+                                {% endif %}
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
+                                    <div class="text-sm text-gray-500">{{ product.supplier.name|default:"No supplier" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.category.name|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.barcode|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ product.quantity }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ product.reorder_level }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">KSh {{ product.purchase_price|floatformat:2 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">KSh {{ product.selling_price|floatformat:2 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                            {% if product.wholesale_price %}
+                            KSh {{ product.wholesale_price|floatformat:2 }}
+                            <div class="text-xs text-gray-400">Min: {{ product.wholesale_min_quantity }}</div>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">KSh {{ product.total_value|floatformat:2 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if product.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {% if product.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="relative inline-block text-left">
+                                <div>
+                                    <button type="button" class="inline-flex items-center p-1 border border-gray-300 rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" id="product-actions-{{ product.id }}" aria-expanded="false" aria-haspopup="true">
+                                        <i class="fas fa-ellipsis-v h-4 w-4"></i>
+                                    </button>
+                                </div>
+                                <div class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10 hidden" role="menu" aria-orientation="vertical" aria-labelledby="product-actions-{{ product.id }}">
+                                    <div class="py-1">
+                                        <a href="{% url 'edit_product' product.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                            <i class="fas fa-edit mr-2"></i> Edit
+                                        </a>
+                                        <a href="{% url 'product_detail' product.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                            <i class="fas fa-eye mr-2"></i> View
+                                        </a>
+                                        <div class="border-t border-gray-100"></div>
+                                        <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100" role="menuitem" data-bs-toggle="modal" data-bs-target="#deleteProductModal" data-product-id="{{ product.id }}">
+                                            <i class="fas fa-trash mr-2"></i> Delete
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="px-6 py-8 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fas fa-box-open text-4xl text-gray-400 mb-3"></i>
+                                <h4 class="text-lg font-medium text-gray-900">No products found</h4>
+                                <p class="text-sm text-gray-500">Try adjusting your filters or add new products</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <div class="mt-6 flex items-center justify-between">
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing <span class="font-medium">{{ page_obj.start_index }}</span> to <span class="font-medium">{{ page_obj.end_index }}</span> of <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        {% endif %}
+                        
+                        {% for i in page_obj.paginator.page_range %}
+                            {% if page_obj.number == i %}
+                            <a href="#" aria-current="page" class="z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                {{ i }}
+                            </a>
+                            {% else %}
+                            <a href="?page={{ i }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                {{ i }}
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="fixed z-10 inset-0 overflow-y-auto hidden" id="exportModal" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="exportModalLabel">Export Inventory Data</h3>
+                <div class="space-y-2">
+                    <a href="?export=csv" class="group flex items-center p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-200 transition-colors">
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:bg-blue-200">
+                            <i class="fas fa-file-csv"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-sm font-medium text-gray-900">CSV Format</h4>
+                            <p class="text-xs text-gray-500">Comma-separated values file</p>
+                        </div>
+                    </a>
+                    <a href="?export=excel" class="group flex items-center p-3 border border-gray-200 rounded-md hover:bg-green-50 hover:border-green-200 transition-colors">
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 group-hover:bg-green-200">
+                            <i class="fas fa-file-excel"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-sm font-medium text-gray-900">Excel Format</h4>
+                            <p class="text-xs text-gray-500">Microsoft Excel spreadsheet</p>
+                        </div>
+                    </a>
+                    <a href="?export=pdf" class="group flex items-center p-3 border border-gray-200 rounded-md hover:bg-red-50 hover:border-red-200 transition-colors">
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 group-hover:bg-red-200">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-sm font-medium text-gray-900">PDF Format</h4>
+                            <p class="text-xs text-gray-500">Portable Document Format</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" onclick="document.getElementById('exportModal').classList.add('hidden')">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Update Modal -->
+<div class="fixed z-10 inset-0 overflow-y-auto hidden" id="bulkUpdateModal" aria-labelledby="bulkUpdateModalLabel" aria-hidden="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form method="post" action="{% url 'bulk_update_products' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="bulkUpdateModalLabel">Bulk Update Products</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="field" class="block text-sm font-medium text-gray-700">Update Field</label>
+                            <select id="field" name="field" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                <option value="category">Category</option>
+                                <option value="supplier">Supplier</option>
+                                <option value="purchase_price">Purchase Price</option>
+                                <option value="selling_price">Selling Price</option>
+                                <option value="reorder_level">Reorder Level</option>
+                                <option value="status">Status (Active/Inactive)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="value" class="block text-sm font-medium text-gray-700">New Value</label>
+                            <input type="text" id="value" name="value" required class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label for="apply_to" class="block text-sm font-medium text-gray-700">Apply to:</label>
+                            <select id="apply_to" name="apply_to" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                <option value="all">All filtered products</option>
+                                <option value="selected">Selected products only</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Apply Changes
+                    </button>
+                    <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" onclick="document.getElementById('bulkUpdateModal').classList.add('hidden')">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    $('#inventoryTable').DataTable({
+        "order": [[0, "asc"]],
+        "dom": "<'flex justify-between items-center mb-4'<'flex-1'f><'flex-none'<'inline-flex space-x-2'>>>" +
+               "<'overflow-x-auto'tr>" +
+               "<'flex justify-between items-center mt-4'<'text-sm text-gray-500'i><'pagination'p>>",
+        "language": {
+            "emptyTable": "No products found",
+            "info": "Showing _START_ to _END_ of _TOTAL_ products",
+            "infoEmpty": "Showing 0 to 0 of 0 products",
+            "infoFiltered": "(filtered from _MAX_ total products)",
+            "lengthMenu": "Show _MENU_ products",
+            "search": "",
+            "searchPlaceholder": "Search products...",
+            "zeroRecords": "No matching products found",
+            "paginate": {
+                "first": "First",
+                "last": "Last",
+                "next": "Next",
+                "previous": "Previous"
+            }
+        },
+        "initComplete": function() {
+            // Style the search input
+            $('input[type="search"]').addClass(
+                'block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm ' +
+                'focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+            );
+        }
+    });
+
+    // Toggle actions dropdown
+    const actionsButton = document.getElementById('actionsDropdownButton');
+    const actionsDropdown = document.getElementById('actionsDropdown');
+    
+    if (actionsButton && actionsDropdown) {
+        actionsButton.addEventListener('click', function() {
+            actionsDropdown.classList.toggle('hidden');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!actionsButton.contains(event.target) && !actionsDropdown.contains(event.target)) {
+                actionsDropdown.classList.add('hidden');
+            }
+        });
+    }
+
+    // Toggle product action dropdowns
+    document.querySelectorAll('[id^="product-actions-"]').forEach(button => {
+        const dropdown = button.nextElementSibling;
+        
+        button.addEventListener('click', function() {
+            dropdown.classList.toggle('hidden');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!button.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    });
+
+    // Modal toggle functions
+    window.toggleModal = function(modalId) {
+        const modal = document.getElementById(modalId);
+        modal.classList.toggle('hidden');
+    };
+});
+</script>
+{% endblock %}
