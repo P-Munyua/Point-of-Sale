@@ -24,6 +24,10 @@ from django.contrib import messages
 from django.template.loader import render_to_string
 from django.http import HttpResponseBadRequest
 import pandas as pd
+# Add these imports at the top of views.py
+from django.db.models import Case, When, Value, Sum, Count, Max, Min, Avg, Q, F
+from django.db.models.functions import ExtractHour, TruncHour, TruncMonth, TruncDate
+from django.db.models import DecimalField
 
 
 from .models import (
@@ -1139,12 +1143,12 @@ def profit_margin_report(request):
             margin = (profit / revenue * 100) if revenue > 0 else 0
             
             profit_data.append({
-                'product': item.product.name,
-                'quantity': item.quantity,
-                'cost': cost,
-                'revenue': revenue,
-                'profit': profit,
-                'margin': margin,
+                'product_name': item.product.name,
+                'quantity_sold': item.quantity,
+                'total_cost': cost,
+                'total_revenue': revenue,
+                'total_profit': profit,
+                'profit_margin': margin,
                 'sale_date': item.sale.date
             })
         except (AttributeError, ObjectDoesNotExist):
@@ -1153,46 +1157,61 @@ def profit_margin_report(request):
     # Aggregate by product
     product_stats = {}
     for item in profit_data:
-        if item['product'] not in product_stats:
-            product_stats[item['product']] = {
-                'quantity': 0,
-                'cost': 0,
-                'revenue': 0,
-                'profit': 0
+        if item['product_name'] not in product_stats:
+            product_stats[item['product_name']] = {
+                'quantity_sold': 0,
+                'total_cost': 0,
+                'total_revenue': 0,
+                'total_profit': 0
             }
         
-        product_stats[item['product']]['quantity'] += item['quantity']
-        product_stats[item['product']]['cost'] += item['cost']
-        product_stats[item['product']]['revenue'] += item['revenue']
-        product_stats[item['product']]['profit'] += item['profit']
+        product_stats[item['product_name']]['quantity_sold'] += item['quantity_sold']
+        product_stats[item['product_name']]['total_cost'] += item['total_cost']
+        product_stats[item['product_name']]['total_revenue'] += item['total_revenue']
+        product_stats[item['product_name']]['total_profit'] += item['total_profit']
     
     # Calculate final margins
     final_data = []
+    total_quantity = 0
+    total_cost = 0
+    total_revenue = 0
+    total_profit = 0
+    
     for product, stats in product_stats.items():
-        margin = (stats['profit'] / stats['revenue'] * 100) if stats['revenue'] > 0 else 0
+        margin = (stats['total_profit'] / stats['total_revenue'] * 100) if stats['total_revenue'] > 0 else 0
         final_data.append({
-            'product': product,
-            'quantity': stats['quantity'],
-            'cost': stats['cost'],
-            'revenue': stats['revenue'],
-            'profit': stats['profit'],
-            'margin': margin
+            'product_name': product,
+            'quantity_sold': stats['quantity_sold'],
+            'total_cost': stats['total_cost'],
+            'total_revenue': stats['total_revenue'],
+            'total_profit': stats['total_profit'],
+            'profit_margin': margin
         })
+        
+        total_quantity += stats['quantity_sold']
+        total_cost += stats['total_cost']
+        total_revenue += stats['total_revenue']
+        total_profit += stats['total_profit']
+    
+    # Calculate average margin
+    avg_margin = (total_profit / total_revenue * 100) if total_revenue > 0 else 0
     
     # Sort by profit margin
-    final_data.sort(key=lambda x: x['margin'], reverse=True)
+    final_data.sort(key=lambda x: x['profit_margin'], reverse=True)
     
     context = {
         'profit_data': final_data,
         'start_date': start_date,
         'end_date': end_date,
-        'total_cost': sum(item['cost'] for item in final_data),
-        'total_revenue': sum(item['revenue'] for item in final_data),
-        'total_profit': sum(item['profit'] for item in final_data),
-        'avg_margin': (sum(item['profit'] for item in final_data) / 
-                      sum(item['revenue'] for item in final_data) * 100) if sum(item['revenue'] for item in final_data) > 0 else 0
+        'total_quantity': total_quantity,
+        'total_cost': total_cost,
+        'total_revenue': total_revenue,
+        'total_profit': total_profit,
+        'avg_margin': avg_margin
     }
     return render(request, 'pos/profit_margin_report.html', context)
+
+
 
 # ============== Batch Management Views ==============
 @login_required
@@ -1314,14 +1333,11 @@ def customer_list(request):
         last_visit=Max('date')
     ).order_by('-total_spent')
     
-    context.update({
-        'customer_purchases': customer_purchases
-    })
-
     context = {
         'customers': page_obj,
         'search_query': search_query,
-        'balance_filter': balance_filter
+        'balance_filter': balance_filter,
+        'customer_purchases': customer_purchases
     }
     return render(request, 'pos/customer_list.html', context)
 
@@ -2853,17 +2869,27 @@ def generate_suppliers_export(format, queryset):
 
 @login_required
 def customer_payment_report(request):
-    # Date filtering
+    # Get filter parameters
     start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date') or timezone.now().date()
+    end_date = request.GET.get('end_date')
+    search_query = request.GET.get('search', '')
     
-    if not start_date:
-        # Default to beginning of current month
-        start_date = timezone.now().date().replace(day=1)
+    # Start with all payments
+    payments = CustomerPayment.objects.all().select_related('customer', 'sale')
     
-    payments = CustomerPayment.objects.filter(
-        date__range=[start_date, end_date]
-    ).select_related('customer', 'sale')
+    # Apply date filters only if dates are provided
+    if start_date:
+        payments = payments.filter(date__gte=start_date)
+    if end_date:
+        payments = payments.filter(date__lte=end_date)
+    
+    # Apply search filter if provided
+    if search_query:
+        payments = payments.filter(
+            Q(customer__name__icontains=search_query) |
+            Q(sale__sale_number__icontains=search_query) |
+            Q(reference__icontains=search_query)
+        )
     
     # Group by payment method
     by_method = payments.values('payment_method').annotate(
@@ -2877,15 +2903,22 @@ def customer_payment_report(request):
         count=Count('id')
     ).order_by('-total')
     
+    # Calculate total amount and average payment
+    total_amount = payments.aggregate(total=Sum('amount'))['total'] or 0
+    average_payment = total_amount / len(payments) if payments.exists() else 0
+    
     context = {
         'payments': payments,
         'by_method': by_method,
         'by_customer': by_customer,
         'start_date': start_date,
         'end_date': end_date,
-        'total_amount': payments.aggregate(total=Sum('amount'))['total'] or 0
+        'search_query': search_query,
+        'total_amount': total_amount,
+        'average_payment': average_payment,
     }
     return render(request, 'pos/customer_payment_report.html', context)
+
 
 @login_required
 def supplier_payment_report(request):
@@ -4511,10 +4544,6 @@ def opening_closing_stock_report(request):
     # Get products
     products = Product.objects.filter(is_active=True).order_by('name')
     
-    # Calculate opening stock (quantity at start date)
-    # This would require stock journal entries or a different approach
-    # For simplicity, we'll use current stock unless you have historical data
-    
     # Calculate stock movements during period
     stock_movements = StockJournal.objects.filter(
         date__date__range=[start_date, end_date]
@@ -4526,25 +4555,48 @@ def opening_closing_stock_report(request):
     movement_dict = {movement['product']: movement for movement in stock_movements}
     
     report_data = []
+    total_opening_stock = 0
+    total_stock_in = 0
+    total_stock_out = 0
+    total_closing_stock = 0
+    total_opening_value = 0
+    total_closing_value = 0
+    
     for product in products:
         movements = movement_dict.get(product.id, {})
         opening_stock = product.quantity - (movements.get('stock_in', 0) or 0) + (movements.get('stock_out', 0) or 0)
         closing_stock = product.quantity
+        stock_in = movements.get('stock_in', 0) or 0
+        stock_out = movements.get('stock_out', 0) or 0
+        value_change = (closing_stock - opening_stock) * product.purchase_price
         
         report_data.append({
             'product': product,
             'opening_stock': max(opening_stock, 0),
             'closing_stock': closing_stock,
-            'stock_in': movements.get('stock_in', 0) or 0,
-            'stock_out': movements.get('stock_out', 0) or 0,
-            'value_change': (closing_stock - opening_stock) * product.purchase_price
+            'stock_in': stock_in,
+            'stock_out': stock_out,
+            'value_change': value_change
         })
+        
+        # Update totals
+        total_opening_stock += max(opening_stock, 0)
+        total_stock_in += stock_in
+        total_stock_out += stock_out
+        total_closing_stock += closing_stock
+        total_opening_value += max(opening_stock, 0) * product.purchase_price
+        total_closing_value += closing_stock * product.purchase_price
     
     context = {
         'report_data': report_data,
         'start_date': start_date,
         'end_date': end_date,
-        'total_opening_value': sum(item['opening_stock'] * item['product'].purchase_price for item in report_data),
-        'total_closing_value': sum(item['closing_stock'] * item['product'].purchase_price for item in report_data)
+        'total_opening_stock': total_opening_stock,
+        'total_stock_in': total_stock_in,
+        'total_stock_out': total_stock_out,
+        'total_closing_stock': total_closing_stock,
+        'total_opening_value': total_opening_value,
+        'total_closing_value': total_closing_value,
+        'total_value_change': total_closing_value - total_opening_value
     }
     return render(request, 'pos/opening_closing_stock.html', context)

@@ -12,95 +12,128 @@
     
     <style>
         :root {
-            --sidebar-width: 220px;
-            --sidebar-collapsed-width: 70px;
             --topbar-height: 50px;
             --transition-speed: 0.2s;
-            --text-size: 0.85rem;
         }
         
         /* Layout */
         .main-container {
             display: flex;
+            flex-direction: column;
             min-height: 100vh;
         }
         
-        .sidebar {
-            width: var(--sidebar-width);
-            height: 100vh;
-            position: fixed;
-            left: 0;
+        /* Top navigation styles */
+        .top-nav {
+            height: var(--topbar-height);
+            background-color: #1e40af;
+            color: white;
+            position: sticky;
             top: 0;
-            transition: all var(--transition-speed) ease;
             z-index: 100;
-            overflow-y: auto;
-            font-size: var(--text-size);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         
-        .sidebar-collapsed {
-            width: var(--sidebar-collapsed-width);
+        .nav-item {
+            position: relative;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            white-space: nowrap;
         }
         
-        .content-area {
-            margin-left: var(--sidebar-width);
-            width: calc(100% - var(--sidebar-width));
-            transition: margin-left var(--transition-speed) ease;
-        }
-        
-        .content-collapsed {
-            margin-left: var(--sidebar-collapsed-width);
-        }
-        
-        /* Sidebar styles */
-        .sidebar-item {
-            transition: all 0.15s ease;
-            padding: 0.4rem 0.5rem;
-        }
-        
-        .sidebar-item:hover {
+        .nav-item:hover {
             background-color: rgba(255, 255, 255, 0.1);
         }
         
-        .sidebar-group-title {
-            transition: all 0.15s ease;
-            padding: 0.4rem 0.5rem;
+        .nav-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0.25rem;
+            z-index: 101;
+            display: none;
+            color: #374151;
+        }
+        
+        .nav-item:hover .nav-dropdown {
+            display: block;
+        }
+        
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.15s ease;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f3f4f6;
         }
         
         /* Active state */
         .active-nav-item {
-            background-color: rgba(59, 130, 246, 0.2);
-            border-left: 3px solid #3b82f6;
+            background-color: rgba(59, 130, 246, 0.3);
         }
         
-        /* Mobile responsiveness */
+        /* Mobile menu */
+        .mobile-menu-btn {
+            display: none;
+        }
+        
         @media (max-width: 1024px) {
-            .sidebar {
-                transform: translateX(-100%);
+            .mobile-menu-btn {
+                display: block;
             }
             
-            .sidebar-open {
-                transform: translateX(0);
-            }
-            
-            .content-area {
-                margin-left: 0;
-                width: 100%;
-            }
-            
-            .sidebar-overlay {
+            .nav-items-container {
                 position: fixed;
-                top: 0;
+                top: var(--topbar-height);
                 left: 0;
                 right: 0;
-                bottom: 0;
-                background-color: rgba(0, 0, 0, 0.5);
-                z-index: 90;
+                background-color: #1e40af;
+                flex-direction: column;
+                padding: 1rem;
+                display: none;
+                z-index: 100;
+                max-height: calc(100vh - var(--topbar-height));
+                overflow-y: auto;
+            }
+            
+            .nav-items-container-open {
+                display: flex;
+            }
+            
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .nav-dropdown {
+                position: static;
+                box-shadow: none;
+                background-color: rgba(0, 0, 0, 0.1);
+                width: 100%;
+                margin-top: 0.5rem;
                 display: none;
             }
             
-            .sidebar-overlay-open {
+            .nav-item:hover .nav-dropdown {
+                display: none;
+            }
+            
+            .nav-item-open .nav-dropdown {
                 display: block;
             }
+        }
+        
+        /* Main content area */
+        .content-area {
+            flex: 1;
+            overflow: auto;
         }
         
         /* Custom scrollbar */
@@ -116,243 +149,191 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans text-sm leading-tight">
-    <!-- Sidebar Overlay (mobile only) -->
-    <div id="sidebar-overlay" class="sidebar-overlay"></div>
-    
-    <!-- Sidebar Navigation -->
-    <aside id="sidebar" class="sidebar bg-blue-800 text-white shadow-lg">
-        <!-- Sidebar Header -->
-        <div class="flex items-center justify-between p-3 border-b border-blue-700">
+    <div class="main-container">
+        <!-- Top Navigation Bar -->
+        <nav class="top-nav flex items-center justify-between px-4">
             <div class="flex items-center">
                 <i class="fas fa-store text-lg mr-2"></i>
-                <span class="font-semibold whitespace-nowrap">Minimart</span>
-            </div>
-            <button id="sidebar-toggle" class="text-white focus:outline-none text-sm">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-        
-        <!-- Sidebar Content -->
-        <div class="p-2 overflow-y-auto">
-            <!-- Dashboard -->
-            <div class="mb-4">
-                <a href="{% url 'dashboard' %}" class="flex items-center sidebar-item {% if request.path == '/' %}active-nav-item{% endif %}">
-                    <i class="fas fa-tachometer-alt mr-3 w-4 text-center"></i>
-                    <span class="whitespace-nowrap">Dashboard</span>
-                </a>
+                <span class="font-semibold">Minimart POS</span>
             </div>
             
-            <!-- POS -->
-            <div class="mb-4">
-                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
-                    <i class="fas fa-cash-register mr-3 w-4 text-center"></i>
-                    <span class="whitespace-nowrap">POS</span>
-                </div>
-                <div class="pl-1">
-                    <a href="{% url 'pos' %}" class="flex items-center sidebar-item {% if 'pos' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-shopping-cart mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">POS Terminal</span>
-                    </a>
-                    <a href="{% url 'credit_payments' %}" class="flex items-center sidebar-item {% if 'credit' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-credit-card mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Credit Sales</span>
-                    </a>
+            <div class="flex items-center space-x-1 flex-1 justify-center nav-items-container" id="nav-items-container">
+                <!-- Dashboard -->
+                <div class="nav-item">
+                    <a href="{% url 'dashboard' %}" class="flex items-center {% if request.path == '/' %}active-nav-item{% endif %}">
+                        <i class="fas fa-tachometer-alt mr-2"></i>
+                        <span>Dashboard</span>
                     </a>
                 </div>
-            </div>
-            
-            <!-- Products -->
-            <div class="mb-4">
-                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
-                    <i class="fas fa-boxes mr-3 w-4 text-center"></i>
-                    <span class="whitespace-nowrap">Products</span>
-                </div>
-                <div class="pl-1">
-                    <a href="{% url 'product_list' %}" class="flex items-center sidebar-item {% if 'products' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-box mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">All Products</span>
-                    </a>
-                    <a href="{% url 'add_product' %}" class="flex items-center sidebar-item {% if 'add-product' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-plus-circle mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Add Product</span>
-                    </a>
-                    <a href="{% url 'batch_list' %}" class="flex items-center sidebar-item {% if 'batches' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-box-open mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Batches</span>
-                    </a>
-                    <a href="{% url 'inventory_report' %}" class="flex items-center sidebar-item {% if 'inventory' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-clipboard-list mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Inventory</span>
-                    </a>
-                    <a href="{% url 'stock_journal_list' %}" class="flex items-center sidebar-item {% if 'inventory' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-clipboard-list mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Stock Journal</span>
-                    </a>
-                  
-            </div>
-            
-            <!-- Sales -->
-            <div class="mb-4">
-                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
-                    <i class="fas fa-chart-line mr-3 w-4 text-center"></i>
-                    <span class="whitespace-nowrap">Sales</span>
-                </div>
-                <div class="pl-1">
-                    <a href="{% url 'sales_report' %}" class="flex items-center sidebar-item {% if 'sales' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-receipt mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">All Sales</span>
-                    </a>
-                 
-                    <a href="{% url 'daily_sales_summary' %}" class="flex items-center sidebar-item {% if 'daily-sales' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-calendar-day mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Daily Summary</span>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Customers -->
-            <div class="mb-4">
-                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
-                    <i class="fas fa-users mr-3 w-4 text-center"></i>
-                    <span class="whitespace-nowrap">Customers</span>
-                </div>
-                <div class="pl-1">
-                    <a href="{% url 'customer_list' %}" class="flex items-center sidebar-item {% if 'customers' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-address-book mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">All Customers</span>
-                    </a>
-                    <a href="{% url 'add_customer' %}" class="flex items-center sidebar-item {% if 'add-customer' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-user-plus mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Add Customer</span>
-                    </a>
-                  
-                </div>
-            </div>
-            
-            <!-- Purchases -->
-            <div class="mb-4">
-                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
-                    <i class="fas fa-shopping-cart mr-3 w-4 text-center"></i>
-                    <span class="whitespace-nowrap">Purchases</span>
-                </div>
-                <div class="pl-1">
-                    <a href="{% url 'purchase_list' %}" class="flex items-center sidebar-item {% if 'purchases' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-truck-loading mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">All Purchases</span>
-                    </a>
-                    <a href="{% url 'add_purchase' %}" class="flex items-center sidebar-item {% if 'add-purchase' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-cart-plus mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Add Purchase</span>
-                    </a>
-                  
-                    <a href="{% url 'pending_purchases' %}" class="flex items-center sidebar-item {% if 'pending-purchases' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-pause-circle mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Pending</span>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Suppliers -->
-            <div class="mb-4">
-                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
-                    <i class="fas fa-truck mr-3 w-4 text-center"></i>
-                    <span class="whitespace-nowrap">Suppliers</span>
-                </div>
-                <div class="pl-1">
-                    <a href="{% url 'supplier_list' %}" class="flex items-center sidebar-item {% if 'suppliers' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-list mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">All Suppliers</span>
-                    </a>
-                    <a href="{% url 'add_supplier' %}" class="flex items-center sidebar-item {% if 'add-supplier' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-plus mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Add Supplier</span>
-                    </a>
                 
+                <!-- POS Dropdown -->
+                <div class="nav-item">
+                    <div class="flex items-center">
+                        <i class="fas fa-cash-register mr-2"></i>
+                        <span>POS</span>
+                        <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                    </div>
+                    <div class="nav-dropdown">
+                        <a href="{% url 'pos' %}" class="dropdown-item {% if 'pos' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-shopping-cart mr-2 w-4"></i>
+                            <span>POS Terminal</span>
+                        </a>
+                        <a href="{% url 'credit_payments' %}" class="dropdown-item {% if 'credit' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-credit-card mr-2 w-4"></i>
+                            <span>Credit Sales</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Products Dropdown -->
+                <div class="nav-item">
+                    <div class="flex items-center">
+                        <i class="fas fa-boxes mr-2"></i>
+                        <span>Products</span>
+                        <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                    </div>
+                    <div class="nav-dropdown">
+                        <a href="{% url 'product_list' %}" class="dropdown-item {% if 'products' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-box mr-2 w-4"></i>
+                            <span>All Products</span>
+                        </a>
+                        <a href="{% url 'add_product' %}" class="dropdown-item {% if 'add-product' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-plus-circle mr-2 w-4"></i>
+                            <span>Add Product</span>
+                        </a>
+                        <a href="{% url 'batch_list' %}" class="dropdown-item {% if 'batches' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-box-open mr-2 w-4"></i>
+                            <span>Batches</span>
+                        </a>
+                        <a href="{% url 'inventory_report' %}" class="dropdown-item {% if 'inventory' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-clipboard-list mr-2 w-4"></i>
+                            <span>Inventory</span>
+                        </a>
+                        <a href="{% url 'stock_journal_list' %}" class="dropdown-item {% if 'inventory' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-clipboard-list mr-2 w-4"></i>
+                            <span>Stock Journal</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Sales Dropdown -->
+                <div class="nav-item">
+                    <div class="flex items-center">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        <span>Sales</span>
+                        <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                    </div>
+                    <div class="nav-dropdown">
+                        <a href="{% url 'sales_report' %}" class="dropdown-item {% if 'sales' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-receipt mr-2 w-4"></i>
+                            <span>All Sales</span>
+                        </a>
+                        <a href="{% url 'daily_sales_summary' %}" class="dropdown-item {% if 'daily-sales' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-calendar-day mr-2 w-4"></i>
+                            <span>Daily Summary</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- More menu for less frequently used items -->
+                <div class="nav-item">
+                    <div class="flex items-center">
+                        <i class="fas fa-ellipsis-h mr-2"></i>
+                        <span>More</span>
+                        <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                    </div>
+                    <div class="nav-dropdown">
+                        <!-- Customers -->
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 mt-2">Customers</div>
+                        <a href="{% url 'customer_list' %}" class="dropdown-item {% if 'customers' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-address-book mr-2 w-4"></i>
+                            <span>All Customers</span>
+                        </a>
+                        <a href="{% url 'add_customer' %}" class="dropdown-item {% if 'add-customer' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-user-plus mr-2 w-4"></i>
+                            <span>Add Customer</span>
+                        </a>
+                        
+                        <!-- Purchases -->
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 mt-2">Purchases</div>
+                        <a href="{% url 'purchase_list' %}" class="dropdown-item {% if 'purchases' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-truck-loading mr-2 w-4"></i>
+                            <span>All Purchases</span>
+                        </a>
+                        <a href="{% url 'add_purchase' %}" class="dropdown-item {% if 'add-purchase' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-cart-plus mr-2 w-4"></i>
+                            <span>Add Purchase</span>
+                        </a>
+                        <a href="{% url 'pending_purchases' %}" class="dropdown-item {% if 'pending-purchases' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-pause-circle mr-2 w-4"></i>
+                            <span>Pending</span>
+                        </a>
+                        
+                        <!-- Suppliers -->
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 mt-2">Suppliers</div>
+                        <a href="{% url 'supplier_list' %}" class="dropdown-item {% if 'suppliers' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-list mr-2 w-4"></i>
+                            <span>All Suppliers</span>
+                        </a>
+                        <a href="{% url 'add_supplier' %}" class="dropdown-item {% if 'add-supplier' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-plus mr-2 w-4"></i>
+                            <span>Add Supplier</span>
+                        </a>
+                        
+                        <!-- Expenses -->
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 mt-2">Expenses</div>
+                        <a href="{% url 'expense_list' %}" class="dropdown-item {% if 'expenses' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-list mr-2 w-4"></i>
+                            <span>All Expenses</span>
+                        </a>
+                        <a href="{% url 'add_expense' %}" class="dropdown-item {% if 'add-expense' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-plus mr-2 w-4"></i>
+                            <span>Add Expense</span>
+                        </a>
+                        
+                        <!-- Reports -->
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 mt-2">Reports</div>
+                        <a href="{% url 'reports' %}" class="dropdown-item {% if 'reports' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-file-alt mr-2 w-4"></i>
+                            <span>All Reports</span>
+                        </a>
+                        <a href="{% url 'profit_margin_report' %}" class="dropdown-item {% if 'profit-loss' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-chart-pie mr-2 w-4"></i>
+                            <span>Profit & Loss</span>
+                        </a>
+                        <a href="{% url 'inventory_report' %}" class="dropdown-item {% if 'stock-value' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-dollar-sign mr-2 w-4"></i>
+                            <span>Stock Value</span>
+                        </a>
+                        <a href="{% url 'daily_sales_report' %}" class="dropdown-item {% if 'daily-report' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-calendar-alt mr-2 w-4"></i>
+                            <span>Daily Sales</span>
+                        </a>
+                        
+                        <!-- System -->
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 mt-2">System</div>
+                        <a href="{% url 'bulk_upload' %}" class="dropdown-item {% if 'bulk-upload' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-file-import mr-2 w-4"></i>
+                            <span>Bulk Upload</span>
+                        </a>
+                        <a href="{% url 'company_settings' %}" class="dropdown-item {% if 'settings' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-building mr-2 w-4"></i>
+                            <span>Company</span>
+                        </a>
+                        <a href="{% url 'discount_list' %}" class="dropdown-item {% if 'discounts' in request.path %}active-nav-item{% endif %}">
+                            <i class="fas fa-percent mr-2 w-4"></i>
+                            <span>Discounts</span>
+                        </a>
+                    </div>
                 </div>
             </div>
             
-            <!-- Expenses -->
-            <div class="mb-4">
-                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
-                    <i class="fas fa-receipt mr-3 w-4 text-center"></i>
-                    <span class="whitespace-nowrap">Expenses</span>
-                </div>
-                <div class="pl-1">
-                    <a href="{% url 'expense_list' %}" class="flex items-center sidebar-item {% if 'expenses' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-list mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">All Expenses</span>
-                    </a>
-                    <a href="{% url 'add_expense' %}" class="flex items-center sidebar-item {% if 'add-expense' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-plus mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Add Expense</span>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Reports -->
-            <div class="mb-4">
-                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
-                    <i class="fas fa-chart-bar mr-3 w-4 text-center"></i>
-                    <span class="whitespace-nowrap">Reports</span>
-                </div>
-                <div class="pl-1">
-                    <a href="{% url 'reports' %}" class="flex items-center sidebar-item {% if 'reports' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-file-alt mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">All Reports</span>
-                    </a>
-                    <a href="{% url 'profit_loss_report' %}" class="flex items-center sidebar-item {% if 'profit-loss' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-chart-pie mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Profit & Loss</span>
-                    </a>
-                    <a href="{% url 'stock_value_report' %}" class="flex items-center sidebar-item {% if 'stock-value' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-dollar-sign mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Stock Value</span>
-                    </a>
-                    <a href="{% url 'daily_sales_report' %}" class="flex items-center sidebar-item {% if 'daily-report' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-calendar-alt mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Daily Sales</span>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- System -->
-            <div class="mb-4">
-                <div class="sidebar-group-title flex items-center text-blue-200 cursor-pointer">
-                    <i class="fas fa-cog mr-3 w-4 text-center"></i>
-                    <span class="whitespace-nowrap">System</span>
-                </div>
-                <div class="pl-1">
-                    <a href="{% url 'bulk_upload' %}" class="flex items-center sidebar-item {% if 'bulk-upload' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-file-import mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Bulk Upload</span>
-                    </a>
-                    <a href="{% url 'company_settings' %}" class="flex items-center sidebar-item {% if 'settings' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-building mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Company</span>
-                    </a>
-                    <a href="{% url 'discount_list' %}" class="flex items-center sidebar-item {% if 'discounts' in request.path %}active-nav-item{% endif %}">
-                        <i class="fas fa-percent mr-3 w-4 text-center"></i>
-                        <span class="whitespace-nowrap">Discounts</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Main Content Area -->
-    <div id="content-area" class="content-area">
-        <!-- Top bar -->
-        <div class="flex items-center justify-between border-b border-gray-300 px-4 py-2 bg-white shadow-sm h-[var(--topbar-height)]">
-            <div class="flex items-center">
-                <button id="mobile-sidebar-toggle" class="mr-3 text-gray-600 focus:outline-none lg:hidden">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <span class="font-semibold text-sm">{% block page_title %}{% endblock %}</span>
-            </div>
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-4">
+                <!-- User menu -->
                 <div class="relative group">
-                    <span class="text-xs cursor-pointer">
+                    <span class="cursor-pointer flex items-center">
                         <i class="fas fa-user mr-1"></i> {{ request.user.username }}
+                        <i class="fas fa-chevron-down ml-1 text-xs"></i>
                     </span>
                     <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block text-xs">
                         <a href="#" class="block px-3 py-1 text-gray-700 hover:bg-gray-100">
@@ -366,79 +347,68 @@
                         </a>
                     </div>
                 </div>
-                <span class="text-xs"><i class="fas fa-calendar mr-1"></i> {% now "d/m/Y" %}</span>
+                
+                <!-- Mobile menu button -->
+                <button id="mobile-menu-toggle" class="mobile-menu-btn text-white focus:outline-none">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
             </div>
-        </div>
+        </nav>
         
-        <!-- Main content -->
-        <main class="container mx-auto p-3 pb-14">
-            {% block content %}{% endblock %}
-        </main>
-        
-        <!-- Status bar -->
-        <div class="fixed bottom-0 left-0 right-0 flex justify-between items-center border-t border-gray-300 bg-gray-100 px-3 py-1 text-xs no-print shadow-inner h-[var(--topbar-height)]">
-            <div><i class="fas fa-phone-alt mr-1"></i> Support: 0115314636</div>
-            <div class="flex space-x-3">
-                <span><i class="fas fa-database mr-1"></i> {{ request.user.company.name|default:"My Business" }}</span>
-                <span><i class="fas fa-clock mr-1"></i> {% now "H:i" %}</span>
+        <!-- Main Content Area -->
+        <div class="content-area">
+            <!-- Page title bar -->
+            <div class="flex items-center justify-between border-b border-gray-300 px-4 py-2 bg-white shadow-sm">
+                <div class="flex items-center">
+                    <span class="font-semibold text-sm">{% block page_title %}{% endblock %}</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="text-xs"><i class="fas fa-calendar mr-1"></i> {% now "d/m/Y" %}</span>
+                </div>
             </div>
+            
+            <!-- Main content -->
+            <main class="container mx-auto p-3 pb-14">
+                {% block content %}{% endblock %}
+            </main>
+            
+            <div class="fixed bottom-0 left-0 w-1/4 flex justify-between items-center border-t border-gray-300 bg-gray-100 px-3 py-1 text-xs no-print shadow-inner h-[var(--topbar-height)]">
+               <div><i class="fas fa-phone-alt mr-1"></i> Support: 0115314636</div>
+</div>
+
         </div>
     </div>
 
     <!-- Scripts -->
     <script>
-        // Sidebar functionality
         document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
-            const contentArea = document.getElementById('content-area');
-            const sidebarToggle = document.getElementById('sidebar-toggle');
-            const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
-            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const navItemsContainer = document.getElementById('nav-items-container');
             
-            // Toggle sidebar
-            function toggleSidebar() {
-                sidebar.classList.toggle('sidebar-collapsed');
-                contentArea.classList.toggle('content-collapsed');
+            // Toggle mobile menu
+            mobileMenuToggle.addEventListener('click', function() {
+                navItemsContainer.classList.toggle('nav-items-container-open');
+            });
+            
+            // For mobile, make dropdowns toggle on click
+            if (window.innerWidth <= 1024) {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        if (e.target.tagName !== 'A') {
+                            this.classList.toggle('nav-item-open');
+                        }
+                    });
+                });
             }
             
-            // Toggle mobile sidebar
-            function toggleMobileSidebar() {
-                sidebar.classList.toggle('sidebar-open');
-                sidebarOverlay.classList.toggle('sidebar-overlay-open');
-            }
-            
-            // Event listeners
-            sidebarToggle.addEventListener('click', toggleSidebar);
-            mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
-            sidebarOverlay.addEventListener('click', toggleMobileSidebar);
-            
-            // Auto-close mobile sidebar on larger screens
+            // Auto-close mobile menu on larger screens
             function handleResize() {
                 if (window.innerWidth > 1024) {
-                    sidebar.classList.remove('sidebar-open');
-                    sidebarOverlay.classList.remove('sidebar-overlay-open');
+                    navItemsContainer.classList.remove('nav-items-container-open');
                 }
             }
             
             window.addEventListener('resize', handleResize);
-            
-            // Collapse/expand sidebar groups
-            document.querySelectorAll('.sidebar-group-title').forEach(title => {
-                title.addEventListener('click', function() {
-                    const content = this.nextElementSibling;
-                    const icon = this.querySelector('i');
-                    
-                    if (content.style.display === 'none') {
-                        content.style.display = 'block';
-                        icon.classList.remove('fa-chevron-right');
-                        icon.classList.add('fa-chevron-down');
-                    } else {
-                        content.style.display = 'none';
-                        icon.classList.remove('fa-chevron-down');
-                        icon.classList.add('fa-chevron-right');
-                    }
-                });
-            });
         });
     </script>
     {% block extra_js %}{% endblock %}

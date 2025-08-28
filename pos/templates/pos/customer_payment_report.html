@@ -7,7 +7,8 @@
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Customer Payments Report</h1>
         <div>
-            <a href="?export=csv" class="btn btn-sm btn-success">
+            <a href="?export=csv{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+               class="btn btn-sm btn-success shadow-sm">
                 <i class="fas fa-download fa-sm"></i> Export CSV
             </a>
         </div>
@@ -15,24 +16,32 @@
 
     <!-- Filter Form -->
     <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Filter Options</h6>
+        <div class="card-header py-3 bg-gradient-primary">
+            <h6 class="m-0 font-weight-bold text-white">Filter Options</h6>
         </div>
         <div class="card-body">
-            <form method="get" class="form-inline">
-                <div class="row g-3 align-items-center">
+            <form method="get" class="form">
+                <div class="row g-3 align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label">Start Date:</label>
+                        <label class="form-label mb-1">Start Date:</label>
                         <input type="date" name="start_date" value="{{ start_date }}" class="form-control form-control-sm">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">End Date:</label>
+                        <label class="form-label mb-1">End Date:</label>
                         <input type="date" name="end_date" value="{{ end_date }}" class="form-control form-control-sm">
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">&nbsp;</label>
-                        <button type="submit" class="btn btn-primary btn-sm form-control">
-                            <i class="fas fa-filter fa-sm"></i> Apply Filter
+                    <div class="col-md-4">
+                        <label class="form-label mb-1">Search:</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="search" value="{{ search_query }}" class="form-control" placeholder="Customer name, reference, sale number...">
+                            <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-filter fa-sm"></i> Apply Filters
                         </button>
                     </div>
                 </div>
@@ -40,17 +49,64 @@
         </div>
     </div>
 
-    <!-- Summary Card -->
-    <div class="card border-left-success shadow mb-4">
-        <div class="card-body">
-            <div class="row no-gutters align-items-center">
-                <div class="col mr-2">
-                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                        Total Payments Received</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_amount|floatformat:2|intcomma }}</div>
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <!-- Total Payments Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Payments Received</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_amount|floatformat:2|intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-auto">
-                    <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+            </div>
+        </div>
+
+        <!-- Payment Count Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Number of Payments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ payments|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-receipt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Payment Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Average Payment</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if payments|length > 0 %}
+                                    KSh {{ average_payment|floatformat:2|intcomma }}
+                                {% else %}
+                                    KSh 0.00
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calculator fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -60,12 +116,12 @@
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="card shadow">
-                <div class="card-header py-3 bg-primary">
+                <div class="card-header py-3 bg-gradient-primary">
                     <h6 class="m-0 font-weight-bold text-white">Payments by Method</h6>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-sm">
+                        <table class="table table-sm table-hover">
                             <thead>
                                 <tr>
                                     <th>Method</th>
@@ -76,8 +132,8 @@
                             <tbody>
                                 {% for method in by_method %}
                                 <tr>
-                                    <td><span class="badge bg-primary">{{ method.payment_method|title }}</span></td>
-                                    <td class="text-right">KSh {{ method.total|floatformat:2|intcomma }}</td>
+                                    <td><span class="badge bg-primary text-white">{{ method.payment_method|title }}</span></td>
+                                    <td class="text-right font-weight-bold">KSh {{ method.total|floatformat:2|intcomma }}</td>
                                     <td class="text-center">{{ method.count }}</td>
                                 </tr>
                                 {% endfor %}
@@ -89,12 +145,12 @@
         </div>
         <div class="col-md-6">
             <div class="card shadow">
-                <div class="card-header py-3 bg-info">
-                    <h6 class="m-0 font-weight-bold text-white">Payments by Customer</h6>
+                <div class="card-header py-3 bg-gradient-info">
+                    <h6 class="m-0 font-weight-bold text-white">Top Paying Customers</h6>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-sm">
+                        <table class="table table-sm table-hover">
                             <thead>
                                 <tr>
                                     <th>Customer</th>
@@ -103,13 +159,20 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for customer in by_customer %}
+                                {% for customer in by_customer|slice:":5" %}
                                 <tr>
-                                    <td>{{ customer.customer__name|truncatechars:20 }}</td>
-                                    <td class="text-right">KSh {{ customer.total|floatformat:2|intcomma }}</td>
+                                    <td>{{ customer.customer__name|default:"Unknown"|truncatechars:20 }}</td>
+                                    <td class="text-right font-weight-bold">KSh {{ customer.total|floatformat:2|intcomma }}</td>
                                     <td class="text-center">{{ customer.count }}</td>
                                 </tr>
                                 {% endfor %}
+                                {% if by_customer|length > 5 %}
+                                <tr>
+                                    <td colspan="3" class="text-center small text-muted">
+                                        + {{ by_customer|length|add:"-5" }} more customers
+                                    </td>
+                                </tr>
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
@@ -120,10 +183,14 @@
 
     <!-- All Payments Table -->
     <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">All Customer Payments</h6>
+        <div class="card-header py-3 d-flex justify-content-between align-items-center bg-gradient-primary">
+            <h6 class="m-0 font-weight-bold text-white">All Customer Payments</h6>
+            <span class="badge bg-light text-dark">
+                {{ payments|length }} payment{{ payments|length|pluralize }}
+            </span>
         </div>
         <div class="card-body">
+            {% if payments %}
             <div class="table-responsive">
                 <table class="table table-bordered table-hover" width="100%" cellspacing="0">
                     <thead class="thead-dark">
@@ -140,20 +207,56 @@
                         {% for payment in payments %}
                         <tr>
                             <td>{{ payment.date|date:"M d, Y" }}</td>
-                            <td>{{ payment.customer.name }}</td>
-                            <td>{{ payment.sale.sale_number }}</td>
+                            <td>
+                                {% if payment.customer %}
+                                    {{ payment.customer.name }}
+                                {% else %}
+                                    <span class="text-muted">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if payment.sale %}
+                                    {{ payment.sale.sale_number }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
                             <td class="text-right text-success font-weight-bold">KSh {{ payment.amount|floatformat:2|intcomma }}</td>
-                            <td><span class="badge bg-primary">{{ payment.payment_method|title }}</span></td>
+                            <td>
+                                <span class="badge 
+                                    {% if payment.payment_method == 'cash' %}bg-success
+                                    {% elif payment.payment_method == 'mpesa' %}bg-info
+                                    {% elif payment.payment_method == 'card' %}bg-primary
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ payment.payment_method|title }}
+                                </span>
+                            </td>
                             <td><small class="text-muted">{{ payment.reference|default:"-" }}</small></td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">No payment records found for the selected period.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
+                    <tfoot class="font-weight-bold bg-light">
+                        <tr>
+                            <td colspan="3">Totals</td>
+                            <td class="text-right text-success">KSh {{ total_amount|floatformat:2|intcomma }}</td>
+                            <td colspan="2">{{ payments|length }} payment{{ payments|length|pluralize }}</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-receipt fa-4x text-gray-300 mb-3"></i>
+                <h5 class="text-gray-400">No Payment Records Found</h5>
+                <p class="text-muted">
+                    {% if start_date or end_date or search_query %}
+                        Try adjusting your filters or search criteria
+                    {% else %}
+                        No payments have been recorded yet
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -167,10 +270,11 @@
 .table th {
     font-weight: 600;
     font-size: 0.9rem;
+    vertical-align: middle;
 }
 
 .thead-dark th {
-    background-color: #4e73df;
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
     color: white;
     border-color: #4e73df;
 }
@@ -178,6 +282,60 @@
 .card {
     border: none;
     border-radius: 10px;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.card-header {
+    border-top-left-radius: 10px !important;
+    border-top-right-radius: 10px !important;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #36b9cc 0%, #2c9faf 100%);
+}
+
+.table-hover tbody tr:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.btn {
+    border-radius: 0.35rem;
+}
+
+.form-control {
+    border-radius: 0.35rem;
+}
+
+.input-group-text {
+    border-radius: 0.35rem;
+}
+
+tfoot tr {
+    background-color: #f8f9fc !important;
+}
+
+.text-success {
+    color: #1cc88a !important;
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Clear search functionality
+    document.getElementById('clear-search').addEventListener('click', function() {
+        document.querySelector('input[name="search"]').value = '';
+        document.querySelector('form').submit();
+    });
+    
+    // Remove the automatic date setting code
+    // The date inputs will now remain blank by default
+});
+
+</script>
 {% endblock %}
