@@ -1465,6 +1465,8 @@ def generate_customer_export(format, queryset):
     return HttpResponse('Invalid export format', status=400)
 
 # ============== Sales Reports Views ==============
+# views.py - Update the sales_report view
+
 @login_required
 def sales_report(request):
     sales = Sale.objects.filter(is_completed=True).order_by('-date')
@@ -1504,6 +1506,11 @@ def sales_report(request):
     total_sales = sales.aggregate(total=Sum('total'))['total'] or 0
     total_items = sales.aggregate(total=Sum('items__quantity'))['total'] or 0
     
+    # Calculate payment method totals for the summary cards
+    cash_sales = sales.filter(payment_method='cash').aggregate(total=Sum('total'))['total'] or 0
+    mpesa_sales = sales.filter(payment_method='mpesa').aggregate(total=Sum('total'))['total'] or 0
+    credit_sales = sales.filter(is_credit=True).aggregate(total=Sum('total'))['total'] or 0
+    
     payment_methods = Sale.PAYMENT_METHODS
     payment_totals = []
     
@@ -1518,27 +1525,6 @@ def sales_report(request):
     # Get all customers for filter dropdown
     customers = Customer.objects.all()
 
-    sales_by_hour = sales.annotate(
-        hour=ExtractHour('date')
-    ).values('hour').annotate(
-        total=Sum('total'),
-        count=Count('id')
-    ).order_by('hour')
-    
-    top_products = SaleItem.objects.filter(sale__in=sales).values(
-        'product__name'
-    ).annotate(
-        quantity=Sum('quantity'),
-        revenue=Sum('total')
-    ).order_by('-revenue')[:10]
-    
-    
-
-    # Export functionality
-    export_format = request.GET.get('export')
-    if export_format:
-        return generate_sales_export(export_format, sales)
-    
     # Pagination
     paginator = Paginator(sales, 25)
     page_number = request.GET.get('page')
@@ -1549,6 +1535,9 @@ def sales_report(request):
         'customers': customers,
         'total_sales': total_sales,
         'total_items': total_items,
+        'cash_sales': cash_sales,
+        'mpesa_sales': mpesa_sales,
+        'credit_sales': credit_sales,
         'payment_totals': payment_totals,
         'start_date': start_date,
         'end_date': end_date,
@@ -1556,8 +1545,6 @@ def sales_report(request):
         'sale_type': sale_type,
         'credit_filter': credit_filter,
         'selected_customer': customer_id,
-        'sales_by_hour': sales_by_hour,
-        'top_products': top_products
     }
     return render(request, 'pos/sales_report.html', context)
 

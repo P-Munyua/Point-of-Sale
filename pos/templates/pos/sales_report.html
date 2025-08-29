@@ -1,319 +1,256 @@
 {% extends 'pos/base.html' %}
+{% load static %}
 
-{% block title %}Sales Report{% endblock %}
+{% block title %}Sales Management{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto bg-white rounded-lg shadow overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-200 bg-blue-600">
-        <div class="flex justify-between items-center">
-            <h2 class="text-xl font-semibold text-white">Sales Report</h2>
-            <div class="flex space-x-2">
-                <a href="{% url 'daily_sales_report' %}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    <i class="fas fa-calendar-day mr-1"></i> Daily Sales
-                </a>
-                <a href="{% url 'profit_margin_report' %}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <i class="fas fa-chart-line mr-1"></i> Profit & Loss
-                </a>
+<div class="max-w-7xl mx-auto">
+    <!-- Header Section -->
+    <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-t-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="p-2 rounded-lg bg-white bg-opacity-20">
+                    <i class="fas fa-chart-line text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-white">Sales Management</h2>
+                    <p class="text-blue-100 text-sm">Track and manage all sales transactions</p>
+                </div>
+            </div>
+            <a href="{% url 'pos' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <i class="fas fa-cash-register mr-2"></i> New Sale
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="px-6 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Sales -->
+        <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                        <i class="fas fa-shopping-cart text-white"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Sales</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">KSh {{ total_sales|floatformat:2 }}</div>
+                        </dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cash Sales -->
+        <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
+                        <i class="fas fa-money-bill-wave text-white"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">Cash Sales</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">KSh {{ cash_sales|floatformat:2 }}</div>
+                        </dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- M-Pesa Sales -->
+        <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
+                        <i class="fas fa-mobile-alt text-white"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">M-Pesa Sales</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">KSh {{ mpesa_sales|floatformat:2 }}</div>
+                        </dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credit Sales -->
+        <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+                        <i class="fas fa-credit-card text-white"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">Credit Sales</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">KSh {{ credit_sales|floatformat:2 }}</div>
+                        </dd>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    
-    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
-        <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+
+    <!-- Filters Section -->
+    <div class="px-6 py-4 bg-white border border-gray-200 rounded-lg shadow mt-4">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
-                <label class="block text-xs font-medium text-gray-700">From:</label>
-                <input type="date" id="start-date" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                <input type="date" name="start_date" id="start_date" 
+                       class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                       value="{{ request.GET.start_date }}">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700">To:</label>
-                <input type="date" id="end-date" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                <input type="date" name="end_date" id="end_date" 
+                       class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                       value="{{ request.GET.end_date }}">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700">Payment:</label>
-                <select id="payment-method" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                <select name="payment_method" id="payment_method" 
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     <option value="">All Methods</option>
-                    <option value="cash">Cash</option>
-                    <option value="mpesa">M-Pesa</option>
-                    <option value="card">Credit Card</option>
-                    <option value="bank">Bank Transfer</option>
+                    <option value="cash" {% if request.GET.payment_method == "cash" %}selected{% endif %}>Cash</option>
+                    <option value="mpesa" {% if request.GET.payment_method == "mpesa" %}selected{% endif %}>M-Pesa</option>
+                    <option value="card" {% if request.GET.payment_method == "card" %}selected{% endif %}>Credit Card</option>
+                    <option value="cheque" {% if request.GET.payment_method == "cheque" %}selected{% endif %}>Cheque</option>
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700">Type:</label>
-                <select id="sale-type" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    <option value="">All Types</option>
-                    <option value="retail">Retail</option>
-                    <option value="wholesale">Wholesale</option>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="credit" id="credit" 
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="">All Statuses</option>
+                    <option value="paid" {% if request.GET.credit == "paid" %}selected{% endif %}>Paid</option>
+                    <option value="credit" {% if request.GET.credit == "credit" %}selected{% endif %}>Credit</option>
                 </select>
             </div>
-            <button id="apply-filters" class="mt-6 sm:mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Apply
-            </button>
-        </div>
-        
-        <div class="flex space-x-2">
-            <div class="bg-blue-50 px-3 py-1 rounded-md text-xs">
-                <span class="font-medium">Total Sales:</span> KSh {{ total_sales|floatformat:2 }}
-            </div>
-            <div class="bg-green-50 px-3 py-1 rounded-md text-xs">
-                <span class="font-medium">Items Sold:</span> {{ total_items }}
-            </div>
-        </div>
-    </div>
-    
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Sale #
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Customer
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Items
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Payment
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                {% for sale in sales %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {{ sale.sale_number }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ sale.date|date:"d/m/Y H:i" }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ sale.customer.name|default:"Walk-in" }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ sale.items.count }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        KSh {{ sale.total|floatformat:2 }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            {% if sale.payment_method == 'cash' %}bg-green-100 text-green-800
-                            {% elif sale.payment_method == 'mpesa' %}bg-blue-100 text-blue-800
-                            {% else %}bg-gray-100 text-gray-800{% endif %}">
-                            {{ sale.get_payment_method_display }}
-                        </span>
-                        {% if sale.is_credit %}
-                        <span class="ml-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                            Credit
-                        </span>
-                        {% endif %}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            {% if sale.is_completed %}bg-green-100 text-green-800
-                            {% else %}bg-red-100 text-red-800{% endif %}">
-                            {% if sale.is_completed %}Completed{% else %}Pending{% endif %}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="{% url 'view_sale' sale.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <a href="{% url 'print_receipt' sale.id %}" class="text-green-600 hover:text-green-900" target="_blank">
-                            <i class="fas fa-print"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
-                        No sales found
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    
-    {% if is_paginated %}
-    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-        <div class="flex-1 flex justify-between items-center">
-            <span class="text-sm text-gray-700">
-                Showing <span class="font-medium">{{ page_obj.start_index }}</span> to 
-                <span class="font-medium">{{ page_obj.end_index }}</span> of 
-                <span class="font-medium">{{ page_obj.paginator.count }}</span> results
-            </span>
-            <div class="flex space-x-1">
-                {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    Previous
-                </a>
-                {% endif %}
-                
-                {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    Next
+            <div class="flex items-end space-x-2">
+                <button type="submit" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-filter mr-1"></i> Filter
+                </button>
+                {% if request.GET.start_date or request.GET.end_date or request.GET.payment_method or request.GET.credit %}
+                <a href="{% url 'sales_report' %}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-sync-alt mr-1"></i> Reset
                 </a>
                 {% endif %}
             </div>
+        </form>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="mt-4 bg-white border border-gray-200 rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sale #</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for sale in sales %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">{{ sale.sale_number }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.date|date:"d/m/Y H:i" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.customer.name|default:"Walk-in" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.items.count }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">KSh {{ sale.total|floatformat:2 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.get_payment_method_display }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if sale.is_credit %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Credit</span>
+                            {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Paid</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex justify-end space-x-3">
+                                <a href="{% url 'view_sale' sale.id %}" 
+                                   class="text-blue-600 hover:text-blue-900" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'print_receipt' sale.id %}" 
+                                   class="text-green-600 hover:text-green-900" title="Print Receipt" target="_blank">
+                                    <i class="fas fa-print"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
+                            <div class="flex flex-col items-center justify-center py-8">
+                                <i class="fas fa-receipt text-4xl text-gray-400 mb-3"></i>
+                                <h4 class="text-lg font-medium text-gray-900">No sales found</h4>
+                                <p class="text-sm text-gray-500">Try adjusting your filters</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </div>
-    {% endif %}
-</div>
 
-<div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div class="bg-white p-4 rounded-lg shadow">
-        <h4 class="font-medium text-gray-900 mb-2">Sales by Payment Method</h4>
-        <canvas id="paymentChart" height="200"></canvas>
-    </div>
-    <div class="bg-white p-4 rounded-lg shadow">
-        <h4 class="font-medium text-gray-900 mb-2">Sales Trend (Last 7 Days)</h4>
-        <canvas id="salesTrendChart" height="200"></canvas>
-    </div>
-    <div class="bg-white p-4 rounded-lg shadow">
-        <h4 class="font-medium text-gray-900 mb-2">Top Selling Products</h4>
-        <canvas id="topProductsChart" height="200"></canvas>
+        <!-- Pagination -->
+        {% if sales.has_other_pages %}
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+            <div class="flex-1 flex justify-between items-center">
+                <span class="text-sm text-gray-700">
+                    Showing {{ sales.start_index }} to {{ sales.end_index }} of {{ sales.paginator.count }} results
+                </span>
+                <div class="flex space-x-2">
+                    {% if sales.has_previous %}
+                    <a href="?page={{ sales.previous_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.credit %}&credit={{ request.GET.credit }}{% endif %}" 
+                       class="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <i class="fas fa-chevron-left mr-1"></i> Previous
+                    </a>
+                    {% endif %}
+                    
+                    {% if sales.has_next %}
+                    <a href="?page={{ sales.next_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.credit %}&credit={{ request.GET.credit }}{% endif %}" 
+                       class="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Next <i class="fas fa-chevron-right ml-1"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Apply filters
-    const applyFiltersBtn = document.getElementById('apply-filters');
-    const startDateInput = document.getElementById('start-date');
-    const endDateInput = document.getElementById('end-date');
-    const paymentMethodSelect = document.getElementById('payment-method');
-    const saleTypeSelect = document.getElementById('sale-type');
+    // Set default dates if not set
+    const today = new Date().toISOString().split('T')[0];
+    const endDateInput = document.getElementById('end_date');
+    const startDateInput = document.getElementById('start_date');
     
-    function applyFilters() {
-        const params = new URLSearchParams();
-        
-        if (startDateInput.value) {
-            params.set('start_date', startDateInput.value);
-        }
-        
-        if (endDateInput.value) {
-            params.set('end_date', endDateInput.value);
-        }
-        
-        if (paymentMethodSelect.value) {
-            params.set('payment_method', paymentMethodSelect.value);
-        }
-        
-        if (saleTypeSelect.value) {
-            params.set('sale_type', saleTypeSelect.value);
-        }
-        
-        window.location.search = params.toString();
+    if (!endDateInput.value) {
+        endDateInput.value = today;
     }
     
-    applyFiltersBtn.addEventListener('click', applyFilters);
-    
-    // Set current filter values from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('start_date')) {
-        startDateInput.value = urlParams.get('start_date');
+    if (!startDateInput.value) {
+        const date = new Date();
+        date.setDate(date.getDate() - 7);
+        const weekAgo = date.toISOString().split('T')[0];
+        startDateInput.value = weekAgo;
     }
-    if (urlParams.has('end_date')) {
-        endDateInput.value = urlParams.get('end_date');
-    }
-    if (urlParams.has('payment_method')) {
-        paymentMethodSelect.value = urlParams.get('payment_method');
-    }
-    if (urlParams.has('sale_type')) {
-        saleTypeSelect.value = urlParams.get('sale_type');
-    }
-    
-    // Charts
-    const paymentCtx = document.getElementById('paymentChart').getContext('2d');
-    const paymentChart = new Chart(paymentCtx, {
-        type: 'doughnut',
-        data: {
-            labels: {{ payment_methods|safe }},
-            datasets: [{
-                data: {{ payment_totals|safe }},
-                backgroundColor: [
-                    '#10B981', // Cash - green
-                    '#3B82F6', // M-Pesa - blue
-                    '#F59E0B', // Card - yellow
-                    '#64748B', // Bank - gray
-                    '#EF4444'  // Credit - red
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                }
-            }
-        }
-    });
-    
-    const trendCtx = document.getElementById('salesTrendChart').getContext('2d');
-    const trendChart = new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: {{ trend_dates|safe }},
-            datasets: [{
-                label: 'Daily Sales',
-                data: {{ trend_values|safe }},
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                borderColor: '#3B82F6',
-                borderWidth: 2,
-                tension: 0.1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-    
-    const productsCtx = document.getElementById('topProductsChart').getContext('2d');
-    const productsChart = new Chart(productsCtx, {
-        type: 'bar',
-        data: {
-            labels: {{ top_products_names|safe }},
-            datasets: [{
-                label: 'Quantity Sold',
-                data: {{ top_products_quantities|safe }},
-                backgroundColor: '#10B981',
-                borderColor: '#047857',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            },
-            indexAxis: 'y',
-        }
-    });
 });
 </script>
 {% endblock %}
