@@ -39,7 +39,7 @@
                     <div class="ml-5 w-0 flex-1">
                         <dt class="text-sm font-medium text-gray-500 truncate">Today's Sales</dt>
                         <dd class="flex items-baseline">
-                            <div class="text-2xl font-semibold text-gray-900">${{ today_sales|floatformat:2 }}</div>
+                            <div class="text-2xl font-semibold text-gray-900">KSh {{ today_sales|floatformat:2 }}</div>
                         </dd>
                         <div class="mt-1 text-xs text-gray-500">
                             {% if today_vs_yesterday > 0 %}
@@ -63,7 +63,7 @@
                     <div class="ml-5 w-0 flex-1">
                         <dt class="text-sm font-medium text-gray-500 truncate">Monthly Sales</dt>
                         <dd class="flex items-baseline">
-                            <div class="text-2xl font-semibold text-gray-900">${{ monthly_sales|floatformat:2 }}</div>
+                            <div class="text-2xl font-semibold text-gray-900">KSh {{ monthly_sales|floatformat:2 }}</div>
                         </dd>
                         <div class="mt-1 text-xs text-gray-500">
                             {% if monthly_vs_last > 0 %}
@@ -107,7 +107,7 @@
                     <div class="ml-5 w-0 flex-1">
                         <dt class="text-sm font-medium text-gray-500 truncate">Outstanding Credit</dt>
                         <dd class="flex items-baseline">
-                            <div class="text-2xl font-semibold text-gray-900">${{ outstanding_credit|floatformat:2 }}</div>
+                            <div class="text-2xl font-semibold text-gray-900">KSh {{ outstanding_credit|floatformat:2 }}</div>
                         </dd>
                         <div class="mt-1 text-xs text-blue-500">
                             <a href="{% url 'credit_payments' %}" class="hover:underline">View details</a>
@@ -192,7 +192,7 @@
                                 <tr>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ product.name }}</td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ product.total_sold }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${{ product.total_revenue|floatformat:2 }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">KSh {{ product.total_revenue|floatformat:2 }}</td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                         {% if product.trend > 0 %}
                                             <span class="text-green-600"><i class="fas fa-arrow-up"></i> {{ product.trend|floatformat:1 }}%</span>
@@ -285,7 +285,7 @@
                                 <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">{{ sale.sale_number }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ sale.date|date:"d/m/Y H:i" }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ sale.customer.name|default:"Walk-in" }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${{ sale.total|floatformat:2 }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">KSh {{ sale.total|floatformat:2 }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ sale.get_payment_method_display }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     {% if sale.is_completed %}

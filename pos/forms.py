@@ -280,3 +280,20 @@ class StockJournalForm(forms.ModelForm):
                 pass
         elif self.instance.pk:
             self.fields['batch'].queryset = self.instance.product.batches.order_by('-expiry_date')
+
+
+from django import forms
+from .models import Company
+
+class CompanyForm(forms.ModelForm):
+    class Meta:
+        model = Company
+        fields = ['name', 'address', 'phone', 'email', 'vat_number', 'logo']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'vat_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }

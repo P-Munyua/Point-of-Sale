@@ -17,7 +17,13 @@
                     <p class="text-blue-100 text-sm">Detailed view of sale transaction</p>
                 </div>
             </div>
+            
             <div class="flex space-x-2">
+                <!-- EDIT BUTTON ADDED HERE -->
+                <a href="{% url 'edit_sale' sale.id %}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    <i class="fas fa-edit mr-2"></i> Edit Sale
+                </a>
                 <a href="{% url 'print_receipt' sale.id %}" 
                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                    target="_blank">
@@ -105,9 +111,9 @@
                     {% for item in sale.items.all %}
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.product.name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">${{ item.price }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">KSh {{ item.price }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ item.quantity }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">${{ item.total }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">KSh {{ item.total }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -118,30 +124,30 @@
                 <tfoot class="bg-gray-50">
                     <tr>
                         <th colspan="3" class="px-6 py-3 text-right text-sm font-medium text-gray-500">Subtotal:</th>
-                        <th class="px-6 py-3 text-right text-sm font-medium text-gray-900">${{ sale.subtotal }}</th>
+                        <th class="px-6 py-3 text-right text-sm font-medium text-gray-900">KSh {{ sale.subtotal }}</th>
                     </tr>
                     {% if sale.discount_amount > 0 %}
                     <tr>
                         <th colspan="3" class="px-6 py-3 text-right text-sm font-medium text-gray-500">Discount:</th>
-                        <th class="px-6 py-3 text-right text-sm font-medium text-gray-900">${{ sale.discount_amount }}</th>
+                        <th class="px-6 py-3 text-right text-sm font-medium text-gray-900">KSh {{ sale.discount_amount }}</th>
                     </tr>
                     {% endif %}
                     <tr>
                         <th colspan="3" class="px-6 py-3 text-right text-sm font-medium text-gray-500">Total:</th>
-                        <th class="px-6 py-3 text-right text-sm font-medium text-gray-900">${{ sale.total }}</th>
+                        <th class="px-6 py-3 text-right text-sm font-medium text-gray-900">KSh {{ sale.total }}</th>
                     </tr>
                     <tr>
                         <th colspan="3" class="px-6 py-3 text-right text-sm font-medium text-gray-500">Amount Paid:</th>
-                        <th class="px-6 py-3 text-right text-sm font-medium text-gray-900">${{ sale.amount_paid }}</th>
+                        <th class="px-6 py-3 text-right text-sm font-medium text-gray-900">KSh {{ sale.amount_paid }}</th>
                     </tr>
                     <tr>
                         <th colspan="3" class="px-6 py-3 text-right text-sm font-medium text-gray-500">Change:</th>
-                        <th class="px-6 py-3 text-right text-sm font-medium text-gray-900">${{ sale.change }}</th>
+                        <th class="px-6 py-3 text-right text-sm font-medium text-gray-900">KSh {{ sale.change }}</th>
                     </tr>
                     {% if sale.balance > 0 %}
                     <tr>
                         <th colspan="3" class="px-6 py-3 text-right text-sm font-medium text-red-500">Balance:</th>
-                        <th class="px-6 py-3 text-right text-sm font-medium text-red-500">${{ sale.balance }}</th>
+                        <th class="px-6 py-3 text-right text-sm font-medium text-red-500">KSh {{ sale.balance }}</th>
                     </tr>
                     {% endif %}
                 </tfoot>

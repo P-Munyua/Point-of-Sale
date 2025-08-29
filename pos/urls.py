@@ -15,6 +15,7 @@ urlpatterns = [
     path('pending-sales/<int:pk>/complete/', views.complete_pending_sale, name='complete_pending_sale'),
     path('pending-sales/<int:pk>/delete/', views.delete_pending_sale, name='delete_pending_sale'),
     path('edit-sale/<int:pk>/', views.edit_sale, name='edit_sale'),
+    path('sale/<int:pk>/', views.sale_detail, name='sale_detail'),
     path('sales/<int:pk>/', views.view_sale, name='view_sale'),
     path('receipt/<int:receipt_id>/', views.view_receipt, name='view_receipt'),
     path('receipt/<int:receipt_id>/print/', views.print_receipt, name='print_receipt'),

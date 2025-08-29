@@ -207,7 +207,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h4 class="mb-0"><i class="fas fa-calendar-alt mr-2"></i>Daily Sales Report</h4>
-                    <p class="mb-0 opacity-75">Detailed overview of all sales transactions</p>
+                    <p class="mb-0 opacity-75">Daily sales summary for {{ date_from|date:"M j, Y" }}{% if date_to != date_from %} to {{ date_to|date:"M j, Y" }}{% endif %}</p>
                 </div>
                 <div>
                     <button class="btn btn-light btn-sm mr-2" onclick="window.print()">
@@ -298,8 +298,8 @@
                             <div class="d-flex justify-content-between">
                                 <div>
                                     <div class="stat-title">Total Sales</div>
-                                    <div class="stat-value">KSh {{ totals.total_sales|default:0|floatformat:2 }}</div>
-                                    <div class="stat-subtitle">{{ date_from|date:"M j" }} - {{ date_to|date:"M j, Y" }}</div>
+                                    <div class="stat-value">KSh {{ total_sales|floatformat:2 }}</div>
+                                    <div class="stat-subtitle">{{ transaction_count }} transactions</div>
                                 </div>
                                 <div class="stat-icon text-primary">
                                     <i class="fas fa-receipt"></i>
@@ -314,8 +314,8 @@
                             <div class="d-flex justify-content-between">
                                 <div>
                                     <div class="stat-title">Items Sold</div>
-                                    <div class="stat-value">{{ totals.total_items|default:0 }}</div>
-                                    <div class="stat-subtitle">{{ totals.transaction_count|default:0 }} transactions</div>
+                                    <div class="stat-value">{{ total_items }}</div>
+                                    <div class="stat-subtitle">Total quantity sold</div>
                                 </div>
                                 <div class="stat-icon text-success">
                                     <i class="fas fa-shopping-basket"></i>
@@ -329,40 +329,14 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <div class="stat-title">Average Sale</div>
+                                    <div class="stat-title">Payment Methods</div>
                                     <div class="stat-value">
-                                        KSh {{ average_sale|floatformat:2 }}
+                                        {{ payment_breakdown|length }}
                                     </div>
-                                    <div class="stat-subtitle">Per transaction</div>
-                                </div>
-                                <div class="stat-icon text-info">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <div class="stat-title">Top Customer</div>
-                                    <div class="stat-value">
-                                        {% if top_customer %}
-                                            {{ top_customer.customer__name|truncatechars:15 }}
-                                        {% else %}
-                                            N/A
-                                        {% endif %}
-                                    </div>
-                                    <div class="stat-subtitle">
-                                        {% if top_customer %}
-                                            KSh {{ top_customer.total|floatformat:2 }}
-                                        {% endif %}
-                                    </div>
+                                    <div class="stat-subtitle">Different methods used</div>
                                 </div>
                                 <div class="stat-icon text-warning">
-                                    <i class="fas fa-user-tie"></i>
+                                    <i class="fas fa-credit-card"></i>
                                 </div>
                             </div>
                         </div>
@@ -370,9 +344,98 @@
                 </div>
             </div>
             
+            <!-- Payment Method Breakdown -->
+            {% if payment_breakdown %}
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Payment Method Breakdown</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Payment Method</th>
+                                            <th>Transactions</th>
+                                            <th>Amount</th>
+                                            <th>Percentage</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for method in payment_breakdown %}
+                                        <tr>
+                                            <td>
+                                                {% if method.payment_method == 'cash' %}Cash
+                                                {% elif method.payment_method == 'mpesa' %}M-Pesa
+                                                {% elif method.payment_method == 'card' %}Card
+                                                {% elif method.payment_method == 'cheque' %}Cheque
+                                                {% elif method.payment_method == 'credit' %}Credit
+                                                {% else %}{{ method.payment_method|title }}
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ method.count }}</td>
+                                            <td>KSh {{ method.total|floatformat:2 }}</td>
+                                            <td>
+                                                {% if total_sales > 0 %}
+                                                    {{ method.percentage|floatformat:1 }}%
+                                                {% else %}
+                                                    0%
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Top Products -->
+                {% if top_products %}
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Top Selling Products</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>Revenue</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for product in top_products %}
+                                        <tr>
+                                            <td>{{ product.product__name }}</td>
+                                            <td>{{ product.quantity_sold }}</td>
+                                            <td>KSh {{ product.revenue|floatformat:2 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
             <!-- Sales Table -->
             <div class="mt-4">
                 {% if sales %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Individual Transactions</h5>
+                    <span class="badge badge-primary">{{ sales.paginator.count }} transactions</span>
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table data-table">
                         <thead>
@@ -420,10 +483,10 @@
                                 </td>
                                 <td>{{ sale.user.get_full_name|default:sale.user.username }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <a href="{% url 'view_sale' sale.id %}" class="btn btn-sm btn-outline-primary" title="View Details">
                                         <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary" title="Print Receipt">
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-secondary" title="Print Receipt" onclick="printReceipt({{ sale.id }})">
                                         <i class="fas fa-print"></i>
                                     </button>
                                 </td>
@@ -516,6 +579,11 @@ function exportSales() {
     
     // Redirect to export URL with current filters
     window.location.href = "{% url 'export_daily_sales' %}?" + params.toString();
+}
+
+// Print receipt function
+function printReceipt(saleId) {
+    window.open("{% url 'print_receipt' 0 %}".replace('0', saleId), '_blank');
 }
 
 // Preserve filters when paginating

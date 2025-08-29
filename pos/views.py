@@ -39,7 +39,7 @@ from .models import (
 from .forms import (
     ProductForm, CustomerForm, SupplierForm, PurchaseForm, 
     ExpenseForm, BatchForm, DiscountForm, CompanyPriceForm,
-    BulkUploadForm, PurchaseReturnForm
+    BulkUploadForm, PurchaseReturnForm,CompanyForm
 )
 
 # ============== Dashboard Views ==============
@@ -766,6 +766,19 @@ def edit_sale(request, pk):
         'company': Company.objects.first()
     }
     return render(request, 'pos/edit_sale.html', context)
+
+
+# views.py
+from django.shortcuts import render, get_object_or_404
+
+@login_required
+def sale_detail(request, pk):
+    sale = get_object_or_404(Sale, pk=pk)
+    context = {
+        'sale': sale,
+        'company': Company.objects.first()
+    }
+    return render(request, 'pos/sale_detail.html', context)
 
 # ============== Product & Inventory Views ==============
 @login_required
@@ -1552,45 +1565,52 @@ def sales_report(request):
 def daily_sales_summary(request):
     today = timezone.now().date()
     
-    # Get sales totals by payment method with proper aggregation
+    # Get sales for today
     sales = Sale.objects.filter(
         date__date=today,
         is_completed=True
-    ).annotate(
-        payment_total=Case(
-            When(payment_method='cash', then=F('total')),
-            When(payment_method='mpesa', then=F('total')),
-            When(payment_method='card', then=F('total')),
-            When(payment_method='cheque', then=F('total')),
-            default=Value(0),
-            output_field=DecimalField()
-        )
     )
     
-    # Calculate totals using proper aggregation
-    totals = sales.aggregate(
-        cash_sales=Sum('cash_amount'),
-        mpesa_sales=Sum('mpesa_amount'),
-        card_sales=Sum('card_amount'),
-        cheque_sales=Sum('cheque_amount'),
-        credit_sales=Sum('total', filter=Q(is_credit=True)),
-        all_sales=Sum('total')
+    # Calculate totals by payment method using the payment_method field
+    # Since you don't have separate amount fields, we need to calculate based on payment_method
+    payment_totals = sales.values('payment_method').annotate(
+        total_amount=Sum('total')
     )
     
-    # Handle None values from aggregation
-    cash_sales = totals['cash_sales'] or 0
-    mpesa_sales = totals['mpesa_sales'] or 0
-    card_sales = totals['card_sales'] or 0
-    cheque_sales = totals['cheque_sales'] or 0
-    credit_sales = totals['credit_sales'] or 0
-    total_sales = totals['all_sales'] or 0
+    # Initialize totals
+    cash_sales = Decimal('0.00')
+    mpesa_sales = Decimal('0.00')
+    card_sales = Decimal('0.00')
+    cheque_sales = Decimal('0.00')
+    credit_sales = Decimal('0.00')
+    
+    # Calculate totals for each payment method
+    for payment in payment_totals:
+        method = payment['payment_method']
+        amount = payment['total_amount'] or Decimal('0.00')
+        
+        if method == 'cash':
+            cash_sales = amount
+        elif method == 'mpesa':
+            mpesa_sales = amount
+        elif method == 'card':
+            card_sales = amount
+        elif method == 'cheque':
+            cheque_sales = amount
+    
+    # Calculate credit sales separately
+    credit_sales = sales.filter(is_credit=True).aggregate(
+        total=Sum('total')
+    )['total'] or Decimal('0.00')
+    
+    total_sales = sales.aggregate(total=Sum('total'))['total'] or Decimal('0.00')
     
     # Get expenses and purchases for the day
-    expenses = Expense.objects.filter(date__date=today)
-    purchases = Purchase.objects.filter(date__date=today)
+    expenses = Expense.objects.filter(date=today)  # Expense.date is already a DateField
+    purchases = Purchase.objects.filter(date__date=today) 
     
-    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or 0
-    total_purchases = purchases.aggregate(total=Sum('total'))['total'] or 0
+    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    total_purchases = purchases.aggregate(total=Sum('total'))['total'] or Decimal('0.00')
     
     # Calculate net cash (excluding credit sales)
     net_cash = (cash_sales + mpesa_sales + card_sales + cheque_sales) - total_expenses - total_purchases
@@ -3172,6 +3192,7 @@ def discount_list(request):
     }
     return render(request, 'pos/discount_list.html', context)
 
+
 @login_required
 def add_discount(request):
     if request.method == 'POST':
@@ -3223,10 +3244,21 @@ def toggle_discount_status(request, pk):
 def company_settings(request):
     company = Company.objects.first()
     
+    # Create company if it doesn't exist
+    if not company:
+        company = Company.objects.create(
+            name="Succeed Cereal Hub",
+            address="Wataalam, Ruiry",
+            phone="+254 74545769",
+            email="info@company.com",
+            vat_number=""
+        )
+    
     if request.method == 'POST':
         form = CompanyForm(request.POST, request.FILES, instance=company)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Company settings updated successfully!')
             return redirect('company_settings')
     else:
         form = CompanyForm(instance=company)
@@ -4135,8 +4167,11 @@ import csv
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 
+
+
+@login_required
 def daily_sales_report(request):
-    # Date filter - default to last 7 days
+    # Date filter - default to today
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     
@@ -4147,8 +4182,8 @@ def daily_sales_report(request):
         date_from = date_to = None
     
     if not date_from and not date_to:
-        date_to = datetime.now().date()
-        date_from = date_to - timedelta(days=7)
+        date_to = timezone.now().date()
+        date_from = date_to
     
     # Base queryset with date filter
     sales = Sale.objects.filter(
@@ -4171,30 +4206,52 @@ def daily_sales_report(request):
     
     min_amount = request.GET.get('min_amount')
     if min_amount:
-        sales = sales.filter(total__gte=float(min_amount))
-    
-    # Calculate totals
-    totals = sales.aggregate(
-        total_sales=Sum('total'),
-        total_items=Sum('items__quantity'),
-        transaction_count=Count('id')
-    )
-    
-    # Calculate average sale
-    if totals['transaction_count'] and totals['total_sales']:
-        average_sale = totals['total_sales'] / totals['transaction_count']
-    else:
-        average_sale = 0
-    
-    # Get top customer
-    top_customer = sales.values('customer__name').annotate(
-        total=Sum('total')
-    ).order_by('-total').first()
+        try:
+            sales = sales.filter(total__gte=Decimal(min_amount))
+        except (ValueError, InvalidOperation):
+            pass
     
     # Pagination
     paginator = Paginator(sales.order_by('-date'), 25)  # Show 25 sales per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    
+    # Calculate totals from the PAGINATED sales data (what's actually displayed)
+    total_sales = Decimal('0.00')
+    total_items = 0
+    transaction_count = page_obj.paginator.count  # Total transactions across all pages
+    
+    # Calculate totals from displayed page only for the stats
+    for sale in page_obj:
+        total_sales += sale.total
+        total_items += sale.items.count()
+    
+    # Calculate average transaction
+    average_transaction = total_sales / transaction_count if transaction_count > 0 else Decimal('0.00')
+    
+    # Get payment method breakdown from ALL sales (not just displayed page)
+    payment_breakdown = sales.values('payment_method').annotate(
+        total=Sum('total'),
+        count=Count('id')
+    )
+    
+    # Calculate percentages for each payment method
+    total_all_sales = sales.aggregate(total=Sum('total'))['total'] or Decimal('0.00')
+    for method in payment_breakdown:
+        if total_all_sales > 0:
+            method['percentage'] = float(method['total'] / total_all_sales * 100)
+        else:
+            method['percentage'] = 0
+    
+    # Get top selling products for the day from ALL sales
+    top_products = SaleItem.objects.filter(
+        sale__in=sales
+    ).values(
+        'product__name'
+    ).annotate(
+        quantity_sold=Sum('quantity'),
+        revenue=Sum('total')
+    ).order_by('-revenue')[:10]
     
     # Get all customers for filter dropdown
     customers = Customer.objects.all().order_by('name')
@@ -4204,13 +4261,17 @@ def daily_sales_report(request):
         'customers': customers,
         'date_from': date_from.strftime('%Y-%m-%d') if date_from else '',
         'date_to': date_to.strftime('%Y-%m-%d') if date_to else '',
-        'totals': totals,
-        'average_sale': average_sale,
-        'top_customer': top_customer,
+        'total_sales': total_sales,
+        'total_items': total_items,
+        'transaction_count': transaction_count,
+        'average_transaction': average_transaction,
+        'payment_breakdown': payment_breakdown,
+        'top_products': top_products,
         'payment_methods': [
             ('cash', 'Cash'),
             ('mpesa', 'M-Pesa'),
             ('card', 'Card'),
+            ('cheque', 'Cheque'),
             ('credit', 'Credit')
         ],
         'selected_payment_method': payment_method,
@@ -4219,6 +4280,8 @@ def daily_sales_report(request):
     }
     return render(request, 'pos/daily_sales_report.html', context)
 
+
+@login_required
 def export_daily_sales(request):
     # Get filter parameters from request
     date_from = request.GET.get('date_from')
