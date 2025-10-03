@@ -106,6 +106,7 @@ path('supplier-returns/export/', views.export_supplier_returns, name='export_sup
     path('expenses/', views.expense_list, name='expense_list'),
     path('expenses/add/', views.add_expense, name='add_expense'),
     path('expenses/edit/<int:pk>/', views.edit_expense, name='edit_expense'),
+    path('expenses/delete/<int:pk>/', views.delete_expense, name='delete_expense'),
     
     # Discounts
     path('discounts/', views.discount_list, name='discount_list'),

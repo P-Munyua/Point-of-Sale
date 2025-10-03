@@ -53,20 +53,19 @@ MIDDLEWARE = [
 ]
 
 
-# settings.py
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / "media"
+
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # Or any preferred directory name
 LOGIN_URL = '/admin/login/'
 LOGIN_REDIRECT_URL = '/'
 
 ROOT_URLCONF = 'minimart_pos.urls'
-
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
 
 TEMPLATES = [
     {

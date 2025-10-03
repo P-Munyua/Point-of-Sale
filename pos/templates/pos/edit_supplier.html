@@ -1,79 +1,110 @@
-<!-- add_supplier.html -->
 {% extends 'pos/base.html' %}
 {% load static %}
 
-{% block title %}Add Supplier{% endblock %}
+{% block title %}Add Supplier - POS System{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">Add New Supplier</h4>
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-bold text-gray-900">Add New Supplier</h1>
+            <a href="{% url 'supplier_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Suppliers
+            </a>
+        </div>
+        <p class="text-gray-600">Add a new supplier to your system. Fields marked with * are required.</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+            <h2 class="text-lg font-medium text-gray-900">Supplier Information</h2>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" class="space-y-6 px-6 py-6">
+            {% csrf_token %}
+            
+            <!-- Basic Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Supplier Name *
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.name.errors }}</p>
+                    {% endif %}
                 </div>
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.name.id_for_label }}">Supplier Name *</label>
-                                    {{ form.name }}
-                                    {% if form.name.errors %}
-                                        <small class="text-danger">{{ form.name.errors }}</small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.contact_person.id_for_label }}">Contact Person *</label>
-                                    {{ form.contact_person }}
-                                    {% if form.contact_person.errors %}
-                                        <small class="text-danger">{{ form.contact_person.errors }}</small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.phone.id_for_label }}">Phone Number *</label>
-                                    {{ form.phone }}
-                                    {% if form.phone.errors %}
-                                        <small class="text-danger">{{ form.phone.errors }}</small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.email.id_for_label }}">Email</label>
-                                    {{ form.email }}
-                                    {% if form.email.errors %}
-                                        <small class="text-danger">{{ form.email.errors }}</small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="{{ form.address.id_for_label }}">Address</label>
-                            {{ form.address }}
-                            {% if form.address.errors %}
-                                <small class="text-danger">{{ form.address.errors }}</small>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-group text-right">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Save Supplier
-                            </button>
-                            <a href="{% url 'supplier_list' %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancel
-                            </a>
-                        </div>
-                    </form>
+                
+                <div>
+                    <label for="{{ form.contact_person.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Contact Person *
+                    </label>
+                    {{ form.contact_person }}
+                    {% if form.contact_person.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.contact_person.errors }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number *
+                    </label>
+                    {{ form.phone }}
+                    {% if form.phone.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.phone.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.email.errors }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Address -->
+            <div>
+                <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Address
+                </label>
+                {{ form.address }}
+                {% if form.address.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.address.errors }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+                <a href="{% url 'supplier_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                    <i class="fas fa-times mr-2"></i> Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                    <i class="fas fa-save mr-2"></i> Save Supplier
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Text -->
+    <div class="mt-6 bg-blue-50 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">Information</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <p>• Suppliers will be available for selection when creating purchase orders</p>
+                    <p>• Contact information will be used for communication and reports</p>
                 </div>
             </div>
         </div>
@@ -83,31 +114,97 @@
 
 {% block scripts %}
 <script>
-$(document).ready(function() {
-    // Initialize form validation
-    $('form').validate({
-        rules: {
-            name: "required",
-            contact_person: "required",
-            phone: "required"
-        },
-        messages: {
-            name: "Please enter supplier name",
-            contact_person: "Please enter contact person",
-            phone: "Please enter phone number"
-        },
-        errorElement: 'span',
-        errorPlacement: function (error, element) {
-            error.addClass('invalid-feedback');
-            element.closest('.form-group').append(error);
-        },
-        highlight: function (element, errorClass, validClass) {
-            $(element).addClass('is-invalid');
-        },
-        unhighlight: function (element, errorClass, validClass) {
-            $(element).removeClass('is-invalid');
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Tailwind classes to form inputs
+    const inputs = document.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+        if (input.type !== 'file') {
+            input.classList.add(
+                'block', 
+                'w-full', 
+                'rounded-md', 
+                'border-gray-300', 
+                'shadow-sm', 
+                'focus:border-blue-500', 
+                'focus:ring-blue-500', 
+                'sm:text-sm',
+                'py-2',
+                'px-3'
+            );
         }
     });
+
+    // Simple validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        const requiredFields = form.querySelectorAll('[required]');
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('border-red-300', 'ring-2', 'ring-red-200');
+                
+                // Remove error class when user starts typing
+                field.addEventListener('input', function() {
+                    this.classList.remove('border-red-300', 'ring-2', 'ring-red-200');
+                });
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            
+            // Show error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4';
+            errorDiv.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <span>Please fill in all required fields.</span>
+                </div>
+            `;
+            
+            const existingError = form.querySelector('.bg-red-50');
+            if (!existingError) {
+                form.prepend(errorDiv);
+            }
+        }
+    });
+
+    // Phone number formatting
+    const phoneField = document.getElementById('{{ form.phone.id_for_label }}');
+    if (phoneField) {
+        phoneField.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                value = value.match(/.{1,4}/g).join(' ');
+            }
+            e.target.value = value;
+        });
+    }
 });
 </script>
+
+<style>
+/* Custom styles for better form appearance */
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    ring: 2px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+/* Animation for form elements */
+input, textarea, select {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Hover effects */
+input:hover, textarea:hover, select:hover {
+    border-color: #93c5fd;
+}
+</style>
 {% endblock %}

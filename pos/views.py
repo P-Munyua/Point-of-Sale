@@ -3154,6 +3154,20 @@ def generate_expenses_export(format, queryset):
     
     return HttpResponse('Invalid export format', status=400)
 
+
+@login_required
+@require_POST
+def delete_expense(request, pk):
+    expense = get_object_or_404(Expense, pk=pk)
+    
+    try:
+        expense.delete()
+        messages.success(request, f'Expense "{expense.description}" has been deleted successfully.')
+    except Exception as e:
+        messages.error(request, f'Error deleting expense: {str(e)}')
+    
+    return redirect('expense_list')
+
 # ============== Discount Views ==============
 @login_required
 def discount_list(request):
@@ -4650,3 +4664,7 @@ def opening_closing_stock_report(request):
         'total_value_change': total_closing_value - total_opening_value
     }
     return render(request, 'pos/opening_closing_stock.html', context)
+
+
+
+

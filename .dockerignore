@@ -13,4 +13,4 @@ venv/
 .idea/
 .DS_Store
 staticfiles/
-db.sqlite3
+db.sqlite3 
