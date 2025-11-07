@@ -53,6 +53,15 @@ MIDDLEWARE = [
 ]
 
 
+# Email settings (for password reset)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # or your SMTP server
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your-email@gmail.com'
+EMAIL_HOST_PASSWORD = 'your-app-password'
+DEFAULT_FROM_EMAIL = 'your-email@gmail.com'
+
 # settings.py
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
@@ -60,8 +69,9 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # Or any preferred directory name
-LOGIN_URL = '/admin/login/'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = '/pos/login/'
+LOGIN_REDIRECT_URL = '/pos/'
+LOGOUT_REDIRECT_URL = '/pos/login/'
 
 ROOT_URLCONF = 'minimart_pos.urls'
 

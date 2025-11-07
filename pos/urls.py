@@ -3,6 +3,12 @@ from django.contrib.auth.views import LogoutView
 from . import views
 
 urlpatterns = [
+
+    path('login/', views.custom_login, name='custom_login'),
+    path('logout/', views.custom_logout, name='custom_logout'),
+    path('password-change/', views.password_change, name='password_change'),
+    path('password-reset/', views.password_reset_request, name='password_reset_request'),
+    path('password-reset-confirm/<uidb64>/<token>/', views.password_reset_confirm, name='password_reset_confirm'),
     # Dashboard
     path('', views.dashboard, name='dashboard'),
 
@@ -106,6 +112,7 @@ path('supplier-returns/export/', views.export_supplier_returns, name='export_sup
     path('expenses/', views.expense_list, name='expense_list'),
     path('expenses/add/', views.add_expense, name='add_expense'),
     path('expenses/edit/<int:pk>/', views.edit_expense, name='edit_expense'),
+    path('expenses/delete/<int:pk>/', views.delete_expense, name='delete_expense'),
     
     # Discounts
     path('discounts/', views.discount_list, name='discount_list'),
@@ -142,6 +149,5 @@ path('supplier-returns/export/', views.export_supplier_returns, name='export_sup
 
 
     # Authentication
-    path('logout/', views.custom_logout, name='logout'),
-    path('logout/', LogoutView.as_view(), name='logout'),
+    
 ]

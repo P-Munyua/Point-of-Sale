@@ -141,34 +141,100 @@ function loadPendingSaleToPOS(saleId) {
         });
 }
 
-// Complete a pending sale
+// Delete a pending sale - FIXED URL
+function deletePendingSale(saleId) {
+    const loadingSwal = Swal.fire({
+        title: 'Deleting...',
+        html: 'Removing pending sale',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // FIXED URL
+    fetch(`/pos/pending-sales/${saleId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Server error');
+        }
+        return data;
+    })
+    .then(data => {
+        if (data.success) {
+            loadingSwal.close();
+            
+            // Remove from table
+            const row = document.querySelector(`tr[data-sale-id="${saleId}"]`);
+            if (row) row.remove();
+            
+            // Show success message
+            showAlert('Pending sale deleted successfully', 'success');
+            
+            // Check if table is empty now
+            checkEmptyTable();
+        } else {
+            throw new Error(data.message || 'Deletion failed');
+        }
+    })
+    .catch(error => {
+        loadingSwal.close();
+        console.error('Error:', error);
+        showAlert('Error deleting sale: ' + error.message, 'danger');
+    });
+}
+
+// Complete a pending sale - FIXED URL
 function completePendingSale(saleId) {
     Swal.fire({
         title: 'Complete Sale',
-        text: "Are you sure you want to complete this sale?",
+        text: "Are you sure you want to complete this sale? This will process the payment and remove it from pending sales.",
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#28a745',
         cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, complete it!'
+        confirmButtonText: 'Yes, complete it!',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        allowOutsideClick: false
     }).then((result) => {
         if (result.isConfirmed) {
-            showLoader();
-            fetch(`/pos/complete_pending_sale/${saleId}/`, {
+            const loadingSwal = Swal.fire({
+                title: 'Processing Sale',
+                html: 'Completing transaction and updating records...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // FIXED URL
+            fetch(`/pos/pending-sales/${saleId}/complete/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}',
                     'Content-Type': 'application/json',
-                }
+                },
+                body: JSON.stringify({})
             })
             .then(response => {
                 if (!response.ok) {
-                    return response.text().then(text => { throw new Error(text) });
+                    return response.json().then(errData => {
+                        throw new Error(errData.message || 'Server error');
+                    });
                 }
                 return response.json();
             })
             .then(data => {
-                hideLoader();
+                loadingSwal.close();
+                
                 if (data.success) {
                     // Remove from table
                     const row = document.querySelector(`tr[data-sale-id="${saleId}"]`);
@@ -177,7 +243,7 @@ function completePendingSale(saleId) {
                     // Show success message
                     showAlert('Sale completed successfully', 'success');
                     
-                    // Open receipt in new tab
+                    // Open receipt in new tab if available
                     if (data.sale_id) {
                         window.open(`/pos/receipt/${data.sale_id}/`, '_blank');
                     }
@@ -189,50 +255,11 @@ function completePendingSale(saleId) {
                 }
             })
             .catch(error => {
-                hideLoader();
+                loadingSwal.close();
                 console.error('Error:', error);
                 showAlert('Error completing sale: ' + error.message, 'danger');
             });
         }
-    });
-}
-
-// Delete a pending sale
-function deletePendingSale(saleId) {
-    showLoader();
-    fetch(`/pos/delete_pending_sale/${saleId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.text().then(text => { throw new Error(text) });
-        }
-        return response.json();
-    })
-    .then(data => {
-        hideLoader();
-        if (data.success) {
-            // Remove from table
-            const row = document.querySelector(`tr[data-sale-id="${saleId}"]`);
-            if (row) row.remove();
-            
-            // Show success message
-            showAlert('Pending sale deleted successfully', 'success');
-            
-            // Check if table is empty now
-            checkEmptyTable();
-        } else {
-            throw new Error(data.message || 'Failed to delete sale');
-        }
-    })
-    .catch(error => {
-        hideLoader();
-        console.error('Error:', error);
-        showAlert('Error deleting sale: ' + error.message, 'danger');
     });
 }
 

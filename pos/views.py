@@ -28,6 +28,8 @@ import pandas as pd
 from django.db.models import Case, When, Value, Sum, Count, Max, Min, Avg, Q, F
 from django.db.models.functions import ExtractHour, TruncHour, TruncMonth, TruncDate
 from django.db.models import DecimalField
+from django.contrib.auth.models import User  # Add this import
+
 
 
 from .models import (
@@ -399,89 +401,75 @@ def load_pending_sale(request, pk):
 @login_required
 @login_required
 @require_POST
+@login_required
+@require_POST
 def complete_pending_sale(request, pk):
+    """Convert a pending purchase to a completed purchase"""
     pending_sale = get_object_or_404(PendingSale, pk=pk, user=request.user)
     
     try:
         with transaction.atomic():
-            # Create the completed sale
-            sale = Sale(
-                customer_id=pending_sale.data.get('customer_id'),
+            # Get data from pending sale
+            pending_data = pending_sale.data
+            
+            # Create the sale
+            sale = Sale.objects.create(
+                customer_id=pending_data.get('customer_id'),
                 user=request.user,
-                sale_type=pending_sale.data.get('sale_type', 'retail'),
-                subtotal=Decimal(pending_sale.data['subtotal']),
-                discount_amount=Decimal(pending_sale.data.get('discount_amount', 0)),
-                discount_percent=Decimal(pending_sale.data.get('discount_percent', 0)),
-                total=Decimal(pending_sale.data['total']),
-                payment_method=pending_sale.data['payment_method'],
-                amount_paid=Decimal(pending_sale.data['amount_paid']),
-                balance=max(Decimal(pending_sale.data['total']) - Decimal(pending_sale.data['amount_paid']), Decimal(0)),
-                is_credit=pending_sale.data.get('is_credit', False),
+                sale_type=pending_data.get('sale_type', 'retail'),
+                subtotal=Decimal(pending_data.get('subtotal', '0.00')),
+                discount_amount=Decimal(pending_data.get('discount_amount', '0.00')),
+                discount_percent=Decimal(pending_data.get('discount_percent', '0.00')),
+                total=Decimal(pending_data.get('total', '0.00')),
+                payment_method=pending_data.get('payment_method', 'cash'),
+                amount_paid=Decimal(pending_data.get('amount_paid', '0.00')),
+                balance=Decimal(pending_data.get('balance', '0.00')),
+                is_credit=pending_data.get('is_credit', False),
                 is_completed=True
             )
-
-            # Handle multiple payment methods
-            payment_details = pending_sale.data.get('payment_details', {})
-            sale.mpesa_amount = Decimal(payment_details.get('mpesa', 0))
-            sale.cash_amount = Decimal(payment_details.get('cash', 0))
-            sale.card_amount = Decimal(payment_details.get('card', 0))
-            sale.cheque_amount = Decimal(payment_details.get('cheque', 0))
-            sale.mpesa_code = payment_details.get('mpesa_code', '')
-            sale.cheque_number = payment_details.get('cheque_number', '')
             
-            sale.save()
+            # Add items to the sale and update inventory
+            for item_data in pending_data.get('items', []):
+                try:
+                    product = Product.objects.get(id=item_data['id'])
+                    quantity = Decimal(str(item_data['quantity']))
+                    price = Decimal(str(item_data['price']))
+                    
+                    # Create sale item
+                    SaleItem.objects.create(
+                        sale=sale,
+                        product=product,
+                        quantity=quantity,
+                        price=price,
+                        discount_amount=Decimal(item_data.get('discount_amount', '0.00')),
+                        discount_percent=Decimal(item_data.get('discount_percent', '0.00')),
+                        total=Decimal(item_data['total'])
+                    )
+                    
+                    # Update product stock
+                    product.quantity -= quantity
+                    product.save()
+                    
+                except Product.DoesNotExist:
+                    # If product doesn't exist, skip it but continue with others
+                    continue
             
-            # Create sale items and update inventory
-            for item in pending_sale.data['items']:
-                product = Product.objects.get(id=item['id'])
-                batch = None
-                
-                if item.get('batch_id'):
-                    batch = Batch.objects.get(id=item['batch_id'])
-                
-                SaleItem.objects.create(
-                    sale=sale,
-                    product=product,
-                    batch=batch,
-                    quantity=item['quantity'],
-                    price=Decimal(item['price']),
-                    discount_amount=Decimal(item.get('discount_amount', 0)),
-                    discount_percent=Decimal(item.get('discount_percent', 0)),
-                    total=Decimal(item['total'])
-                )
-                
-                # Update product quantity
-                product.quantity -= item['quantity']
-                product.save()
-                
-                # Update batch quantity if batch was specified
-                if batch:
-                    batch.quantity -= item['quantity']
-                    batch.save()
-            
-            # Update customer balance if credit sale
-            if sale.is_credit and sale.customer:
-                sale.customer.balance += sale.balance
-                sale.customer.save()
-            
-            # Delete the pending sale AFTER successful completion
+            # Delete pending sale AFTER successful completion
             pending_sale.delete()
             
             return JsonResponse({
                 'success': True,
-                'message': 'Sale completed successfully',
+                'message': 'Sale completed successfully!',
                 'sale_id': sale.id,
-                'pending_sale_deleted': True  # Explicit confirmation
+                'pending_sale_deleted': True
             })
-
+    
     except Exception as e:
-        logger.error(f"Error completing pending sale {pk}: {str(e)}")
         return JsonResponse({
             'success': False,
-            'message': str(e),
+            'message': f'Error completing sale: {str(e)}',
             'pending_sale_deleted': False
         }, status=500)
-
 
 # pos/views.py
 from django.shortcuts import render, get_object_or_404
@@ -3154,6 +3142,20 @@ def generate_expenses_export(format, queryset):
     
     return HttpResponse('Invalid export format', status=400)
 
+
+@login_required
+@require_POST
+def delete_expense(request, pk):
+    expense = get_object_or_404(Expense, pk=pk)
+    
+    try:
+        expense.delete()
+        messages.success(request, f'Expense "{expense.description}" has been deleted successfully.')
+    except Exception as e:
+        messages.error(request, f'Error deleting expense: {str(e)}')
+    
+    return redirect('expense_list')
+
 # ============== Discount Views ==============
 @login_required
 def discount_list(request):
@@ -3874,12 +3876,131 @@ def bulk_upload(request):
     })
     
 # ============== Authentication Views ==============
-from django.contrib.auth import logout
-from django.shortcuts import redirect
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, SetPasswordForm
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.mail import send_mail
+from django.shortcuts import render, redirect
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.conf import settings
+from django.db.models.query_utils import Q
+
+def custom_login(request):
+    # If user is already authenticated, redirect to POS
+    if request.user.is_authenticated:
+        return redirect('pos')
+    
+    error = None
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                # Redirect to the next page if provided, otherwise to POS
+                next_page = request.GET.get('next', 'pos')
+                return redirect(next_page)
+        else:
+            # Form is invalid, show error
+            error = 'Invalid username or password. Please try again.'
+    
+    return render(request, 'pos/login.html', {'error': error})
 
 def custom_logout(request):
     logout(request)
-    return redirect('login')
+    return redirect('custom_login')
+
+@login_required
+def password_change(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Update session to prevent logout
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password has been changed successfully!')
+            return redirect('pos')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    
+    return render(request, 'pos/password_change.html', {'form': form})
+
+def password_reset_request(request):
+    if request.method == 'POST':
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            associated_users = User.objects.filter(Q(email=email))
+            if associated_users.exists():
+                for user in associated_users:
+                    subject = "Password Reset Request - POS System"
+                    email_template_name = "pos/password_reset_email.html"
+                    context = {
+                        'email': user.email,
+                        'domain': request.get_host(),
+                        'site_name': 'POS System',
+                        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                        'user': user,
+                        'token': default_token_generator.make_token(user),
+                        'protocol': 'https' if request.is_secure() else 'http',
+                    }
+                    email_content = render_to_string(email_template_name, context)
+                    
+                    try:
+                        send_mail(
+                            subject,
+                            email_content,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [user.email],
+                            fail_silently=False,
+                            html_message=email_content
+                        )
+                    except Exception as e:
+                        messages.error(request, f'Error sending email: {str(e)}')
+                        return redirect('password_reset_request')
+                
+                messages.success(request, 'Password reset link has been sent to your email.')
+                return redirect('custom_login')
+            else:
+                messages.error(request, 'No account found with that email address.')
+    else:
+        form = PasswordResetForm()
+    
+    return render(request, 'pos/password_reset.html', {'form': form})
+
+def password_reset_confirm(request, uidb64=None, token=None):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            form = SetPasswordForm(user, request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Your password has been reset successfully. You can now login with your new password.')
+                return redirect('custom_login')
+            else:
+                messages.error(request, 'Please correct the error below.')
+        else:
+            form = SetPasswordForm(user)
+        
+        return render(request, 'pos/password_reset_confirm.html', {'form': form})
+    else:
+        messages.error(request, 'The password reset link is invalid or has expired.')
+        return redirect('password_reset_request')
+    
+
 
 # ============== Reports Dashboard ==============
 @login_required
@@ -4650,3 +4771,7 @@ def opening_closing_stock_report(request):
         'total_value_change': total_closing_value - total_opening_value
     }
     return render(request, 'pos/opening_closing_stock.html', context)
+
+
+
+
