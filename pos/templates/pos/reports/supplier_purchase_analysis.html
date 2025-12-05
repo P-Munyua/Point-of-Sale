@@ -1,0 +1,333 @@
+{% extends 'pos/reports/base_report.html' %}
+
+
+{% load static humanize custom_filters %}
+{% block title %}Supplier Purchase Analysis{% endblock %}
+
+{% block content %}
+{% with report_title="Supplier Purchase Analysis" report_icon="fa-industry" report_color="deep-purple" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+{% block summary_cards %}
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-deep-purple-100 p-3 rounded-lg">
+                <i class="fas fa-industry text-deep-purple-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Suppliers</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ summary.total_suppliers|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-blue-100 p-3 rounded-lg">
+                <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Purchases</p>
+                <p class="text-2xl font-semibold text-gray-900">Ksh {{ summary.total_purchases|default:0|intcomma }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-green-100 p-3 rounded-lg">
+                <i class="fas fa-money-check text-green-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Payments</p>
+                <p class="text-2xl font-semibold text-gray-900">Ksh {{ summary.total_payments|default:0|intcomma }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-red-100 p-3 rounded-lg">
+                <i class="fas fa-balance-scale text-red-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Balance Due</p>
+                <p class="text-2xl font-semibold text-gray-900">Ksh {{ summary.total_balance|default:0|intcomma }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Active Suppliers</p>
+                <p class="text-2xl font-semibold text-green-600">{{ summary.active_suppliers|default:0 }}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm font-medium text-gray-500">Payment Ratio</p>
+                <p class="text-2xl font-semibold text-blue-600">{{ summary.avg_payment_ratio|default:0|floatformat:1 }}%</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-center">
+            <p class="text-sm font-medium text-gray-500">Avg Purchase/Supplier</p>
+            <p class="text-2xl font-semibold text-purple-600">
+                {% if summary.total_suppliers > 0 %}
+                Ksh {{ summary.total_purchases|default:0|divide:summary.total_suppliers|floatformat:0|intcomma }}
+                {% else %}0{% endif %}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">Average purchases per supplier</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block filters %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Filter Analysis</h3>
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" 
+                           value="{{ start_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-deep-purple-500 focus:border-deep-purple-500">
+                </div>
+                
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" name="end_date" id="end_date" 
+                           value="{{ end_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-deep-purple-500 focus:border-deep-purple-500">
+                </div>
+                
+                <div class="flex items-end">
+                    <button type="submit" 
+                            class="w-full bg-deep-purple-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-deep-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-deep-purple-500">
+                        <i class="fas fa-filter mr-2"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- Supplier Analysis Table -->
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg font-medium text-gray-900">Supplier Performance Analysis</h3>
+        <p class="mt-1 text-sm text-gray-500">Sorted by total purchase value</p>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Supplier
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Purchases
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Purchases
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Items
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Products
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Payments
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Balance Due
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Payment Ratio
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last Purchase
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for supplier in supplier_analysis %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-medium text-gray-900">{{ supplier.supplier__name }}</div>
+                        <div class="text-sm text-gray-500">Balance: Ksh {{ supplier.supplier__balance|default:0|floatformat:2 }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ supplier.supplier__phone|default:"-" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        Ksh {{ supplier.total_purchases|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ supplier.purchase_count }}
+                        <div class="text-xs text-gray-400">
+                            Ksh {{ supplier.avg_purchase_value|default:0|floatformat:0 }} avg
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ supplier.total_items|default:0 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ supplier.product_count }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                        Ksh {{ supplier.total_payments|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {% if supplier.balance_due > 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                        Ksh {{ supplier.balance_due|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <span class="text-sm font-medium text-gray-900 mr-2">
+                                {{ supplier.payment_ratio|default:0|floatformat:1 }}%
+                            </span>
+                            <div class="w-16">
+                                <div class="progress-bar">
+                                    <div class="progress-fill bg-{% if supplier.payment_ratio > 80 %}green{% elif supplier.payment_ratio > 50 %}yellow{% else %}red{% endif %}-500" 
+                                         style="width: {{ supplier.payment_ratio|default:0 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ supplier.last_purchase|date:"M d, Y"|default:"-" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="px-6 py-4 text-center text-gray-500">
+                        No supplier purchase data found for the selected period.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if supplier_analysis %}
+            <tfoot class="bg-gray-50">
+                <tr>
+                    <td colspan="2" class="px-6 py-3 text-right text-sm font-medium text-gray-900">
+                        Totals/Averages:
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                        Ksh {{ summary.total_purchases|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm text-gray-500">
+                        {{ summary.active_suppliers|default:0 }} active
+                    </td>
+                    <td class="px-6 py-3 text-sm text-gray-500">
+                        -
+                    </td>
+                    <td class="px-6 py-3 text-sm text-gray-500">
+                        -
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-green-600">
+                        Ksh {{ summary.total_payments|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-red-600">
+                        Ksh {{ summary.total_balance|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                        {{ summary.avg_payment_ratio|default:0|floatformat:1 }}% avg
+                    </td>
+                    <td class="px-6 py-3 text-sm text-gray-500">
+                        -
+                    </td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+    
+    {% if supplier_analysis %}
+    <div class="px-4 py-3 bg-gray-50 sm:px-6">
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                Showing <span class="font-medium">{{ supplier_analysis|length }}</span> suppliers
+            </div>
+            <div class="text-sm text-gray-500">
+                {{ summary.active_suppliers }} active suppliers ({{ summary.active_suppliers|divide:summary.total_suppliers|multiply:100|floatformat:1 }}%)
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Payment Status Summary -->
+<div class="mt-6 bg-white shadow rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Payment Status Overview</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="text-center p-4 border rounded-lg">
+                <div class="text-2xl font-semibold text-green-600">
+                    {{ good_suppliers|default:0 }}
+                </div>
+                <p class="text-sm font-medium text-gray-700">Good Payers</p>
+                <p class="text-xs text-gray-500">Payment ratio > 80%</p>
+            </div>
+            
+            <div class="text-center p-4 border rounded-lg">
+                <div class="text-2xl font-semibold text-yellow-600">
+                    {{ average_suppliers|default:0 }}
+                </div>
+                <p class="text-sm font-medium text-gray-700">Average Payers</p>
+                <p class="text-xs text-gray-500">Payment ratio 50-80%</p>
+            </div>
+            
+            <div class="text-center p-4 border rounded-lg">
+                <div class="text-2xl font-semibold text-red-600">
+                    {{ poor_suppliers|default:0 }}
+                </div>
+                <p class="text-sm font-medium text-gray-700">Poor Payers</p>
+                <p class="text-xs text-gray-500">Payment ratio < 50%</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+$(document).ready(function() {
+    // Calculate payment status categories
+    var goodSuppliers = 0;
+    var averageSuppliers = 0;
+    var poorSuppliers = 0;
+    
+    {% for supplier in supplier_analysis %}
+    var ratio = {{ supplier.payment_ratio|default:0 }};
+    if (ratio > 80) {
+        goodSuppliers++;
+    } else if (ratio > 50) {
+        averageSuppliers++;
+    } else {
+        poorSuppliers++;
+    }
+    {% endfor %}
+    
+    // Update the summary numbers
+    $('.good-payers').text(goodSuppliers);
+    $('.average-payers').text(averageSuppliers);
+    $('.poor-payers').text(poorSuppliers);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,510 @@
+{% extends 'pos/reports/base_report.html' %}
+{% load static humanize custom_filters %}
+
+{% block title %}Customer Sales Analysis{% endblock %}
+
+{% block content %}
+{% with report_title="Customer Sales Analysis" report_icon="fa-users" report_color="blue" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+{% block filters %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <div class="flex items-center mb-4">
+            <i class="fas fa-filter text-blue-600 mr-2"></i>
+            <h3 class="text-lg font-medium text-gray-900">Filter Analysis</h3>
+        </div>
+        
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Start Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" 
+                           value="{{ start_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <!-- End Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <input type="date" name="end_date" id="end_date" 
+                           value="{{ end_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <!-- Apply Button -->
+                <div class="flex items-end">
+                    <button type="submit" 
+                            class="w-full bg-blue-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-filter mr-2"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- Report Header Info -->
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-calendar-alt text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h4 class="text-sm font-medium text-blue-800">Report Period</h4>
+                <div class="mt-1">
+                    <span class="text-lg font-semibold text-gray-900">{{ start_date }}</span>
+                    <span class="text-gray-600 mx-2">to</span>
+                    <span class="text-lg font-semibold text-gray-900">{{ end_date }}</span>
+                </div>
+            </div>
+        </div>
+        <div>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                <i class="fas fa-calendar-check mr-1"></i>
+                Generated: {{ today|date:"M d, Y" }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <!-- Total Customers -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-users text-blue-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Customers
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        {{ summary.total_customers|default:0 }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Sales -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-shopping-cart text-green-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Sales
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ summary.total_sales|default:0|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Profit -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <i class="fas fa-money-bill-wave text-indigo-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Profit
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ summary.total_profit|default:0|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Margin -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                        <i class="fas fa-percent text-yellow-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Avg Margin
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        {{ summary.avg_profit_margin|default:0|floatformat:1 }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <!-- Active Customers -->
+    <div class="bg-gradient-to-r from-blue-50 to-white shadow rounded-lg overflow-hidden">
+        <div class="p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-14 w-14 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-user-check text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5">
+                    <h3 class="text-lg font-medium text-blue-900">Active Customers</h3>
+                    <div class="mt-2 text-3xl font-bold text-blue-700">
+                        {{ summary.active_customers|default:0 }}
+                    </div>
+                    <p class="mt-1 text-sm text-blue-600">Made at least 1 purchase</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Repeat Customers -->
+    <div class="bg-gradient-to-r from-green-50 to-white shadow rounded-lg overflow-hidden">
+        <div class="p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-14 w-14 rounded-full bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-redo-alt text-green-600 text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5">
+                    <h3 class="text-lg font-medium text-green-900">Repeat Customers</h3>
+                    <div class="mt-2 text-3xl font-bold text-green-700">
+                        {{ summary.repeat_customers|default:0 }}
+                    </div>
+                    <p class="mt-1 text-sm text-green-600">Made 2+ purchases</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Sales per Customer -->
+    <div class="bg-gradient-to-r from-indigo-50 to-white shadow rounded-lg overflow-hidden">
+        <div class="p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-14 w-14 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <i class="fas fa-chart-bar text-indigo-600 text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5">
+                    <h3 class="text-lg font-medium text-indigo-900">Avg Sales/Customer</h3>
+                    <div class="mt-2 text-3xl font-bold text-indigo-700">
+                        {% if summary.total_customers > 0 %}
+                        KSh {{ summary.avg_sales_per_customer|default:0|floatformat:0|intcomma }}
+                        {% else %}
+                        KSh 0
+                        {% endif %}
+                    </div>
+                    <p class="mt-1 text-sm text-indigo-600">Average sales per customer</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Analysis Table -->
+<div class="bg-white shadow rounded-lg">
+    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900">
+                    <i class="fas fa-table text-blue-600 mr-2"></i>Customer Profitability Analysis
+                </h3>
+                <p class="mt-1 text-sm text-gray-500">Detailed analysis of customer purchasing behavior</p>
+            </div>
+            <div class="flex space-x-3">
+                <button type="button" onclick="window.print()" 
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-print mr-2"></i> Print
+                </button>
+                <a href="?export=excel" 
+                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-file-excel mr-2"></i> Export Excel
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    {% if customer_analysis %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Sales
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Purchases
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Items
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Cost
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Profit
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Profit Margin
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last Purchase
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for customer in customer_analysis %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-gray-900">{{ customer.customer__name }}</div>
+                        <div class="text-xs text-gray-500">
+                            Balance: KSh {{ customer.customer__balance|default:0|floatformat:2|intcomma }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ customer.customer__phone|default:"-" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                        KSh {{ customer.total_sales|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex flex-col items-center">
+                            <span class="text-sm font-medium text-gray-900">{{ customer.sale_count }}</span>
+                            {% if customer.avg_sale_value %}
+                            <span class="text-xs text-gray-500">
+                                KSh {{ customer.avg_sale_value|floatformat:0|intcomma }} avg
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            {{ customer.total_items|default:0 }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        KSh {{ customer.total_cost|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-bold {% if customer.total_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                            KSh {{ customer.total_profit|default:0|floatformat:2|intcomma }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                <div class="h-2 rounded-full 
+                                    {% if customer.profit_margin > 30 %}bg-green-500
+                                    {% elif customer.profit_margin > 15 %}bg-yellow-500
+                                    {% else %}bg-red-500{% endif %}" 
+                                    style="width: {% if customer.profit_margin > 100 %}100{% else %}{{ customer.profit_margin|floatformat:0 }}{% endif %}%">
+                                </div>
+                            </div>
+                            <span class="ml-3 text-sm font-medium text-gray-700">
+                                {{ customer.profit_margin|floatformat:1 }}%
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {% if customer.last_purchase %}
+                        {{ customer.last_purchase|date:"M d, Y" }}
+                        {% else %}
+                        <span class="text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="border-t border-gray-200">
+        <div class="px-4 py-4 sm:px-6">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Showing <span class="font-medium">{{ customer_analysis|length }}</span> customers
+                </div>
+                <div class="text-sm text-gray-500">
+                    Generated on {{ today|date:"F d, Y H:i" }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="px-6 py-12 text-center">
+        <div class="text-gray-400">
+            <i class="fas fa-users fa-4x mb-4"></i>
+            <p class="mt-2 text-lg font-medium text-gray-900">No customer sales data found</p>
+            <p class="text-gray-500">Try adjusting your date range</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Performance Segments -->
+{% if customer_analysis %}
+<div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Top Customers by Sales -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">
+                <i class="fas fa-trophy text-yellow-600 mr-2"></i>Top Customers by Sales
+            </h3>
+        </div>
+        <div class="p-6">
+            <ul class="divide-y divide-gray-200">
+                {% for customer in customer_analysis|slice:":5" %}
+                <li class="py-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ customer.customer__name|truncatechars:20 }}</p>
+                            <p class="text-xs text-gray-500">{{ customer.sale_count }} purchases</p>
+                        </div>
+                        <div class="text-sm font-bold text-gray-900">
+                            KSh {{ customer.total_sales|floatformat:0|intcomma }}
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Top Customers by Profit -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">
+                <i class="fas fa-money-bill-wave text-green-600 mr-2"></i>Top Customers by Profit
+            </h3>
+        </div>
+        <div class="p-6">
+            <ul class="divide-y divide-gray-200">
+                {% for customer in customer_analysis|dictsortreversed:"total_profit"|slice:":5" %}
+                <li class="py-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ customer.customer__name|truncatechars:20 }}</p>
+                            <p class="text-xs text-gray-500">{{ customer.sale_count }} purchases</p>
+                        </div>
+                        <div class="text-sm font-bold {% if customer.total_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                            KSh {{ customer.total_profit|floatformat:0|intcomma }}
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Customer Activity -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">
+                <i class="fas fa-chart-line text-blue-600 mr-2"></i>Customer Activity
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-700">Most Active</p>
+                    <p class="mt-1 text-lg font-bold text-gray-900">
+                        {% with top=customer_analysis|dictsortreversed:"sale_count"|first %}
+                        {{ top.customer__name|truncatechars:20 }}
+                        {% endwith %}
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        {% with top=customer_analysis|dictsortreversed:"sale_count"|first %}
+                        {{ top.sale_count }} purchases
+                        {% endwith %}
+                    </p>
+                </div>
+                <div class="pt-4 border-t border-gray-200">
+                    <p class="text-sm font-medium text-gray-700">Highest Average Purchase</p>
+                    <p class="mt-1 text-lg font-bold text-gray-900">
+                        {% with top=customer_analysis|dictsortreversed:"avg_sale_value"|first %}
+                        {{ top.customer__name|truncatechars:20 }}
+                        {% endwith %}
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        {% with top=customer_analysis|dictsortreversed:"avg_sale_value"|first %}
+                        KSh {{ top.avg_sale_value|floatformat:0|intcomma }} avg
+                        {% endwith %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date range if not set
+    const today = new Date().toISOString().split('T')[0];
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (!startDateInput.value) {
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        startDateInput.value = ninetyDaysAgo.toISOString().split('T')[0];
+    }
+    
+    if (!endDateInput.value) {
+        endDateInput.value = today;
+    }
+    
+    // Initialize DataTable if jQuery is available
+    if (typeof jQuery !== 'undefined' && $.fn.DataTable) {
+        $('table').DataTable({
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            order: [[2, 'desc']], // Sort by total sales descending
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search customers...",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)"
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

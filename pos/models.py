@@ -33,12 +33,16 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+from django.db import models
+from django.core.validators import MinValueValidator
+
 class Product(models.Model):
     name = models.CharField(max_length=100)
     barcode = models.CharField(max_length=50, unique=True, blank=True, null=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
     selling_price = models.DecimalField(max_digits=10, decimal_places=2)
+    least_selling_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     wholesale_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     wholesale_min_quantity = models.IntegerField(default=0, blank=True, null=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -48,12 +52,51 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
     
     def __str__(self):
-        return f"{self.name} - {self.selling_price}"
+        return f"{self.name} - KES {self.selling_price}"
     
     def save(self, *args, **kwargs):
         if not self.barcode:
             self.barcode = f"PRD{self.id:08d}" if self.id else None
+        
+        # Ensure least_selling_price is not higher than selling_price
+        if self.least_selling_price > self.selling_price:
+            self.least_selling_price = self.selling_price
+            
+        # Ensure least_selling_price is not lower than purchase_price
+        if self.least_selling_price < self.purchase_price:
+            self.least_selling_price = self.purchase_price
+            
+        # Ensure wholesale_price is not lower than purchase_price
+        if self.wholesale_price < self.purchase_price:
+            self.wholesale_price = self.purchase_price
+            
+        # Ensure wholesale_price is not higher than selling_price
+        if self.wholesale_price > self.selling_price:
+            self.wholesale_price = self.selling_price
+            
         super().save(*args, **kwargs)
+    
+    @property
+    def profit_margin(self):
+        """Calculate profit margin percentage"""
+        if self.purchase_price > 0:
+            return ((self.selling_price - self.purchase_price) / self.purchase_price) * 100
+        return 0
+    
+    @property
+    def is_low_stock(self):
+        """Check if product is below reorder level"""
+        return self.quantity <= self.reorder_level
+    
+    @property
+    def is_below_minimum_price(self):
+        """Check if selling price is below least selling price"""
+        return self.selling_price < self.least_selling_price
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Product'
+        verbose_name_plural = 'Products'
 
 class Batch(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='batches')
@@ -139,6 +182,26 @@ class SaleItem(models.Model):
     
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
+
+    @property
+    def profit(self):
+        """Calculate profit for this sale item"""
+        try:
+            cost = self.product.purchase_price * self.quantity
+            return self.total - cost
+        except:
+            return Decimal('0.00')
+    
+    @property
+    def profit_margin(self):
+        """Calculate profit margin percentage"""
+        try:
+            if self.total > 0:
+                cost = self.product.purchase_price * self.quantity
+                return ((self.total - cost) / self.total) * 100
+        except:
+            return Decimal('0.00')
+        return Decimal('0.00')
 
 from django.db import models
 from django.contrib.auth.models import User

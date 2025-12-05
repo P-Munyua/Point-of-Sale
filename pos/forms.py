@@ -1,6 +1,9 @@
 from django import forms
 from .models import *
 from django.core.exceptions import ValidationError
+from django import forms
+from .models import Product
+from django.core.exceptions import ValidationError
 
 class ProductForm(forms.ModelForm):
     class Meta:
@@ -12,14 +15,47 @@ class ProductForm(forms.ModelForm):
             'category': forms.Select(attrs={'class': 'form-control'}),
             'purchase_price': forms.NumberInput(attrs={'class': 'form-control'}),
             'selling_price': forms.NumberInput(attrs={'class': 'form-control'}),
+            'least_selling_price': forms.NumberInput(attrs={'class': 'form-control'}),
             'wholesale_price': forms.NumberInput(attrs={'class': 'form-control'}),
             'wholesale_min_quantity': forms.NumberInput(attrs={'class': 'form-control'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': 'any'}),
             'reorder_level': forms.NumberInput(attrs={'class': 'form-control'}),
             'supplier': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        purchase_price = cleaned_data.get('purchase_price')
+        selling_price = cleaned_data.get('selling_price')
+        least_selling_price = cleaned_data.get('least_selling_price')
+        wholesale_price = cleaned_data.get('wholesale_price')
+        
+        # Validation rules
+        errors = {}
+        
+        if purchase_price and selling_price:
+            if selling_price < purchase_price:
+                errors['selling_price'] = "Selling price cannot be less than purchase price."
+            
+            if least_selling_price:
+                if least_selling_price > selling_price:
+                    errors['least_selling_price'] = "Least selling price cannot be higher than retail price."
+                if least_selling_price < purchase_price:
+                    errors['least_selling_price'] = "Least selling price cannot be less than purchase price."
+            
+            if wholesale_price:
+                if wholesale_price < purchase_price:
+                    errors['wholesale_price'] = "Wholesale price cannot be less than purchase price."
+                if wholesale_price > selling_price:
+                    errors['wholesale_price'] = "Wholesale price cannot be higher than retail price."
+        
+        if errors:
+            raise ValidationError(errors)
+        
+        return cleaned_data
 
 
 from django import forms
@@ -105,6 +141,74 @@ class ExpenseForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'amount': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+
+# Add this to your existing forms.py
+from django.forms import formset_factory, modelformset_factory
+
+# In forms.py - Update the ExpenseItemForm and ExpenseFormSet
+
+class ExpenseItemForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = ['date', 'category', 'description', 'amount']
+        widgets = {
+            'date': forms.DateInput(attrs={
+                'class': 'form-control', 
+                'type': 'date',
+                'required': False  # Allow empty for row template
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-control',
+                'required': False  # Allow empty for row template
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 2, 
+                'placeholder': 'Description',
+                'required': False
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control amount-input', 
+                'placeholder': '0.00', 
+                'step': '0.01',
+                'required': False
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set today's date as default if not provided
+        if not self.initial.get('date'):
+            self.fields['date'].initial = timezone.now().date()
+        
+        # Ensure category choices match the model
+        self.fields['category'].choices = [('', 'Select Category')] + list(Expense.CATEGORIES)
+
+# Use a regular formset with extra=0 and handle validation manually
+ExpenseFormSet = forms.formset_factory(
+    ExpenseItemForm,
+    extra=0,  # Start with no rows, we'll add them dynamically
+    can_delete=True
+)
+
+# Create formset factory
+ExpenseFormSet = modelformset_factory(
+    Expense, 
+    form=ExpenseItemForm,
+    extra=3,  # Number of empty forms to show
+    can_delete=True
+)
+
+class BulkExpenseForm(forms.Form):
+    expense_date = forms.DateField(
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        initial=timezone.now().date
+    )
+    total_amount = forms.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'readonly': True})
+    )
 
 class BatchForm(forms.ModelForm):
     class Meta:

@@ -28,6 +28,8 @@ import pandas as pd
 from django.db.models import Case, When, Value, Sum, Count, Max, Min, Avg, Q, F
 from django.db.models.functions import ExtractHour, TruncHour, TruncMonth, TruncDate
 from django.db.models import DecimalField
+from django.contrib.auth.models import User  # Add this import
+
 
 
 from .models import (
@@ -39,7 +41,7 @@ from .models import (
 from .forms import (
     ProductForm, CustomerForm, SupplierForm, PurchaseForm, 
     ExpenseForm, BatchForm, DiscountForm, CompanyPriceForm,
-    BulkUploadForm, PurchaseReturnForm,CompanyForm
+    BulkUploadForm, PurchaseReturnForm,CompanyForm, SupplierPaymentForm, ExpenseFormSet, BulkExpenseForm
 )
 
 # ============== Dashboard Views ==============
@@ -399,89 +401,75 @@ def load_pending_sale(request, pk):
 @login_required
 @login_required
 @require_POST
+@login_required
+@require_POST
 def complete_pending_sale(request, pk):
+    """Convert a pending purchase to a completed purchase"""
     pending_sale = get_object_or_404(PendingSale, pk=pk, user=request.user)
     
     try:
         with transaction.atomic():
-            # Create the completed sale
-            sale = Sale(
-                customer_id=pending_sale.data.get('customer_id'),
+            # Get data from pending sale
+            pending_data = pending_sale.data
+            
+            # Create the sale
+            sale = Sale.objects.create(
+                customer_id=pending_data.get('customer_id'),
                 user=request.user,
-                sale_type=pending_sale.data.get('sale_type', 'retail'),
-                subtotal=Decimal(pending_sale.data['subtotal']),
-                discount_amount=Decimal(pending_sale.data.get('discount_amount', 0)),
-                discount_percent=Decimal(pending_sale.data.get('discount_percent', 0)),
-                total=Decimal(pending_sale.data['total']),
-                payment_method=pending_sale.data['payment_method'],
-                amount_paid=Decimal(pending_sale.data['amount_paid']),
-                balance=max(Decimal(pending_sale.data['total']) - Decimal(pending_sale.data['amount_paid']), Decimal(0)),
-                is_credit=pending_sale.data.get('is_credit', False),
+                sale_type=pending_data.get('sale_type', 'retail'),
+                subtotal=Decimal(pending_data.get('subtotal', '0.00')),
+                discount_amount=Decimal(pending_data.get('discount_amount', '0.00')),
+                discount_percent=Decimal(pending_data.get('discount_percent', '0.00')),
+                total=Decimal(pending_data.get('total', '0.00')),
+                payment_method=pending_data.get('payment_method', 'cash'),
+                amount_paid=Decimal(pending_data.get('amount_paid', '0.00')),
+                balance=Decimal(pending_data.get('balance', '0.00')),
+                is_credit=pending_data.get('is_credit', False),
                 is_completed=True
             )
-
-            # Handle multiple payment methods
-            payment_details = pending_sale.data.get('payment_details', {})
-            sale.mpesa_amount = Decimal(payment_details.get('mpesa', 0))
-            sale.cash_amount = Decimal(payment_details.get('cash', 0))
-            sale.card_amount = Decimal(payment_details.get('card', 0))
-            sale.cheque_amount = Decimal(payment_details.get('cheque', 0))
-            sale.mpesa_code = payment_details.get('mpesa_code', '')
-            sale.cheque_number = payment_details.get('cheque_number', '')
             
-            sale.save()
+            # Add items to the sale and update inventory
+            for item_data in pending_data.get('items', []):
+                try:
+                    product = Product.objects.get(id=item_data['id'])
+                    quantity = Decimal(str(item_data['quantity']))
+                    price = Decimal(str(item_data['price']))
+                    
+                    # Create sale item
+                    SaleItem.objects.create(
+                        sale=sale,
+                        product=product,
+                        quantity=quantity,
+                        price=price,
+                        discount_amount=Decimal(item_data.get('discount_amount', '0.00')),
+                        discount_percent=Decimal(item_data.get('discount_percent', '0.00')),
+                        total=Decimal(item_data['total'])
+                    )
+                    
+                    # Update product stock
+                    product.quantity -= quantity
+                    product.save()
+                    
+                except Product.DoesNotExist:
+                    # If product doesn't exist, skip it but continue with others
+                    continue
             
-            # Create sale items and update inventory
-            for item in pending_sale.data['items']:
-                product = Product.objects.get(id=item['id'])
-                batch = None
-                
-                if item.get('batch_id'):
-                    batch = Batch.objects.get(id=item['batch_id'])
-                
-                SaleItem.objects.create(
-                    sale=sale,
-                    product=product,
-                    batch=batch,
-                    quantity=item['quantity'],
-                    price=Decimal(item['price']),
-                    discount_amount=Decimal(item.get('discount_amount', 0)),
-                    discount_percent=Decimal(item.get('discount_percent', 0)),
-                    total=Decimal(item['total'])
-                )
-                
-                # Update product quantity
-                product.quantity -= item['quantity']
-                product.save()
-                
-                # Update batch quantity if batch was specified
-                if batch:
-                    batch.quantity -= item['quantity']
-                    batch.save()
-            
-            # Update customer balance if credit sale
-            if sale.is_credit and sale.customer:
-                sale.customer.balance += sale.balance
-                sale.customer.save()
-            
-            # Delete the pending sale AFTER successful completion
+            # Delete pending sale AFTER successful completion
             pending_sale.delete()
             
             return JsonResponse({
                 'success': True,
-                'message': 'Sale completed successfully',
+                'message': 'Sale completed successfully!',
                 'sale_id': sale.id,
-                'pending_sale_deleted': True  # Explicit confirmation
+                'pending_sale_deleted': True
             })
-
+    
     except Exception as e:
-        logger.error(f"Error completing pending sale {pk}: {str(e)}")
         return JsonResponse({
             'success': False,
-            'message': str(e),
+            'message': f'Error completing sale: {str(e)}',
             'pending_sale_deleted': False
         }, status=500)
-
 
 # pos/views.py
 from django.shortcuts import render, get_object_or_404
@@ -767,7 +755,6 @@ def edit_sale(request, pk):
     }
     return render(request, 'pos/edit_sale.html', context)
 
-
 # views.py
 from django.shortcuts import render, get_object_or_404
 
@@ -877,10 +864,50 @@ def add_product(request):
                 next_id = last_product.id + 1 if last_product else 1
                 product.barcode = f"PRD{next_id:08d}"
             
+            # Ensure least_selling_price is valid
+            if product.least_selling_price > product.selling_price:
+                messages.error(request, "Least selling price cannot be higher than retail price.")
+                suppliers = Supplier.objects.all()
+                categories = Category.objects.all()
+                context = {
+                    'form': form,
+                    'suppliers': suppliers,
+                    'categories': categories
+                }
+                return render(request, 'pos/add_product.html', context)
+            
+            if product.least_selling_price < product.purchase_price:
+                messages.error(request, "Least selling price cannot be less than purchase price.")
+                suppliers = Supplier.objects.all()
+                categories = Category.objects.all()
+                context = {
+                    'form': form,
+                    'suppliers': suppliers,
+                    'categories': categories
+                }
+                return render(request, 'pos/add_product.html', context)
+            
+            # Ensure wholesale price is valid
+            if product.wholesale_price < product.purchase_price:
+                messages.error(request, "Wholesale price cannot be less than purchase price.")
+                suppliers = Supplier.objects.all()
+                categories = Category.objects.all()
+                context = {
+                    'form': form,
+                    'suppliers': suppliers,
+                    'categories': categories
+                }
+                return render(request, 'pos/add_product.html', context)
+            
             product.save()
+            messages.success(request, f"Product '{product.name}' added successfully!")
             return redirect('product_list')
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = ProductForm()
+        # Set default values for prices if needed
+        form.fields['least_selling_price'].initial = 0
     
     suppliers = Supplier.objects.all()
     categories = Category.objects.all()
@@ -899,8 +926,51 @@ def edit_product(request, pk):
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
+            updated_product = form.save(commit=False)
+            
+            # Validate least_selling_price
+            if updated_product.least_selling_price > updated_product.selling_price:
+                messages.error(request, "Least selling price cannot be higher than retail price.")
+                suppliers = Supplier.objects.all()
+                categories = Category.objects.all()
+                context = {
+                    'form': form,
+                    'product': product,
+                    'suppliers': suppliers,
+                    'categories': categories
+                }
+                return render(request, 'pos/edit_product.html', context)
+            
+            if updated_product.least_selling_price < updated_product.purchase_price:
+                messages.error(request, "Least selling price cannot be less than purchase price.")
+                suppliers = Supplier.objects.all()
+                categories = Category.objects.all()
+                context = {
+                    'form': form,
+                    'product': product,
+                    'suppliers': suppliers,
+                    'categories': categories
+                }
+                return render(request, 'pos/edit_product.html', context)
+            
+            # Validate wholesale price
+            if updated_product.wholesale_price < updated_product.purchase_price:
+                messages.error(request, "Wholesale price cannot be less than purchase price.")
+                suppliers = Supplier.objects.all()
+                categories = Category.objects.all()
+                context = {
+                    'form': form,
+                    'product': product,
+                    'suppliers': suppliers,
+                    'categories': categories
+                }
+                return render(request, 'pos/edit_product.html', context)
+            
             form.save()
+            messages.success(request, f"Product '{updated_product.name}' updated successfully!")
             return redirect('product_list')
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = ProductForm(instance=product)
     
@@ -950,7 +1020,7 @@ def inventory_report(request):
     # Debug: print received parameters
     print(f"GET parameters: {dict(request.GET)}")
     
-    # Get all products with calculated stock value using PURCHASE PRICE (cost)
+    # Start with base queryset - FIXED: Use the annotated queryset
     products = Product.objects.annotate(
         stock_value=ExpressionWrapper(
             F('quantity') * F('purchase_price'),
@@ -960,7 +1030,7 @@ def inventory_report(request):
     
     print(f"Initial products count: {products.count()}")
     
-    # Apply filters with validation
+    # Apply filters with proper validation
     category_id = request.GET.get('category')
     if category_id and category_id.isdigit():
         products = products.filter(category_id=int(category_id))
@@ -971,23 +1041,24 @@ def inventory_report(request):
         products = products.filter(supplier_id=int(supplier_id))
         print(f"After supplier filter ({supplier_id}): {products.count()}")
     
-    # Stock status filter
-    stock_filter = request.GET.get('stock')
-    if stock_filter == 'low':
-        products = products.filter(quantity__lte=F('reorder_level'), quantity__gt=0)
-        print(f"After low stock filter: {products.count()}")
-    elif stock_filter == 'out':
-        products = products.filter(quantity__lte=0)
-        print(f"After out of stock filter: {products.count()}")
-    elif stock_filter == 'active':
-        products = products.filter(is_active=True)
-        print(f"After active filter: {products.count()}")
-    elif stock_filter == 'inactive':
-        products = products.filter(is_active=False)
-        print(f"After inactive filter: {products.count()}")
+    # Stock status filter - FIXED: Handle all cases properly
+    stock_filter = request.GET.get('stock', '')
+    if stock_filter:
+        if stock_filter == 'low':
+            products = products.filter(quantity__gt=0, quantity__lte=F('reorder_level'))
+            print(f"After low stock filter: {products.count()}")
+        elif stock_filter == 'out':
+            products = products.filter(quantity__lte=0)
+            print(f"After out of stock filter: {products.count()}")
+        elif stock_filter == 'active':
+            products = products.filter(is_active=True)
+            print(f"After active filter: {products.count()}")
+        elif stock_filter == 'inactive':
+            products = products.filter(is_active=False)
+            print(f"After inactive filter: {products.count()}")
     
-    # Search functionality
-    search_query = request.GET.get('search')
+    # Search functionality - FIXED: Handle search properly
+    search_query = request.GET.get('search', '').strip()
     if search_query:
         products = products.filter(
             Q(name__icontains=search_query) |
@@ -997,10 +1068,11 @@ def inventory_report(request):
     
     print(f"Final products count: {products.count()}")
     
-    # Calculate summary statistics
+    # Calculate summary statistics using the filtered queryset
     total_products = products.count()
     total_stock_value = products.aggregate(total=Sum('stock_value'))['total'] or Decimal('0.00')
     
+    # Calculate counts for the filtered results
     in_stock_count = products.filter(quantity__gt=0).count()
     low_stock_count = products.filter(quantity__gt=0, quantity__lte=F('reorder_level')).count()
     out_of_stock_count = products.filter(quantity__lte=0).count()
@@ -1014,12 +1086,12 @@ def inventory_report(request):
     if export_format:
         return generate_inventory_export(export_format, products)
     
-    # Pagination
+    # Pagination - FIXED: Use the filtered queryset
     paginator = Paginator(products, 50)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Convert to string for template comparison
+    # Pass filter values to template for proper display
     context = {
         'products': page_obj,
         'categories': categories,
@@ -1029,8 +1101,8 @@ def inventory_report(request):
         'in_stock_count': in_stock_count,
         'low_stock_count': low_stock_count,
         'out_of_stock_count': out_of_stock_count,
-        'selected_category': str(category_id) if category_id else '',
-        'selected_supplier': str(supplier_id) if supplier_id else '',
+        'selected_category': category_id if category_id else '',
+        'selected_supplier': supplier_id if supplier_id else '',
         'stock_filter': stock_filter,
         'search_query': search_query,
     }
@@ -2964,42 +3036,809 @@ def supplier_payment_report(request):
     return render(request, 'pos/supplier_payment_report.html', context)
 
 
+# views.py - Add these imports
+from django.db.models import (
+    Sum, Count, Avg, Max, Min, F, Q, ExpressionWrapper, 
+    DecimalField, Value, Case, When, CharField, IntegerField
+)
+from django.db.models.functions import TruncDate, TruncMonth, TruncYear, Coalesce, Extract
+from datetime import datetime, timedelta
+import pandas as pd
+from io import BytesIO
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import base64
+
+# ============== REPORTS MODULE ==============
+
 @login_required
 def reports_dashboard(request):
-    # Quick stats for dashboard
-    today = timezone.now().date()
-    
-    # Today's sales
-    today_sales = Sale.objects.filter(
-        date__date=today,
-        is_completed=True
-    ).aggregate(total=Sum('total'))['total'] or 0
-    
-    # Today's expenses
-    today_expenses = Expense.objects.filter(
-        date__date=today
-    ).aggregate(total=Sum('amount'))['total'] or 0
-    
-    # Low stock items
-    low_stock_count = Product.objects.filter(
-        quantity__lte=F('reorder_level'),
-        is_active=True
-    ).count()
-    
-    # Outstanding credit
-    outstanding_credit = Sale.objects.filter(
-        is_credit=True,
-        balance__gt=0
-    ).aggregate(total=Sum('balance'))['total'] or 0
-    
+    """Main reports dashboard"""
     context = {
-        'today_sales': today_sales,
-        'today_expenses': today_expenses,
-        'low_stock_count': low_stock_count,
-        'outstanding_credit': outstanding_credit,
+        'today': timezone.now().date(),
+        'reports': [
+            {'name': 'Sales by Product', 'url': 'sales_by_product_report', 'icon': 'fa-chart-bar', 'color': 'blue'},
+            {'name': 'Purchase by Product', 'url': 'purchase_by_product_report', 'icon': 'fa-shopping-cart', 'color': 'green'},
+            {'name': 'Daily Sales Report', 'url': 'daily_sales_report', 'icon': 'fa-calendar-day', 'color': 'orange'},
+            {'name': 'Sales Report', 'url': 'sales_report', 'icon': 'fa-file-invoice-dollar', 'color': 'purple'},
+            {'name': 'Profit by Product', 'url': 'profit_by_product_report', 'icon': 'fa-money-bill-wave', 'color': 'teal'},
+            {'name': 'Profit Margin Report', 'url': 'profit_margin_report', 'icon': 'fa-percentage', 'color': 'red'},
+            {'name': 'Customer Payments', 'url': 'customer_payment_report', 'icon': 'fa-user-check', 'color': 'indigo'},
+            {'name': 'Supplier Payments', 'url': 'supplier_payment_report', 'icon': 'fa-truck', 'color': 'pink'},
+            {'name': 'Daily Opening Stock', 'url': 'daily_opening_stock_report', 'icon': 'fa-box-open', 'color': 'yellow'},
+            {'name': 'Inventory Valuation', 'url': 'stock_value_report', 'icon': 'fa-coins', 'color': 'cyan'},
+            {'name': 'Top Selling Products', 'url': 'top_selling_products_report', 'icon': 'fa-star', 'color': 'amber'},
+            {'name': 'Slow Moving Products', 'url': 'slow_moving_products_report', 'icon': 'fa-clock', 'color': 'gray'},
+            {'name': 'Customer Sales Analysis', 'url': 'customer_sales_analysis', 'icon': 'fa-users', 'color': 'lime'},
+            {'name': 'Supplier Purchase Analysis', 'url': 'supplier_purchase_analysis', 'icon': 'fa-industry', 'color': 'deep-purple'},
+        ]
     }
     return render(request, 'pos/reports_dashboard.html', context)
 
+# ============== SALES REPORTS ==============
+
+@login_required
+def sales_by_product_report(request):
+    """Sales analysis by product"""
+    # Date filtering
+    start_date = request.GET.get('start_date', (timezone.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', timezone.now().strftime('%Y-%m-%d'))
+    
+    # Get sales data
+    sales = Sale.objects.filter(
+        date__date__range=[start_date, end_date],
+        is_completed=True
+    )
+    
+    # Apply additional filters
+    category_id = request.GET.get('category')
+    if category_id:
+        sales = sales.filter(items__product__category_id=category_id)
+    
+    # Get sale items with product details
+    sale_items = SaleItem.objects.filter(
+        sale__in=sales
+    ).select_related('product', 'product__category')
+    
+    # Group by product
+    product_sales = sale_items.values(
+        'product__id',
+        'product__name',
+        'product__category__name',
+        'product__selling_price'
+    ).annotate(
+        total_quantity=Sum('quantity'),
+        total_sales=Sum('total'),
+        avg_price=Avg('price'),
+        sale_count=Count('sale', distinct=True),
+        total_cost=Sum(F('quantity') * F('product__purchase_price')),
+        total_profit=Sum(F('total') - (F('quantity') * F('product__purchase_price'))),
+        profit_margin=ExpressionWrapper(
+            Avg((F('total') - (F('quantity') * F('product__purchase_price'))) / F('total') * 100),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    ).order_by('-total_sales')
+    
+    # Calculate summary statistics
+    summary = product_sales.aggregate(
+        total_products=Count('product__id', distinct=True),
+        total_quantity=Sum('total_quantity'),
+        total_sales=Sum('total_sales'),
+        total_profit=Sum('total_profit'),
+        avg_profit_margin=Avg('profit_margin')
+    )
+    
+    # Get categories for filter
+    categories = Category.objects.all()
+    
+    # Generate chart data
+    chart_data = []
+    for product in product_sales[:10]:  # Top 10 products
+        chart_data.append({
+            'product': product['product__name'],
+            'sales': float(product['total_sales'] or 0),
+            'quantity': float(product['total_quantity'] or 0),
+            'profit': float(product['total_profit'] or 0)
+        })
+    
+    context = {
+        'product_sales': product_sales,
+        'summary': summary,
+        'categories': categories,
+        'start_date': start_date,
+        'end_date': end_date,
+        'selected_category': category_id,
+        'chart_data': json.dumps(chart_data),
+    }
+    return render(request, 'pos/reports/sales_by_product.html', context)
+
+@login_required
+def purchase_by_product_report(request):
+    """Purchase analysis by product"""
+    # Date filtering
+    start_date = request.GET.get('start_date', (timezone.now() - timedelta(days=90)).strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', timezone.now().strftime('%Y-%m-%d'))
+    
+    # Get purchases data
+    purchases = Purchase.objects.filter(
+        date__date__range=[start_date, end_date],
+        is_return=False
+    )
+    
+    # Apply additional filters
+    supplier_id = request.GET.get('supplier')
+    if supplier_id:
+        purchases = purchases.filter(supplier_id=supplier_id)
+    
+    category_id = request.GET.get('category')
+    if category_id:
+        purchases = purchases.filter(items__product__category_id=category_id)
+    
+    # Get purchase items with product details
+    purchase_items = PurchaseItem.objects.filter(
+        purchase__in=purchases
+    ).select_related('product', 'product__category', 'purchase__supplier')
+    
+    # Group by product
+    product_purchases = purchase_items.values(
+        'product__id',
+        'product__name',
+        'product__category__name',
+        'purchase__supplier__name'
+    ).annotate(
+        total_quantity=Sum('quantity'),
+        total_amount=Sum('total'),
+        avg_price=Avg('price'),
+        purchase_count=Count('purchase', distinct=True),
+        supplier_count=Count('purchase__supplier', distinct=True)
+    ).order_by('-total_amount')
+    
+    # Calculate summary statistics
+    summary = product_purchases.aggregate(
+        total_products=Count('product__id', distinct=True),
+        total_quantity=Sum('total_quantity'),
+        total_amount=Sum('total_amount'),
+        avg_price=Avg('avg_price')
+    )
+    
+    # Get filters data
+    suppliers = Supplier.objects.all()
+    categories = Category.objects.all()
+    
+    context = {
+        'product_purchases': product_purchases,
+        'summary': summary,
+        'suppliers': suppliers,
+        'categories': categories,
+        'start_date': start_date,
+        'end_date': end_date,
+        'selected_supplier': supplier_id,
+        'selected_category': category_id,
+    }
+    return render(request, 'pos/reports/purchase_by_product.html', context)
+
+# ============== PAYMENT REPORTS ==============
+
+@login_required
+def customer_payment_report(request):
+    """Customer payments report"""
+    # Date filtering
+    start_date = request.GET.get('start_date', (timezone.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', timezone.now().strftime('%Y-%m-%d'))
+    
+    # Get payments
+    payments = CustomerPayment.objects.filter(
+        date__range=[start_date, end_date]
+    ).select_related('customer', 'sale', 'user')
+    
+    # Apply filters
+    customer_id = request.GET.get('customer')
+    if customer_id:
+        payments = payments.filter(customer_id=customer_id)
+    
+    payment_method = request.GET.get('payment_method')
+    if payment_method:
+        payments = payments.filter(payment_method=payment_method)
+    
+    # Group by customer
+    customer_summary = payments.values(
+        'customer__name',
+        'customer__phone'
+    ).annotate(
+        total_payments=Sum('amount'),
+        payment_count=Count('id'),
+        avg_payment=Avg('amount'),
+        last_payment=Max('date')
+    ).order_by('-total_payments')
+    
+    # Group by payment method
+    method_summary = payments.values('payment_method').annotate(
+        total_amount=Sum('amount'),
+        count=Count('id')
+    ).order_by('-total_amount')
+    
+    # Group by date (for trend)
+    daily_summary = payments.annotate(
+        payment_date=TruncDate('date')
+    ).values('payment_date').annotate(
+        total_amount=Sum('amount'),
+        count=Count('id')
+    ).order_by('payment_date')
+    
+    # Calculate totals
+    totals = payments.aggregate(
+        total_amount=Sum('amount'),
+        total_count=Count('id'),
+        avg_amount=Avg('amount')
+    )
+    
+    # Get customers for filter
+    customers = Customer.objects.all()
+    
+    context = {
+        'payments': payments,
+        'customer_summary': customer_summary,
+        'method_summary': method_summary,
+        'daily_summary': daily_summary,
+        'totals': totals,
+        'customers': customers,
+        'payment_methods': CustomerPayment.PAYMENT_METHODS,
+        'start_date': start_date,
+        'end_date': end_date,
+        'selected_customer': customer_id,
+        'selected_payment_method': payment_method,
+    }
+    return render(request, 'pos/reports/customer_payments.html', context)
+
+@login_required
+def supplier_payment_report(request):
+    """Supplier payments report"""
+    # Date filtering
+    start_date = request.GET.get('start_date', (timezone.now() - timedelta(days=90)).strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', timezone.now().strftime('%Y-%m-%d'))
+    
+    # Get payments
+    payments = SupplierPayment.objects.filter(
+        date__range=[start_date, end_date]
+    ).select_related('supplier', 'purchase', 'user')
+    
+    # Apply filters
+    supplier_id = request.GET.get('supplier')
+    if supplier_id:
+        payments = payments.filter(supplier_id=supplier_id)
+    
+    payment_method = request.GET.get('payment_method')
+    if payment_method:
+        payments = payments.filter(payment_method=payment_method)
+    
+    # Group by supplier
+    supplier_summary = payments.values(
+        'supplier__name',
+        'supplier__phone'
+    ).annotate(
+        total_payments=Sum('amount'),
+        payment_count=Count('id'),
+        avg_payment=Avg('amount'),
+        last_payment=Max('date')
+    ).order_by('-total_payments')
+    
+    # Group by payment method
+    method_summary = payments.values('payment_method').annotate(
+        total_amount=Sum('amount'),
+        count=Count('id')
+    ).order_by('-total_amount')
+    
+    # Calculate totals
+    totals = payments.aggregate(
+        total_amount=Sum('amount'),
+        total_count=Count('id'),
+        avg_amount=Avg('amount')
+    )
+    
+    # Get suppliers for filter
+    suppliers = Supplier.objects.all()
+    
+    context = {
+        'payments': payments,
+        'supplier_summary': supplier_summary,
+        'method_summary': method_summary,
+        'totals': totals,
+        'suppliers': suppliers,
+        'payment_methods': SupplierPayment.PAYMENT_METHODS,
+        'start_date': start_date,
+        'end_date': end_date,
+        'selected_supplier': supplier_id,
+        'selected_payment_method': payment_method,
+    }
+    return render(request, 'pos/reports/supplier_payments.html', context)
+
+# ============== PROFIT REPORTS ==============
+
+@login_required
+def profit_by_product_report(request):
+    """Profit analysis by product"""
+    # Date filtering
+    start_date = request.GET.get('start_date', (timezone.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', timezone.now().strftime('%Y-%m-%d'))
+    
+    # Get sales data
+    sales = Sale.objects.filter(
+        date__date__range=[start_date, end_date],
+        is_completed=True
+    )
+    
+    # Apply filters
+    category_id = request.GET.get('category')
+    if category_id:
+        sales = sales.filter(items__product__category_id=category_id)
+    
+    # Get sale items with profit calculations
+    sale_items = SaleItem.objects.filter(
+        sale__in=sales
+    ).select_related('product', 'product__category')
+    
+    # Calculate profit by product
+    product_profits = []
+    all_items = sale_items.select_related('product', 'product__category')
+    
+    # Group by product
+    product_groups = {}
+    for item in all_items:
+        product_id = item.product.id
+        if product_id not in product_groups:
+            product_groups[product_id] = {
+                'product': item.product,
+                'category': item.product.category.name if item.product.category else 'Uncategorized',
+                'total_quantity': Decimal('0'),
+                'total_sales': Decimal('0'),
+                'total_cost': Decimal('0'),
+                'total_profit': Decimal('0'),
+                'sale_count': 0
+            }
+        
+        quantity = item.quantity
+        sales_amount = item.total
+        cost = item.product.purchase_price * quantity
+        profit = sales_amount - cost
+        
+        product_groups[product_id]['total_quantity'] += quantity
+        product_groups[product_id]['total_sales'] += sales_amount
+        product_groups[product_id]['total_cost'] += cost
+        product_groups[product_id]['total_profit'] += profit
+        product_groups[product_id]['sale_count'] += 1
+    
+    # Convert to list and calculate margins
+    for product_id, data in product_groups.items():
+        profit_margin = (data['total_profit'] / data['total_sales'] * 100) if data['total_sales'] > 0 else 0
+        avg_profit_per_unit = data['total_profit'] / data['total_quantity'] if data['total_quantity'] > 0 else 0
+        
+        product_profits.append({
+            'product': data['product'],
+            'category': data['category'],
+            'total_quantity': data['total_quantity'],
+            'total_sales': data['total_sales'],
+            'total_cost': data['total_cost'],
+            'total_profit': data['total_profit'],
+            'profit_margin': profit_margin,
+            'avg_profit_per_unit': avg_profit_per_unit,
+            'sale_count': data['sale_count']
+        })
+    
+    # Sort by total profit
+    product_profits.sort(key=lambda x: x['total_profit'], reverse=True)
+    
+    # Calculate summary
+    summary = {
+        'total_products': len(product_profits),
+        'total_sales': sum(p['total_sales'] for p in product_profits),
+        'total_cost': sum(p['total_cost'] for p in product_profits),
+        'total_profit': sum(p['total_profit'] for p in product_profits),
+        'avg_profit_margin': sum(p['profit_margin'] for p in product_profits) / len(product_profits) if product_profits else 0
+    }
+    
+    # Get categories for filter
+    categories = Category.objects.all()
+    
+    context = {
+        'product_profits': product_profits,
+        'summary': summary,
+        'categories': categories,
+        'start_date': start_date,
+        'end_date': end_date,
+        'selected_category': category_id,
+    }
+    return render(request, 'pos/reports/profit_by_product.html', context)
+
+# ============== DAILY REPORTS ==============
+
+@login_required
+def daily_opening_stock_report(request):
+    """Daily opening and closing stock report"""
+    # Date filtering
+    date = request.GET.get('date', timezone.now().strftime('%Y-%m-%d'))
+    
+    try:
+        report_date = datetime.strptime(date, '%Y-%m-%d').date()
+    except:
+        report_date = timezone.now().date()
+    
+    # Get previous day for opening stock
+    previous_date = report_date - timedelta(days=1)
+    
+    # Get all products
+    products = Product.objects.filter(is_active=True).select_related('category', 'supplier')
+    
+    # Get stock movements for the day
+    movements = StockJournal.objects.filter(
+        date__date=report_date
+    ).values('product').annotate(
+        stock_in=Sum('quantity', filter=Q(movement_type='in')),
+        stock_out=Sum('quantity', filter=Q(movement_type='out'))
+    )
+    
+    movement_dict = {m['product']: m for m in movements}
+    
+    # Prepare report data
+    report_data = []
+    total_opening_value = Decimal('0')
+    total_closing_value = Decimal('0')
+    total_stock_in = Decimal('0')
+    total_stock_out = Decimal('0')
+    
+    for product in products:
+        movements = movement_dict.get(product.id, {})
+        
+        # Calculate opening stock (previous day's closing stock)
+        # For simplicity, we'll use current stock minus today's movements
+        stock_in = movements.get('stock_in') or Decimal('0')
+        stock_out = movements.get('stock_out') or Decimal('0')
+        
+        opening_stock = product.quantity + stock_out - stock_in
+        closing_stock = product.quantity
+        
+        # Calculate values
+        opening_value = opening_stock * product.purchase_price
+        closing_value = closing_stock * product.purchase_price
+        value_change = closing_value - opening_value
+        
+        report_data.append({
+            'product': product,
+            'opening_stock': max(opening_stock, Decimal('0')),
+            'closing_stock': closing_stock,
+            'stock_in': stock_in,
+            'stock_out': stock_out,
+            'opening_value': opening_value,
+            'closing_value': closing_value,
+            'value_change': value_change,
+            'stock_status': 'low' if closing_stock <= product.reorder_level else 'ok'
+        })
+        
+        # Update totals
+        total_opening_value += opening_value
+        total_closing_value += closing_value
+        total_stock_in += stock_in
+        total_stock_out += stock_out
+    
+    # Calculate summary
+    summary = {
+        'date': report_date,
+        'total_products': len(report_data),
+        'total_opening_value': total_opening_value,
+        'total_closing_value': total_closing_value,
+        'total_stock_in': total_stock_in,
+        'total_stock_out': total_stock_out,
+        'net_change': total_closing_value - total_opening_value,
+        'percentage_change': ((total_closing_value - total_opening_value) / total_opening_value * 100) if total_opening_value > 0 else 0
+    }
+    
+    context = {
+        'report_data': sorted(report_data, key=lambda x: x['closing_value'], reverse=True),
+        'summary': summary,
+        'selected_date': date,
+    }
+    return render(request, 'pos/reports/daily_opening_stock.html', context)
+
+# ============== ADDITIONAL VALUABLE REPORTS ==============
+
+@login_required
+def top_selling_products_report(request):
+    """Top selling products report"""
+    # Date filtering
+    start_date = request.GET.get('start_date', (timezone.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', timezone.now().strftime('%Y-%m-%d'))
+    
+    # Get sales data
+    sale_items = SaleItem.objects.filter(
+        sale__date__date__range=[start_date, end_date],
+        sale__is_completed=True
+    ).select_related('product', 'product__category')
+    
+    # Group by product for top sellers
+    top_by_quantity = sale_items.values(
+        'product__id',
+        'product__name',
+        'product__category__name'
+    ).annotate(
+        total_quantity=Sum('quantity'),
+        total_sales=Sum('total'),
+        sale_count=Count('sale', distinct=True)
+    ).order_by('-total_quantity')[:20]
+    
+    top_by_revenue = sale_items.values(
+        'product__id',
+        'product__name',
+        'product__category__name'
+    ).annotate(
+        total_quantity=Sum('quantity'),
+        total_sales=Sum('total'),
+        sale_count=Count('sale', distinct=True)
+    ).order_by('-total_sales')[:20]
+    
+    # Get categories for filter
+    categories = Category.objects.all()
+    
+    context = {
+        'top_by_quantity': top_by_quantity,
+        'top_by_revenue': top_by_revenue,
+        'categories': categories,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    return render(request, 'pos/reports/top_selling_products.html', context)
+
+@login_required
+def slow_moving_products_report(request):
+    """Slow moving/obsolete products report"""
+    # Get date threshold (products not sold in last X days)
+    days_threshold = int(request.GET.get('days', 30))
+    threshold_date = timezone.now() - timedelta(days=days_threshold)
+    
+    # Get all active products
+    products = Product.objects.filter(is_active=True).select_related('category')
+    
+    # Get last sale date for each product
+    slow_moving_products = []
+    for product in products:
+        last_sale_item = SaleItem.objects.filter(
+            product=product,
+            sale__is_completed=True
+        ).order_by('-sale__date').first()
+        
+        last_sale_date = last_sale_item.sale.date if last_sale_item else None
+        
+        days_since_sale = (timezone.now().date() - last_sale_date.date()).days if last_sale_date else None
+        
+        stock_value = product.quantity * product.purchase_price
+        
+        slow_moving_products.append({
+            'product': product,
+            'current_stock': product.quantity,
+            'last_sale_date': last_sale_date,
+            'days_since_sale': days_since_sale,
+            'stock_value': stock_value,
+            'reorder_level': product.reorder_level,
+            'is_slow_moving': days_since_sale and days_since_sale > days_threshold,
+            'is_excess_stock': product.quantity > (product.reorder_level * 3)  # More than 3x reorder level
+        })
+    
+    # Filter and sort
+    filtered_products = [p for p in slow_moving_products if p['is_slow_moving'] or p['is_excess_stock']]
+    filtered_products.sort(key=lambda x: x['stock_value'], reverse=True)
+    
+    # Calculate summary
+    total_slow_moving = len([p for p in filtered_products if p['is_slow_moving']])
+    total_excess_stock = len([p for p in filtered_products if p['is_excess_stock']])
+    total_stock_value = sum(p['stock_value'] for p in filtered_products)
+    
+    context = {
+        'products': filtered_products,
+        'total_slow_moving': total_slow_moving,
+        'total_excess_stock': total_excess_stock,
+        'total_stock_value': total_stock_value,
+        'days_threshold': days_threshold,
+    }
+    return render(request, 'pos/reports/slow_moving_products.html', context)
+
+@login_required
+def customer_sales_analysis(request):
+    """Customer sales and profitability analysis"""
+    # Date filtering
+    start_date = request.GET.get('start_date', (timezone.now() - timedelta(days=90)).strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', timezone.now().strftime('%Y-%m-%d'))
+    
+    # Get sales data
+    sales = Sale.objects.filter(
+        date__date__range=[start_date, end_date],
+        is_completed=True,
+        customer__isnull=False
+    ).select_related('customer')
+    
+    # Group by customer
+    customer_analysis = sales.values(
+        'customer__id',
+        'customer__name',
+        'customer__phone',
+        'customer__balance'
+    ).annotate(
+        total_sales=Sum('total'),
+        sale_count=Count('id'),
+        avg_sale_value=Avg('total'),
+        total_items=Sum('items__quantity'),
+        last_purchase=Max('date'),
+        credit_sales=Sum('total', filter=Q(is_credit=True)),
+        cash_sales=Sum('total', filter=Q(is_credit=False))
+    ).order_by('-total_sales')
+    
+    # Calculate profitability for each customer
+    for customer in customer_analysis:
+        customer_sales = sales.filter(customer_id=customer['customer__id'])
+        sale_items = SaleItem.objects.filter(
+            sale__in=customer_sales
+        ).select_related('product')
+        
+        total_cost = Decimal('0')
+        total_revenue = Decimal('0')
+        
+        for item in sale_items:
+            cost = item.quantity * item.product.purchase_price
+            total_cost += cost
+            total_revenue += item.total
+        
+        customer['total_cost'] = total_cost
+        customer['total_profit'] = total_revenue - total_cost
+        customer['profit_margin'] = (customer['total_profit'] / total_revenue * 100) if total_revenue > 0 else 0
+    
+    # Calculate summary
+    summary = {
+        'total_customers': len(customer_analysis),
+        'total_sales': sum(c['total_sales'] or Decimal('0') for c in customer_analysis),
+        'total_profit': sum(c['total_profit'] for c in customer_analysis),
+        'avg_profit_margin': sum(c['profit_margin'] for c in customer_analysis) / len(customer_analysis) if customer_analysis else 0,
+        'active_customers': len([c for c in customer_analysis if c['sale_count'] > 0]),
+        'repeat_customers': len([c for c in customer_analysis if c['sale_count'] > 1]),
+    }
+    
+    context = {
+        'customer_analysis': customer_analysis,
+        'summary': summary,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    return render(request, 'pos/reports/customer_sales_analysis.html', context)
+
+@login_required
+def supplier_purchase_analysis(request):
+    """Supplier purchase analysis"""
+    # Date filtering
+    start_date = request.GET.get('start_date', (timezone.now() - timedelta(days=180)).strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', timezone.now().strftime('%Y-%m-%d'))
+    
+    # Get purchases data
+    purchases = Purchase.objects.filter(
+        date__date__range=[start_date, end_date],
+        is_return=False
+    ).select_related('supplier')
+    
+    # Group by supplier
+    supplier_analysis = purchases.values(
+        'supplier__id',
+        'supplier__name',
+        'supplier__phone',
+        'supplier__balance'
+    ).annotate(
+        total_purchases=Sum('total'),
+        purchase_count=Count('id'),
+        avg_purchase_value=Avg('total'),
+        total_items=Sum('items__quantity'),
+        last_purchase=Max('date'),
+        total_payments=Sum('supplierpayment__amount'),
+        balance_due=F('total_purchases') - F('total_payments')
+    ).order_by('-total_purchases')
+    
+    # Get product diversity for each supplier
+    for supplier in supplier_analysis:
+        supplier_purchases = purchases.filter(supplier_id=supplier['supplier__id'])
+        product_count = PurchaseItem.objects.filter(
+            purchase__in=supplier_purchases
+        ).values('product').distinct().count()
+        
+        supplier['product_count'] = product_count
+        supplier['payment_ratio'] = (supplier['total_payments'] / supplier['total_purchases'] * 100) if supplier['total_purchases'] > 0 else 0
+    
+    # Calculate summary
+    summary = {
+        'total_suppliers': len(supplier_analysis),
+        'total_purchases': sum(s['total_purchases'] or Decimal('0') for s in supplier_analysis),
+        'total_payments': sum(s['total_payments'] or Decimal('0') for s in supplier_analysis),
+        'total_balance': sum(s['balance_due'] or Decimal('0') for s in supplier_analysis),
+        'active_suppliers': len([s for s in supplier_analysis if s['purchase_count'] > 0]),
+        'avg_payment_ratio': sum(s['payment_ratio'] for s in supplier_analysis) / len(supplier_analysis) if supplier_analysis else 0,
+    }
+    
+    context = {
+        'supplier_analysis': supplier_analysis,
+        'summary': summary,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    return render(request, 'pos/reports/supplier_purchase_analysis.html', context)
+
+# ============== EXPORT FUNCTIONS ==============
+
+@login_required
+def export_report(request, report_type):
+    """Export report to Excel"""
+    # Map report types to functions
+    report_mapping = {
+        'sales_by_product': sales_by_product_report,
+        'purchase_by_product': purchase_by_product_report,
+        'customer_payments': customer_payment_report,
+        'supplier_payments': supplier_payment_report,
+        'profit_by_product': profit_by_product_report,
+        # Add other report mappings
+    }
+    
+    if report_type not in report_mapping:
+        messages.error(request, 'Invalid report type')
+        return redirect('reports_dashboard')
+    
+    # Get report data (we'll implement proper Excel export)
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="{report_type}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+    
+    # Create Excel workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = report_type.replace('_', ' ').title()
+    
+    # Add headers and data based on report type
+    # (Implementation depends on specific report structure)
+    
+    wb.save(response)
+    return response
+
+# ============== HELPER FUNCTIONS ==============
+
+def generate_chart_image(data, chart_type='bar', title=''):
+    """Generate chart image from data"""
+    plt.figure(figsize=(10, 6))
+    
+    if chart_type == 'bar':
+        labels = [item['label'] for item in data]
+        values = [item['value'] for item in data]
+        plt.bar(labels, values)
+    elif chart_type == 'line':
+        dates = [item['date'] for item in data]
+        values = [item['value'] for item in data]
+        plt.plot(dates, values, marker='o')
+    elif chart_type == 'pie':
+        labels = [item['label'] for item in data]
+        values = [item['value'] for item in data]
+        plt.pie(values, labels=labels, autopct='%1.1f%%')
+    
+    plt.title(title)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    # Save to buffer
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    plt.close()
+    buffer.seek(0)
+    
+    # Encode to base64
+    image_png = buffer.getvalue()
+    buffer.close()
+    graphic = base64.b64encode(image_png)
+    graphic = graphic.decode('utf-8')
+    
+    return graphic
+
+
+
+
+    
 from .models import SupplierReturn
 from .forms import SupplierReturnForm
 
@@ -3041,75 +3880,128 @@ def process_return(request, return_id):
 # ============== Expense Views ==============
 @login_required
 def expense_list(request):
+    # Base queryset
     expenses = Expense.objects.all().order_by('-date')
     
-    # Date filtering
+    # Date filtering - FIXED
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     
     if start_date:
-        expenses = expenses.filter(date__gte=start_date)
-    if end_date:
-        expenses = expenses.filter(date__lte=end_date)
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            expenses = expenses.filter(date__gte=start_date)
+        except ValueError:
+            pass
     
-    # Category filter
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            expenses = expenses.filter(date__lte=end_date)
+        except ValueError:
+            pass
+    
+    # Category filter - FIXED
     category = request.GET.get('category')
     if category:
         expenses = expenses.filter(category=category)
     
-    # Calculate total expenses
-    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or 0
+    # Calculate totals - FIXED
+    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    # Calculate average daily expense
+    if start_date and end_date:
+        days = (end_date - start_date).days + 1
+        avg_daily_expense = total_expenses / days if days > 0 else Decimal('0.00')
+    else:
+        # Default to last 30 days
+        thirty_days_ago = timezone.now().date() - timedelta(days=30)
+        recent_expenses = Expense.objects.filter(date__gte=thirty_days_ago)
+        monthly_total = recent_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        avg_daily_expense = monthly_total / 30
+    
+    # This month's expenses
+    this_month_start = timezone.now().date().replace(day=1)
+    monthly_expense = Expense.objects.filter(
+        date__gte=this_month_start
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     
     # Export functionality
     export_format = request.GET.get('export')
-    if export_format:
-        return generate_expenses_export(export_format, expenses)
+    if export_format == 'csv':
+        return generate_expenses_export(expenses)
     
-    # Pagination
-    paginator = Paginator(expenses, 25)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    expenses_by_category = expenses.values(
-        'category'
-    ).annotate(
+    # Category breakdown for current filter
+    expenses_by_category = expenses.values('category').annotate(
         total=Sum('amount'),
         count=Count('id')
     ).order_by('-total')
     
-    monthly_expenses = expenses.annotate(
+    # Monthly expenses for chart (last 6 months)
+    six_months_ago = timezone.now().date() - timedelta(days=180)
+    monthly_expenses_chart = expenses.filter(
+        date__gte=six_months_ago
+    ).annotate(
         month=TruncMonth('date')
     ).values('month').annotate(
         total=Sum('amount')
     ).order_by('month')
     
-    
+    # Pagination
+    paginator = Paginator(expenses, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
     context = {
         'expenses': page_obj,
         'total_expenses': total_expenses,
-        'start_date': start_date,
-        'end_date': end_date,
+        'avg_daily_expense': avg_daily_expense,
+        'monthly_expense': monthly_expense,
+        'start_date': start_date.strftime('%Y-%m-%d') if start_date else '',
+        'end_date': end_date.strftime('%Y-%m-%d') if end_date else '',
         'selected_category': category,
         'expenses_by_category': expenses_by_category,
-        'monthly_expenses': monthly_expenses
+        'monthly_expenses_chart': monthly_expenses_chart,
+        'categories': Expense.CATEGORIES,  # CHANGED FROM CATEGORY_CHOICES
     }
     return render(request, 'pos/expense_list.html', context)
+
 
 @login_required
 def add_expense(request):
     if request.method == 'POST':
-        form = ExpenseForm(request.POST)
-        if form.is_valid():
-            expense = form.save(commit=False)
-            expense.user = request.user
-            expense.save()
+        formset = ExpenseFormSet(request.POST, queryset=Expense.objects.none())
+        bulk_form = BulkExpenseForm(request.POST)
+        
+        if formset.is_valid():
+            instances = formset.save(commit=False)
+            total_amount = Decimal('0.00')
+            
+            # Save all instances
+            for instance in instances:
+                instance.user = request.user
+                if not instance.date:  # Set default date if not provided
+                    instance.date = timezone.now().date()
+                instance.save()
+                total_amount += instance.amount
+            
+            # Handle deleted forms if any
+            for deleted_form in formset.deleted_forms:
+                if deleted_form.instance.pk:
+                    deleted_form.instance.delete()
+            
+            messages.success(request, f'Successfully added {len(instances)} expense(s) totaling KSh {total_amount:.2f}')
             return redirect('expense_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
-        form = ExpenseForm()
+        formset = ExpenseFormSet(queryset=Expense.objects.none())
+        bulk_form = BulkExpenseForm()
     
     context = {
-        'form': form
+        'formset': formset,
+        'bulk_form': bulk_form,
+        'title': 'Add Multiple Expenses'
     }
     return render(request, 'pos/add_expense.html', context)
 
@@ -3153,6 +4045,20 @@ def generate_expenses_export(format, queryset):
         return response
     
     return HttpResponse('Invalid export format', status=400)
+
+
+@login_required
+@require_POST
+def delete_expense(request, pk):
+    expense = get_object_or_404(Expense, pk=pk)
+    
+    try:
+        expense.delete()
+        messages.success(request, f'Expense "{expense.description}" has been deleted successfully.')
+    except Exception as e:
+        messages.error(request, f'Error deleting expense: {str(e)}')
+    
+    return redirect('expense_list')
 
 # ============== Discount Views ==============
 @login_required
@@ -3874,12 +4780,131 @@ def bulk_upload(request):
     })
     
 # ============== Authentication Views ==============
-from django.contrib.auth import logout
-from django.shortcuts import redirect
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, SetPasswordForm
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.mail import send_mail
+from django.shortcuts import render, redirect
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.conf import settings
+from django.db.models.query_utils import Q
+
+def custom_login(request):
+    # If user is already authenticated, redirect to POS
+    if request.user.is_authenticated:
+        return redirect('pos')
+    
+    error = None
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                # Redirect to the next page if provided, otherwise to POS
+                next_page = request.GET.get('next', 'pos')
+                return redirect(next_page)
+        else:
+            # Form is invalid, show error
+            error = 'Invalid username or password. Please try again.'
+    
+    return render(request, 'pos/login.html', {'error': error})
 
 def custom_logout(request):
     logout(request)
-    return redirect('login')
+    return redirect('custom_login')
+
+@login_required
+def password_change(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Update session to prevent logout
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password has been changed successfully!')
+            return redirect('pos')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    
+    return render(request, 'pos/password_change.html', {'form': form})
+
+def password_reset_request(request):
+    if request.method == 'POST':
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            associated_users = User.objects.filter(Q(email=email))
+            if associated_users.exists():
+                for user in associated_users:
+                    subject = "Password Reset Request - POS System"
+                    email_template_name = "pos/password_reset_email.html"
+                    context = {
+                        'email': user.email,
+                        'domain': request.get_host(),
+                        'site_name': 'POS System',
+                        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                        'user': user,
+                        'token': default_token_generator.make_token(user),
+                        'protocol': 'https' if request.is_secure() else 'http',
+                    }
+                    email_content = render_to_string(email_template_name, context)
+                    
+                    try:
+                        send_mail(
+                            subject,
+                            email_content,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [user.email],
+                            fail_silently=False,
+                            html_message=email_content
+                        )
+                    except Exception as e:
+                        messages.error(request, f'Error sending email: {str(e)}')
+                        return redirect('password_reset_request')
+                
+                messages.success(request, 'Password reset link has been sent to your email.')
+                return redirect('custom_login')
+            else:
+                messages.error(request, 'No account found with that email address.')
+    else:
+        form = PasswordResetForm()
+    
+    return render(request, 'pos/password_reset.html', {'form': form})
+
+def password_reset_confirm(request, uidb64=None, token=None):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            form = SetPasswordForm(user, request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Your password has been reset successfully. You can now login with your new password.')
+                return redirect('custom_login')
+            else:
+                messages.error(request, 'Please correct the error below.')
+        else:
+            form = SetPasswordForm(user)
+        
+        return render(request, 'pos/password_reset_confirm.html', {'form': form})
+    else:
+        messages.error(request, 'The password reset link is invalid or has expired.')
+        return redirect('password_reset_request')
+    
+
 
 # ============== Reports Dashboard ==============
 @login_required
@@ -4650,3 +5675,7 @@ def opening_closing_stock_report(request):
         'total_value_change': total_closing_value - total_opening_value
     }
     return render(request, 'pos/opening_closing_stock.html', context)
+
+
+
+

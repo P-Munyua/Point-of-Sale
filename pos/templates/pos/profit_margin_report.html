@@ -1,240 +1,475 @@
-{% extends 'pos/base.html' %}
-{% load humanize %}
+{% extends 'pos/reports/base_report.html' %}
+{% load static humanize custom_filters %}
+
+{% block title %}Profit Margin Report{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Page Heading -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Profit Margin Report</h1>
-        <div>
-            <a href="?export=csv" class="btn btn-sm btn-success shadow-sm">
-                <i class="fas fa-download fa-sm"></i> Export CSV
-            </a>
-        </div>
-    </div>
+{% with report_title="Profit Margin Report" report_icon="fa-chart-line" report_color="indigo" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
 
-    <!-- Filter Form -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 bg-primary">
-            <h6 class="m-0 font-weight-bold text-white">Filter Options</h6>
+{% block filters %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <div class="flex items-center mb-4">
+            <i class="fas fa-filter text-indigo-600 mr-2"></i>
+            <h3 class="text-lg font-medium text-gray-900">Filter Options</h3>
         </div>
-        <div class="card-body">
-            <form method="get" class="form-inline">
-                <div class="row g-3 align-items-center">
-                    <div class="col-md-3">
-                        <label class="form-label mb-1">Start Date:</label>
-                        <input type="date" name="start_date" value="{{ start_date }}" class="form-control form-control-sm">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label mb-1">End Date:</label>
-                        <input type="date" name="end_date" value="{{ end_date }}" class="form-control form-control-sm">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label mb-1 invisible">Apply</label>
-                        <button type="submit" class="btn btn-primary btn-sm form-control">
-                            <i class="fas fa-filter fa-sm"></i> Apply Filter
+        
+        <form method="get" id="filterForm">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Start Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" 
+                           value="{{ start_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <!-- End Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <input type="date" name="end_date" id="end_date" 
+                           value="{{ end_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <!-- Apply Button -->
+                <div class="flex items-end">
+                    <div class="flex space-x-2 w-full">
+                        <button type="submit" 
+                                class="flex-1 bg-indigo-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-filter mr-2"></i> Apply Filter
                         </button>
+                        <a href="{% url 'profit_margin_report' %}" 
+                           class="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-sync-alt mr-2"></i> Reset
+                        </a>
                     </div>
                 </div>
-            </form>
+            </div>
+            
+            <!-- Hidden field for CSV export to preserve filters -->
+            {% if request.GET.export %}
+            <input type="hidden" name="export" value="{{ request.GET.export }}">
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- Report Header Info -->
+<div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-calendar-alt text-indigo-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h4 class="text-sm font-medium text-indigo-800">Report Period</h4>
+                <div class="mt-1">
+                    <span class="text-lg font-semibold text-gray-900">{{ start_date|date:"M d, Y" }}</span>
+                    {% if end_date != start_date %}
+                    <span class="text-gray-600 mx-2">→</span>
+                    <span class="text-lg font-semibold text-gray-900">{{ end_date|date:"M d, Y" }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="text-sm text-gray-600">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                <i class="fas fa-calendar-check mr-1"></i>
+                Generated: {{ today|date:"M d, Y" }}
+            </span>
         </div>
     </div>
+</div>
 
-    <!-- Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Total Revenue</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_revenue|floatformat:2|intcomma }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
-                        </div>
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <!-- Total Revenue -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-money-bill-wave text-blue-600 text-lg"></i>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                Total Cost</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_cost|floatformat:2|intcomma }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-money-bill-alt fa-2x text-gray-300"></i>
-                        </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Revenue
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Total Profit</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_profit|floatformat:2|intcomma }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Average Margin</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ avg_margin|floatformat:2 }}%</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-percent fa-2x text-gray-300"></i>
-                        </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ total_revenue|floatformat:2|intcomma }}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Data Table -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 bg-gradient-primary">
-            <h6 class="m-0 font-weight-bold text-white">Profit Margin by Product</h6>
+    <!-- Total Cost -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                        <i class="fas fa-money-bill-alt text-red-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Cost
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ total_cost|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>Product</th>
-                            <th class="text-center">Quantity Sold</th>
-                            <th class="text-right">Cost</th>
-                            <th class="text-right">Revenue</th>
-                            <th class="text-right">Profit</th>
-                            <th class="text-center">Margin %</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in profit_data %}
-                        <tr class="{% if item.profit_margin > 30 %}table-success{% elif item.profit_margin > 10 %}table-warning{% else %}table-danger{% endif %}">
-                            <td class="font-weight-bold">{{ item.product_name }}</td>
-                            <td class="text-center">{{ item.quantity_sold }}</td>
-                            <td class="text-right">KSh {{ item.total_cost|floatformat:2|intcomma }}</td>
-                            <td class="text-right">KSh {{ item.total_revenue|floatformat:2|intcomma }}</td>
-                            <td class="text-right">KSh {{ item.total_profit|floatformat:2|intcomma }}</td>
-                            <td class="text-center">
-                                <span class="badge {% if item.profit_margin > 30 %}badge-success{% elif item.profit_margin > 10 %}badge-warning{% else %}badge-danger{% endif %}">
-                                    {{ item.profit_margin|floatformat:2 }}%
-                                </span>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-4">
-                                <i class="fas fa-exclamation-circle fa-2x text-gray-300 mb-2"></i>
-                                <p class="text-muted">No data available for the selected period</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot class="font-weight-bold bg-light">
-                        <tr>
-                            <td>Totals</td>
-                            <td class="text-center">{{ total_quantity }}</td>
-                            <td class="text-right">KSh {{ total_cost|floatformat:2|intcomma }}</td>
-                            <td class="text-right">KSh {{ total_revenue|floatformat:2|intcomma }}</td>
-                            <td class="text-right">KSh {{ total_profit|floatformat:2|intcomma }}</td>
-                            <td class="text-center">{{ avg_margin|floatformat:2 }}%</td>
-                        </tr>
-                    </tfoot>
-                </table>
+    </div>
+
+    <!-- Total Profit -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-chart-line text-green-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Profit
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ total_profit|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Margin -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <i class="fas fa-percent text-indigo-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Average Margin
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        {{ avg_margin|floatformat:2 }}%
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Profit Margin Table -->
+<div class="bg-white shadow rounded-lg">
+    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900">
+                    <i class="fas fa-chart-line text-indigo-600 mr-2"></i>Profit Margin by Product
+                </h3>
+                <p class="mt-1 text-sm text-gray-500">Detailed profit margin analysis for each product</p>
+            </div>
+            <div>
+                <button type="button" onclick="exportToCSV()" 
+                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-download mr-2"></i> Export CSV
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Quantity Sold
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Cost
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Revenue
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Profit
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Margin %
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for item in profit_data %}
+                <tr class="{% if item.profit_margin > 30 %}bg-green-50 hover:bg-green-100{% elif item.profit_margin > 10 %}bg-yellow-50 hover:bg-yellow-100{% else %}bg-red-50 hover:bg-red-100{% endif %} transition duration-150 ease-in-out">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-bold text-gray-900">{{ item.product_name }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {{ item.quantity_sold }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                        KSh {{ item.total_cost|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                        KSh {{ item.total_revenue|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-900">
+                        <span class="{% if item.total_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                            KSh {{ item.total_profit|floatformat:2|intcomma }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        <div class="flex items-center justify-center">
+                            {% if item.profit_margin > 30 %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span class="w-2 h-2 mr-1 bg-green-500 rounded-full"></span>
+                                {{ item.profit_margin|floatformat:2 }}%
+                            </span>
+                            {% elif item.profit_margin > 10 %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <span class="w-2 h-2 mr-1 bg-yellow-500 rounded-full"></span>
+                                {{ item.profit_margin|floatformat:2 }}%
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <span class="w-2 h-2 mr-1 bg-red-500 rounded-full"></span>
+                                {{ item.profit_margin|floatformat:2 }}%
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center">
+                        <div class="text-gray-400">
+                            <i class="fas fa-exclamation-circle fa-4x mb-4"></i>
+                            <p class="mt-2 text-lg font-medium text-gray-900">No data available</p>
+                            <p class="text-gray-500">Try adjusting your filters or select a different date range</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            
+            {% if profit_data %}
+            <tfoot class="bg-gray-50">
+                <tr>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                        Totals
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-center">
+                        {{ total_quantity }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
+                        KSh {{ total_cost|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
+                        KSh {{ total_revenue|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
+                        <span class="{% if total_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                            KSh {{ total_profit|floatformat:2|intcomma }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            {{ avg_margin|floatformat:2 }}%
+                        </span>
+                    </td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+    
+    {% if profit_data %}
+    <div class="px-4 py-3 bg-gray-50 sm:px-6">
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                Showing {{ profit_data|length }} products
+            </div>
+            <div class="text-sm text-gray-500">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-green-500 rounded-full mr-1"></span>
+                        <span class="text-xs">High Margin (>30%)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-yellow-500 rounded-full mr-1"></span>
+                        <span class="text-xs">Medium Margin (10-30%)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-red-500 rounded-full mr-1"></span>
+                        <span class="text-xs">Low Margin (<10%)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date range to today if not set
+    const today = new Date().toISOString().split('T')[0];
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (!startDateInput.value) {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+    }
+    
+    if (!endDateInput.value) {
+        endDateInput.value = today;
+    }
+    
+    // Initialize DataTable if jQuery is available
+    if (typeof jQuery !== 'undefined' && $.fn.DataTable) {
+        $('table').DataTable({
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            order: [[5, 'desc']], // Sort by margin descending
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search products...",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)"
+            }
+        });
+    }
+});
+
+// Export to CSV function
+function exportToCSV() {
+    const form = document.getElementById('filterForm');
+    const originalAction = form.action;
+    
+    // Set export parameter
+    const exportInput = document.createElement('input');
+    exportInput.type = 'hidden';
+    exportInput.name = 'export';
+    exportInput.value = 'csv';
+    form.appendChild(exportInput);
+    
+    // Submit form with export parameter
+    form.submit();
+    
+    // Remove the export input after submission
+    form.removeChild(exportInput);
+    
+    // Restore original action
+    form.action = originalAction;
+}
+
+// Form validation
+document.getElementById('filterForm').addEventListener('submit', function(e) {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+        e.preventDefault();
+        alert('Start date cannot be after end date');
+        return false;
+    }
+    
+    return true;
+});
+
+// Auto-submit form when dates change (optional)
+document.getElementById('start_date').addEventListener('change', function() {
+    document.getElementById('filterForm').submit();
+});
+
+document.getElementById('end_date').addEventListener('change', function() {
+    document.getElementById('filterForm').submit();
+});
+</script>
+
 <style>
-.table th {
-    font-weight: 600;
-    font-size: 0.9rem;
-    border-top: none;
+/* Custom styles for better visual hierarchy */
+tbody tr {
+    transition: background-color 0.2s ease;
 }
 
-.thead-dark th {
-    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-    color: white;
-    border-color: #4e73df;
-    vertical-align: middle;
+tbody tr:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-.card {
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .text-2xl {
+        font-size: 1.25rem;
+    }
+    
+    .p-5 {
+        padding: 1rem;
+    }
+    
+    .px-6 {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    .py-4 {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+    
+    .flex-col {
+        flex-direction: column;
+    }
+    
+    .space-x-4 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    .space-x-4 > * + * {
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
 }
 
-.card-header {
-    border-top-left-radius: 10px !important;
-    border-top-right-radius: 10px !important;
+/* Loading state for filters */
+.form-control:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
 }
 
-.margin-indicator {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    margin-right: 5px;
-}
-
-.margin-high { background-color: #28a745; }
-.margin-medium { background-color: #ffc107; }
-.margin-low { background-color: #dc3545; }
-
-.table-hover tbody tr:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    transition: all 0.2s ease;
-}
-
-.badge {
-    font-size: 0.85em;
-    padding: 0.35em 0.65em;
-}
-
-.btn {
-    border-radius: 0.35rem;
-}
-
-.form-control {
-    border-radius: 0.35rem;
-}
-
-.bg-gradient-primary {
-    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-}
-
-.table-responsive {
-    border-radius: 0.35rem;
-    overflow: hidden;
-}
-
-tfoot tr {
-    background-color: #f8f9fc !important;
+/* Focus styles for better accessibility */
+.form-control:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    ring-width: 2px;
 }
 </style>
 {% endblock %}

@@ -1,0 +1,294 @@
+{% extends 'pos/reports/base_report.html' %}
+{% load static humanize %}
+
+{% block title %}Daily Opening Stock Report{% endblock %}
+
+{% block content %}
+{% with report_title="Daily Opening Stock Report" report_icon="fa-box-open" report_color="yellow" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+{% block summary_cards %}
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-yellow-100 p-3 rounded-lg">
+                <i class="fas fa-boxes text-yellow-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Products</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ summary.total_products|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-green-100 p-3 rounded-lg">
+                <i class="fas fa-arrow-down text-green-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Stock In</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ summary.total_stock_in|default:0|intcomma }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-red-100 p-3 rounded-lg">
+                <i class="fas fa-arrow-up text-red-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Stock Out</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ summary.total_stock_out|default:0|intcomma }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-blue-100 p-3 rounded-lg">
+                <i class="fas fa-coins text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Net Change</p>
+                <p class="text-2xl font-semibold {% if summary.net_change >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                    Ksh {{ summary.net_change|default:0|floatformat:2|intcomma }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Value Summary -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-center">
+            <p class="text-sm font-medium text-gray-500">Opening Value</p>
+            <p class="text-2xl font-semibold text-gray-900">Ksh {{ summary.total_opening_value|default:0|floatformat:2|intcomma }}</p>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-center">
+            <p class="text-sm font-medium text-gray-500">Closing Value</p>
+            <p class="text-2xl font-semibold text-gray-900">Ksh {{ summary.total_closing_value|default:0|floatformat:2|intcomma }}</p>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-center">
+            <p class="text-sm font-medium text-gray-500">% Change</p>
+            <p class="text-2xl font-semibold {% if summary.percentage_change >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                {{ summary.percentage_change|default:0|floatformat:2 }}%
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block filters %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label for="date" class="block text-sm font-medium text-gray-700">Select Date</label>
+                    <input type="date" name="date" id="date" 
+                           value="{{ selected_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500">
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="submit" name="date" value="{{ today|date:'Y-m-d' }}"
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                        <i class="fas fa-calendar-day mr-2"></i> Today
+                    </button>
+                    
+                    <button type="submit" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                        <i class="fas fa-filter mr-2"></i> View Report
+                    </button>
+                </div>
+                
+                <div class="text-right">
+                    <span class="text-sm text-gray-500">
+                        Report for: <span class="font-medium">{{ summary.date|date:"F d, Y" }}</span>
+                    </span>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- Stock Movement Summary -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Stock Movement Summary</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Stock In Details</h4>
+                <ul class="space-y-2">
+                    <li class="flex justify-between text-sm">
+                        <span class="text-gray-500">Purchases:</span>
+                        <span class="font-medium">{{ summary.total_stock_in|default:0 }} units</span>
+                    </li>
+                    <!-- Add more stock in categories as needed -->
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Stock Out Details</h4>
+                <ul class="space-y-2">
+                    <li class="flex justify-between text-sm">
+                        <span class="text-gray-500">Sales:</span>
+                        <span class="font-medium">{{ summary.total_stock_out|default:0 }} units</span>
+                    </li>
+                    <!-- Add more stock out categories as needed -->
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg font-medium text-gray-900">Product-wise Stock Details</h3>
+        <p class="mt-1 text-sm text-gray-500">Sorted by closing stock value</p>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Opening Stock
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Stock In
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Stock Out
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Closing Stock
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Opening Value
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Closing Value
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Change
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for item in report_data %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-medium text-gray-900">{{ item.product.name }}</div>
+                        <div class="text-sm text-gray-500">{{ item.product.sku|default:"-" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ item.opening_stock|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                        {% if item.stock_in > 0 %}+{{ item.stock_in|intcomma }}{% else %}-{% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
+                        {% if item.stock_out > 0 %}-{{ item.stock_out|intcomma }}{% else %}-{% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ item.closing_stock|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if item.stock_status == 'low' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Low Stock
+                        </span>
+                        {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            In Stock
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        Ksh {{ item.opening_value|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        Ksh {{ item.closing_value|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {% if item.value_change >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                        {% if item.value_change >= 0 %}+{% endif %}Ksh {{ item.value_change|floatformat:2|intcomma }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="px-6 py-4 text-center text-gray-500">
+                        No stock data available for the selected date.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if report_data %}
+            <tfoot class="bg-gray-50">
+                <tr>
+                    <td class="px-6 py-3 text-right text-sm font-medium text-gray-900">
+                        Totals:
+                    </td>
+                    <td class="px-6 py-3 text-sm text-gray-500">
+                        -
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-green-600">
+                        +{{ summary.total_stock_in|default:0|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-red-600">
+                        -{{ summary.total_stock_out|default:0|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                        -
+                    </td>
+                    <td class="px-6 py-3 text-sm text-gray-500">
+                        -
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                        Ksh {{ summary.total_opening_value|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                        Ksh {{ summary.total_closing_value|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium {% if summary.net_change >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                        {% if summary.net_change >= 0 %}+{% endif %}KSh {{ summary.net_change|default:0|floatformat:2|intcomma }}
+                    </td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+    
+    {% if report_data %}
+    <div class="px-4 py-3 bg-gray-50 sm:px-6">
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                Showing <span class="font-medium">{{ report_data|length }}</span> products
+            </div>
+            <div class="text-sm text-gray-500">
+                Generated on {{ today|date:"F d, Y" }} | Date: {{ summary.date|date:"F d, Y" }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,482 @@
+{% extends 'pos/reports/base_report.html' %}
+{% load static humanize custom_filters %}
+
+{% block title %}Supplier Payments Report{% endblock %}
+
+{% block content %}
+{% with report_title="Supplier Payments Report" report_icon="fa-truck" report_color="purple" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+{% block filters %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <div class="flex items-center mb-4">
+            <i class="fas fa-filter text-purple-600 mr-2"></i>
+            <h3 class="text-lg font-medium text-gray-900">Filter Report</h3>
+        </div>
+        
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Start Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" 
+                           value="{{ start_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                
+                <!-- End Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <input type="date" name="end_date" id="end_date" 
+                           value="{{ end_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                
+                <!-- Supplier -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                    <select name="supplier" id="supplier"
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                        <option value="">All Suppliers</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" {% if selected_supplier == supplier.id|stringformat:"i" %}selected{% endif %}>
+                            {{ supplier.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Payment Method -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                    <select name="payment_method" id="payment_method"
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                        <option value="">All Methods</option>
+                        {% for method in payment_methods %}
+                        <option value="{{ method.0 }}" {% if selected_payment_method == method.0 %}selected{% endif %}>
+                            {{ method.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="pt-4 text-right">
+                <button type="submit" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                    <i class="fas fa-filter mr-2"></i> Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- Report Header Info -->
+<div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-calendar-alt text-purple-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h4 class="text-sm font-medium text-purple-800">Report Period</h4>
+                <div class="mt-1">
+                    <span class="text-lg font-semibold text-gray-900">{{ start_date }}</span>
+                    <span class="text-gray-600 mx-2">to</span>
+                    <span class="text-lg font-semibold text-gray-900">{{ end_date }}</span>
+                </div>
+            </div>
+        </div>
+        <div>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                <i class="fas fa-calendar-check mr-1"></i>
+                Generated: {{ today|date:"M d, Y" }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <!-- Total Payments -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-money-check-alt text-green-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Payments
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ totals.total_amount|default:0|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-exchange-alt text-blue-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Transactions
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        {{ totals.total_count|default:0 }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Payment -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <i class="fas fa-calculator text-indigo-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Avg Payment
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ totals.avg_amount|default:0|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suppliers Count -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                        <i class="fas fa-truck text-yellow-600 text-lg"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Suppliers
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        {{ supplier_summary|length }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Methods and Top Suppliers -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <!-- Payment Methods Breakdown -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <div class="flex items-center">
+                <i class="fas fa-credit-card text-purple-600 mr-2"></i>
+                <h3 class="text-lg font-medium text-gray-900">Payment Methods</h3>
+            </div>
+        </div>
+        <div class="p-6">
+            {% for method in method_summary %}
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-medium text-gray-700">
+                        {% if method.payment_method == 'cash' %}
+                        <i class="fas fa-money-bill-wave text-green-600 mr-1"></i> Cash
+                        {% elif method.payment_method == 'mpesa' %}
+                        <i class="fas fa-mobile-alt text-blue-600 mr-1"></i> M-Pesa
+                        {% elif method.payment_method == 'bank' or method.payment_method == 'transfer' %}
+                        <i class="fas fa-university text-indigo-600 mr-1"></i> Bank/Transfer
+                        {% elif method.payment_method == 'cheque' %}
+                        <i class="fas fa-file-invoice-dollar text-yellow-600 mr-1"></i> Cheque
+                        {% else %}
+                        <i class="fas fa-money-check text-gray-600 mr-1"></i> {{ method.payment_method|title }}
+                        {% endif %}
+                    </span>
+                    <span class="text-sm font-bold text-gray-900">
+                        KSh {{ method.total_amount|default:0|floatformat:2|intcomma }}
+                    </span>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex-1 bg-gray-200 rounded-full h-2">
+                        <div class="h-2 rounded-full bg-purple-500" 
+                             style="width: {% if totals.total_amount > 0 %}{{ method.total_amount|divide:totals.total_amount|multiply:100|floatformat:0 }}{% else %}0{% endif %}%">
+                        </div>
+                    </div>
+                    <span class="ml-3 text-xs font-medium text-gray-600 w-16 text-right">
+                        {% if totals.total_amount > 0 %}
+                        {{ method.total_amount|divide:totals.total_amount|multiply:100|floatformat:1 }}%
+                        {% else %}0%{% endif %}
+                    </span>
+                </div>
+                <div class="flex justify-between mt-1">
+                    <span class="text-xs text-gray-500">{{ method.count }} transactions</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Top Suppliers -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <div class="flex items-center">
+                <i class="fas fa-chart-line text-purple-600 mr-2"></i>
+                <h3 class="text-lg font-medium text-gray-900">Top Suppliers</h3>
+            </div>
+        </div>
+        <div class="overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Supplier
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total Payments
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Transactions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for supplier in supplier_summary|slice:":5" %}
+                    <tr>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-gray-900">
+                                {{ supplier.supplier__name|truncatechars:20 }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                            KSh {{ supplier.total_payments|default:0|floatformat:2|intcomma }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                {{ supplier.payment_count }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="px-6 py-8 text-center text-gray-500">
+                            No supplier data available
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Payments Transactions Table -->
+<div class="bg-white shadow rounded-lg">
+    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900">
+                    <i class="fas fa-table text-purple-600 mr-2"></i>Supplier Payment Transactions
+                </h3>
+                <p class="mt-1 text-sm text-gray-500">Detailed payment transactions to suppliers</p>
+            </div>
+            <div class="flex space-x-3">
+                <button type="button" onclick="window.print()" 
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                    <i class="fas fa-print mr-2"></i> Print
+                </button>
+                <a href="?export=excel" 
+                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-file-excel mr-2"></i> Export Excel
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    {% if payments %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Supplier
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Purchase No
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Payment Method
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Paid By
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Notes
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for payment in payments %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ payment.date|date:"M d, Y" }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-gray-900">{{ payment.supplier.name }}</div>
+                        <div class="text-xs text-gray-500">{{ payment.supplier.phone|default:"-" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if payment.purchase %}
+                        <a href="{% url 'view_purchase' payment.purchase.id %}" 
+                           class="text-purple-600 hover:text-purple-900 font-medium">
+                            {{ payment.purchase.invoice_number|default:payment.purchase.id }}
+                        </a>
+                        {% else %}
+                        <span class="text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if payment.payment_method == 'cash' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-money-bill-wave mr-1"></i> Cash
+                        </span>
+                        {% elif payment.payment_method == 'mpesa' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <i class="fas fa-mobile-alt mr-1"></i> M-Pesa
+                        </span>
+                        {% elif payment.payment_method == 'bank' or payment.payment_method == 'transfer' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            <i class="fas fa-university mr-1"></i> Bank/Transfer
+                        </span>
+                        {% elif payment.payment_method == 'cheque' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <i class="fas fa-file-invoice-dollar mr-1"></i> Cheque
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {{ payment.get_payment_method_display }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                        KSh {{ payment.amount|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ payment.user.get_full_name|default:payment.user.username }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-500 max-w-xs truncate">
+                            {{ payment.notes|default:"-" }}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if payments %}
+            <tfoot class="bg-gray-50">
+                <tr>
+                    <td colspan="4" class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
+                        Totals:
+                    </td>
+                    <td class="px-6 py-3 text-sm font-bold text-gray-900">
+                        KSh {{ totals.total_amount|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td colspan="2" class="px-6 py-3 text-sm text-gray-500">
+                        {{ totals.total_count|default:0 }} transactions
+                    </td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+    
+    <!-- Pagination (if needed) -->
+    {% if payments.has_other_pages %}
+    <div class="px-4 py-3 bg-gray-50 sm:px-6">
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                Showing <span class="font-medium">{{ payments.start_index }}</span> to 
+                <span class="font-medium">{{ payments.end_index }}</span> of 
+                <span class="font-medium">{{ payments.paginator.count }}</span> results
+            </div>
+            <!-- Add pagination controls here if needed -->
+        </div>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="px-6 py-12 text-center">
+        <div class="text-gray-400">
+            <i class="fas fa-truck fa-4x mb-4"></i>
+            <p class="mt-2 text-lg font-medium text-gray-900">No supplier payment transactions found</p>
+            <p class="text-gray-500">Try adjusting your filters or select a different date range</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date range to today if not set
+    const today = new Date().toISOString().split('T')[0];
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (!startDateInput.value) {
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        startDateInput.value = ninetyDaysAgo.toISOString().split('T')[0];
+    }
+    
+    if (!endDateInput.value) {
+        endDateInput.value = today;
+    }
+    
+    // Initialize DataTable if jQuery is available
+    if (typeof jQuery !== 'undefined' && $.fn.DataTable) {
+        $('table').DataTable({
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            order: [[0, 'desc']], // Sort by date descending
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search payments...",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)"
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

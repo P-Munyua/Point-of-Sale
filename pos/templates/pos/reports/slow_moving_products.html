@@ -1,0 +1,290 @@
+{% extends 'pos/reports/base_report.html' %}
+{% load static humanize %}
+
+{% block title %}Slow Moving Products Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-clock text-warning me-2"></i>Slow Moving Products Report
+        </h1>
+        <div class="d-flex">
+            <button type="button" onclick="window.print()" class="btn btn-outline-primary btn-sm me-2">
+                <i class="fas fa-print me-1"></i>Print
+            </button>
+            <a href="?export=excel" class="btn btn-success btn-sm">
+                <i class="fas fa-file-excel me-1"></i>Export Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Slow Moving Products
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_slow_moving|default:0 }}</div>
+                            <div class="mt-2 small">
+                                Not sold in {{ days_threshold }} days
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Excess Stock
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_excess_stock|default:0 }}</div>
+                            <div class="mt-2 small">
+                                Stock > 3x reorder level
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Stock Value
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_stock_value|default:0|floatformat:2|intcomma }}</div>
+                            <div class="mt-2 small">
+                                At risk value
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-coins fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Products Analyzed
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ products|length }}</div>
+                            <div class="mt-2 small">
+                                All active products
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-warning">
+                <i class="fas fa-filter me-2"></i>Filter Report
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="days" class="form-label">Days Threshold</label>
+                    <select class="form-select" id="days" name="days">
+                        <option value="30" {% if days_threshold == 30 %}selected{% endif %}>30 days (1 month)</option>
+                        <option value="60" {% if days_threshold == 60 %}selected{% endif %}>60 days (2 months)</option>
+                        <option value="90" {% if days_threshold == 90 %}selected{% endif %}>90 days (3 months)</option>
+                        <option value="180" {% if days_threshold == 180 %}selected{% endif %}>180 days (6 months)</option>
+                        <option value="365" {% if days_threshold == 365 %}selected{% endif %}>365 days (1 year)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="show_all" name="show_all" {% if request.GET.show_all %}checked{% endif %}>
+                        <label class="form-check-label" for="show_all">
+                            Show all products (including non-slow moving)
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-filter me-1"></i> Apply Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-warning">
+                <i class="fas fa-table me-2"></i>Slow Moving & Excess Stock Analysis
+            </h6>
+            <div>
+                <span class="badge bg-warning me-2">Slow Moving: {{ total_slow_moving }}</span>
+                <span class="badge bg-danger">Excess: {{ total_excess_stock }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th class="text-center">Current Stock</th>
+                            <th class="text-center">Reorder Level</th>
+                            <th class="text-center">Last Sale Date</th>
+                            <th class="text-center">Days Since Sale</th>
+                            <th class="text-end">Stock Value</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>
+                                <strong>{{ product.product.name }}</strong><br>
+                                <small class="text-muted">{{ product.product.sku|default:"-" }}</small>
+                            </td>
+                            <td>
+                                {% if product.product.category %}
+                                <span class="badge bg-info">{{ product.product.category.name }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Uncategorized</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ product.current_stock|intcomma }}</td>
+                            <td class="text-center">{{ product.reorder_level|intcomma }}</td>
+                            <td class="text-center">
+                                {% if product.last_sale_date %}
+                                {{ product.last_sale_date|date:"M d, Y" }}
+                                {% else %}
+                                <span class="text-muted">Never sold</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if product.days_since_sale %}
+                                <span class="{% if product.days_since_sale > days_threshold %}text-danger{% else %}text-success{% endif %}">
+                                    {{ product.days_since_sale }} days
+                                </span>
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <strong>KSh {{ product.stock_value|floatformat:2|intcomma }}</strong>
+                            </td>
+                            <td class="text-center">
+                                {% if product.is_slow_moving and product.is_excess_stock %}
+                                <span class="badge bg-danger">Slow & Excess</span>
+                                {% elif product.is_slow_moving %}
+                                <span class="badge bg-warning">Slow Moving</span>
+                                {% elif product.is_excess_stock %}
+                                <span class="badge bg-primary">Excess Stock</span>
+                                {% else %}
+                                <span class="badge bg-success">Normal</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-clock fa-3x mb-3"></i><br>
+                                    No slow moving products found for the selected threshold.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="row">
+                <div class="col">
+                    <small class="text-muted">
+                        Showing {{ products|length }} products
+                    </small>
+                </div>
+                <div class="col text-end">
+                    <small class="text-muted">
+                        Generated on {{ today|date:"F d, Y H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    background-color: #f8f9fc;
+    border-top: none;
+}
+
+#dataTable tbody tr:hover {
+    background-color: #f8f9fc;
+}
+
+.badge.bg-warning {
+    color: #000;
+}
+
+.badge.bg-danger {
+    color: #fff;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable if jQuery is available
+    if (typeof jQuery !== 'undefined' && $.fn.DataTable) {
+        $('#dataTable').DataTable({
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            order: [[5, 'desc']], // Sort by days since sale descending
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search products...",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)"
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
