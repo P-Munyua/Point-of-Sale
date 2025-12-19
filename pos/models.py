@@ -49,6 +49,7 @@ class Product(models.Model):
     reorder_level = models.IntegerField(default=5)
     supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
+    description = models.TextField(blank=True, null=True)  # Add this line
     is_active = models.BooleanField(default=True)
     
     def __str__(self):
@@ -207,18 +208,24 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+# models.py - Update Purchase model
+from django.db import models
+from django.db.models import Max
+import random
+import string
+
 class Purchase(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
-    invoice_number = models.CharField(max_length=50)
+    invoice_number = models.CharField(max_length=50, unique=True, editable=True)
     date = models.DateTimeField(default=timezone.now)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_paid = models.BooleanField(default=False)
-    payment_method = models.CharField(max_length=50, blank=True, null=True)  # Added
-    notes = models.TextField(blank=True, null=True)  # Added
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='purchases')  # Updated
+    payment_method = models.CharField(max_length=50, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='purchases')
     item_count = models.PositiveIntegerField(default=0)
     
     # Return fields
@@ -240,10 +247,40 @@ class Purchase(models.Model):
         ],
         default='pending'
     )
-
+    
     def __str__(self):
         prefix = "RETURN-" if self.is_return else ""
         return f"{prefix}{self.invoice_number} - {self.supplier.name}"
+    
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            # Generate invoice number based on date and sequence
+            date_str = timezone.now().strftime('%Y%m%d')
+            
+            # Get the last invoice number for today
+            last_invoice = Purchase.objects.filter(
+                invoice_number__startswith=f"INV-{date_str}-"
+            ).order_by('-invoice_number').first()
+            
+            if last_invoice:
+                try:
+                    # Extract the sequence number
+                    last_num = int(last_invoice.invoice_number.split('-')[-1])
+                    next_num = last_num + 1
+                except:
+                    next_num = 1
+            else:
+                next_num = 1
+            
+            # Format: INV-YYYYMMDD-XXXX
+            self.invoice_number = f"INV-{date_str}-{next_num:04d}"
+        
+        super().save(*args, **kwargs)
+    
+    class Meta:
+        ordering = ['-date']
+        verbose_name = 'Purchase'
+        verbose_name_plural = 'Purchases'
 
 
 class PurchaseItem(models.Model):
@@ -259,6 +296,7 @@ class PurchaseItem(models.Model):
 
 
 
+# models.py - Update PendingPurchase model
 class PendingPurchase(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -277,42 +315,82 @@ class PendingPurchase(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    
     def __str__(self):
         return f"Pending Purchase #{self.id} - {self.supplier.name}"
     
     def save(self, *args, **kwargs):
         if not self.invoice_number:
-            today = timezone.now().date()
-            today_pending = PendingPurchase.objects.filter(created_at__date=today)
-            next_number = today_pending.count() + 1
-            self.invoice_number = f"PEND-{today.strftime('%Y%m%d')}-{next_number:04d}"
+            # Generate temporary invoice number
+            date_str = timezone.now().strftime('%Y%m%d')
+            
+            # Get count of pending purchases today
+            today_pending = PendingPurchase.objects.filter(
+                created_at__date=timezone.now().date()
+            ).count()
+            
+            next_num = today_pending + 1
+            self.invoice_number = f"PEND-{date_str}-{next_num:04d}"
+        
         super().save(*args, **kwargs)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Pending Purchase'
+        verbose_name_plural = 'Pending Purchases'
 
         
     
+# In models.py - Update StockJournal model
 class StockJournal(models.Model):
-    MOVEMENT_TYPES = (
-        ('in', 'Stock In'),
-        ('out', 'Stock Out'),
-        ('transfer', 'Transfer'),
-        ('adjustment', 'Adjustment'),
-    )
-    
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)
-    movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPES)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    # Remove MOVEMENT_TYPES from here
+    movement_number = models.CharField(max_length=50, unique=True, editable=False)
+    # Remove movement_type field from here
     reference = models.CharField(max_length=100, blank=True)
     notes = models.TextField(blank=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     date = models.DateTimeField(auto_now_add=True)
+    total_items = models.IntegerField(default=0)
     
     class Meta:
         ordering = ['-date']
     
     def __str__(self):
-        return f"{self.get_movement_type_display()} - {self.product.name} ({self.quantity})" 
+        return f"{self.movement_number}"
+    
+    def save(self, *args, **kwargs):
+        if not self.movement_number:
+            today = timezone.now().date()
+            today_movements = StockJournal.objects.filter(date__date=today)
+            next_number = today_movements.aggregate(models.Max('id'))['id__max'] + 1 if today_movements.exists() else 1
+            self.movement_number = f"MOV-{today.strftime('%Y%m%d')}-{next_number:04d}"
+        super().save(*args, **kwargs)
+
+
+
+class StockJournalItem(models.Model):
+    MOVEMENT_TYPES = (
+        ('in', 'Stock In'),
+        ('out', 'Stock Out'),
+        ('missing', 'Missing'),
+        ('damaged', 'Damaged'),
+        ('broken', 'Broken'),
+        ('expired', 'Expired'),
+        ('adjustment', 'Adjustment'),
+        ('transfer', 'Transfer'),
+    )
+    
+    journal = models.ForeignKey(StockJournal, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)
+    movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPES)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    current_stock = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    new_stock = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    notes = models.TextField(blank=True)
+    
+    def __str__(self):
+        return f"{self.product.name if self.product else 'Unknown'} - {self.get_movement_type_display()} - {self.quantity}"
 
 class Expense(models.Model):
     CATEGORIES = (

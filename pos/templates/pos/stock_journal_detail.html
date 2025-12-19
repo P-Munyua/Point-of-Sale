@@ -1,0 +1,113 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-800">Stock Movement Details</h2>
+        <div class="flex space-x-2">
+            <a href="{% url 'stock_journal_list' %}" class="inline-flex items-center px-3 py-1 border border-gray-300 text-sm leading-4 font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Journal
+            </a>
+        </div>
+    </div>
+
+    <div class="px-6 py-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Movement Number</h3>
+                <p class="mt-1 text-lg font-semibold text-gray-900">{{ journal.movement_number }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Movement Type</h3>
+                <p class="mt-1">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        {% if journal.movement_type == 'missing' or journal.movement_type == 'damaged' or journal.movement_type == 'broken' or journal.movement_type == 'expired' %}bg-red-100 text-red-800
+                        {% elif journal.movement_type == 'adjustment' %}bg-blue-100 text-blue-800
+                        {% else %}bg-green-100 text-green-800{% endif %}">
+                        {{ journal.get_movement_type_display }}
+                    </span>
+                </p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Date & Time</h3>
+                <p class="mt-1 text-lg text-gray-900">{{ journal.date|date:"Y-m-d H:i" }}</p>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h3 class="text-sm font-medium text-gray-500">Reference</h3>
+            <p class="mt-1 text-gray-900">{{ journal.reference|default:"No reference" }}</p>
+        </div>
+
+        <div class="mb-6">
+            <h3 class="text-sm font-medium text-gray-500">Notes</h3>
+            <p class="mt-1 text-gray-900">{{ journal.notes|default:"No notes" }}</p>
+        </div>
+
+        <div class="border-t border-gray-200 pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Items ({{ journal.total_items }})</h3>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Stock</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for item in journal.items.all %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                {{ item.product.name|default:"Unknown" }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ item.batch.batch_number|default:"-" }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                {{ item.quantity }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ item.current_stock }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ item.new_stock }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ item.notes|default:"-" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-3 text-center text-sm text-gray-500">No items found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Recorded By</h3>
+                    <p class="mt-1 text-gray-900">{{ journal.user.username|default:"Unknown" }}</p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Total Items</h3>
+                    <p class="mt-1 text-lg font-semibold text-gray-900">{{ journal.total_items }}</p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Date Created</h3>
+                    <p class="mt-1 text-gray-900">{{ journal.date|date:"F j, Y, g:i a" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -92,11 +92,47 @@ class ExpenseAdmin(admin.ModelAdmin):
 from django.contrib import admin
 from .models import StockJournal
 
+from django.contrib import admin
+# In admin.py - Update or add this
+from django.contrib import admin
+from .models import (
+    Product, Category, Customer, Supplier, Sale, SaleItem,
+    Purchase, PurchaseItem, Expense, Batch, Discount, Company,
+    CompanyPrice, SupplierPayment, PendingSale, PendingPurchase,
+    CustomerPayment, StockJournal, StockJournalItem
+)
+
+# ... your other admin classes ...
+
+# First, define the inline
+class StockJournalItemInline(admin.TabularInline):
+    model = StockJournalItem
+    extra = 0
+    fields = ['product', 'batch', 'movement_type', 'quantity', 'current_stock', 'new_stock', 'notes']
+    readonly_fields = ['current_stock', 'new_stock']
+    classes = ['collapse']
+
+# Then register StockJournalAdmin
 @admin.register(StockJournal)
 class StockJournalAdmin(admin.ModelAdmin):
-    list_display = ('date', 'product', 'batch', 'movement_type', 'quantity', 'user')
-    list_filter = ('movement_type', 'date', 'user')
-    search_fields = ('product__name', 'batch__batch_number', 'reference')
+    list_display = ['movement_number', 'reference', 'user', 'date', 'total_items']
+    list_filter = ['date']  # Removed movement_type since it's not in the model anymore
+    search_fields = ['movement_number', 'reference', 'notes']
+    readonly_fields = ['movement_number', 'date', 'total_items']
+    inlines = [StockJournalItemInline]  # Now this is defined
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('items')
+
+@admin.register(StockJournalItem)
+class StockJournalItemAdmin(admin.ModelAdmin):
+    list_display = ['product', 'batch', 'movement_type', 'quantity', 'current_stock', 'new_stock', 'journal', 'notes']
+    list_filter = ['movement_type', 'journal']  # Removed 'journal__movement_type'
+    search_fields = ['product__name', 'batch__batch_number', 'notes']
+    readonly_fields = ['current_stock', 'new_stock']
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('product', 'batch', 'journal')
 
 
 admin.site.register(Category)

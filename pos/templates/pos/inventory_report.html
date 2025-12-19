@@ -275,10 +275,10 @@
                                         <i class="fas fa-box text-blue-600"></i>
                                     </div>
                                     <div class="ml-4">
-                                        <a href="{% url 'product_detail' product.id %}" class="text-sm font-medium text-gray-900 hover:text-blue-600">
-                                            {{ product.name }}
-                                        </a>
-                                    </div>
+    <a href="{% url 'edit_product' product.id %}" class="text-sm font-medium text-gray-900 hover:text-blue-600">
+        {{ product.name }}
+    </a>
+</div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">

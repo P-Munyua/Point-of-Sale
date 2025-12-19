@@ -1,205 +1,599 @@
-{% extends 'pos/base.html' %}
-{% load static %}
+{% extends 'pos/reports/base_report.html' %}
+{% load static humanize custom_filters %}
+
+{% block title %}Stock Journal{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">
-                    <i class="fas fa-clipboard-list me-2"></i>Stock Journal
-                </h2>
-                <a href="{% url 'add_stock_journal' %}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Add Movement
-                </a>
-            </div>
-            <hr class="mt-2 mb-4">
-        </div>
-    </div>
+{% with report_title="Stock Journal" report_icon="fa-clipboard-list" report_color="teal" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-            <div class="row">
-                <div class="col-md-8">
-                    <form method="get" class="row g-2">
-                        <div class="col-md-3">
-                            <select name="product" class="form-select">
-                                <option value="">All Products</option>
-                                {% for product in products %}
-                                    <option value="{{ product.id }}" {% if selected_product == product.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ product.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <select name="movement_type" class="form-select">
-                                <option value="">All Types</option>
-                                {% for type in movement_types %}
-                                    <option value="{{ type.0 }}" {% if selected_movement_type == type.0 %}selected{% endif %}>
-                                        {{ type.1 }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <input type="date" name="start_date" class="form-control" value="{{ start_date }}" placeholder="From">
-                        </div>
-                        <div class="col-md-2">
-                            <input type="date" name="end_date" class="form-control" value="{{ end_date }}" placeholder="To">
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-outline-primary">
-                                <i class="fas fa-filter me-1"></i>Filter
-                            </button>
-                            <a href="{% url 'stock_journal_list' %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-sync-alt me-1"></i>Reset
-                            </a>
-                        </div>
-                    </form>
+{% block filters %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <div class="flex items-center mb-4">
+            <i class="fas fa-filter text-teal-600 mr-2"></i>
+            <h3 class="text-lg font-medium text-gray-900">Filter Stock Movements</h3>
+        </div>
+        
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <!-- Product Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                    <select name="product" id="product"
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                        <option value="">All Products</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}" {% if selected_product == product.id|stringformat:"s" %}selected{% endif %}>
+                            {{ product.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <div class="col-md-4 text-end">
-                    <a href="?export=csv{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
-                       class="btn btn-success">
-                        <i class="fas fa-file-export me-1"></i>Export CSV
+                
+                <!-- Movement Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Movement Type</label>
+                    <select name="movement_type" id="movement_type"
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                        <option value="">All Types</option>
+                        {% for type in movement_types %}
+                        <option value="{{ type.0 }}" {% if selected_movement_type == type.0 %}selected{% endif %}>
+                            {{ type.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Start Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" 
+                           value="{{ start_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                </div>
+                
+                <!-- End Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <input type="date" name="end_date" id="end_date" 
+                           value="{{ end_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                </div>
+                
+                <!-- Filter Buttons -->
+                <div class="flex items-end space-x-2">
+                    <button type="submit" 
+                            class="flex-1 bg-teal-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                        <i class="fas fa-filter mr-2"></i> Filter
+                    </button>
+                    <a href="{% url 'stock_journal_list' %}" 
+                       class="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                        <i class="fas fa-sync-alt mr-2"></i> Reset
                     </a>
                 </div>
             </div>
-        </div>
-
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">Date</th>
-                            <th>Product</th>
-                            <th>Batch</th>
-                            <th>Type</th>
-                            <th class="text-end">Qty</th>
-                            <th>Reference</th>
-                            <th>Notes</th>
-                            <th>User</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for journal in journals %}
-                            <tr>
-                                <td class="ps-4">{{ journal.date|date:"M d, Y H:i" }}</td>
-                                <td>
-                                    <span class="fw-semibold">{{ journal.product.name }}</span>
-                                </td>
-                                <td>
-                                    {% if journal.batch %}
-                                        <span class="badge bg-light text-dark">{{ journal.batch.batch_number }}</span>
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if journal.movement_type == 'in' %}
-                                        <span class="badge bg-success bg-opacity-10 text-success">
-                                            <i class="fas fa-arrow-down me-1"></i>{{ journal.get_movement_type_display }}
-                                        </span>
-                                    {% elif journal.movement_type == 'out' %}
-                                        <span class="badge bg-danger bg-opacity-10 text-danger">
-                                            <i class="fas fa-arrow-up me-1"></i>{{ journal.get_movement_type_display }}
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-info bg-opacity-10 text-info">
-                                            {{ journal.get_movement_type_display }}
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-end fw-semibold">{{ journal.quantity }}</td>
-                                <td>{{ journal.reference|default:"-" }}</td>
-                                <td>
-                                    {% if journal.notes %}
-                                        <span class="d-inline-block text-truncate" style="max-width: 150px;" 
-                                              data-bs-toggle="tooltip" title="{{ journal.notes }}">
-                                            {{ journal.notes }}
-                                        </span>
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-dark">{{ journal.user.username }}</span>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">
-                                    <i class="fas fa-clipboard-list fa-2x mb-3"></i><br>
-                                    No stock movements found
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            {% if journals.paginator.num_pages > 1 %}
-            <div class="card-footer bg-white border-top-0 py-3">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center mb-0">
-                        {% if journals.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page=1{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="First">
-                                    <i class="fas fa-angle-double-left"></i>
-                                </a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ journals.previous_page_number }}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Previous">
-                                    <i class="fas fa-angle-left"></i>
-                                </a>
-                            </li>
-                        {% endif %}
-
-                        {% for num in journals.paginator.page_range %}
-                            {% if journals.number == num %}
-                                <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
-                            {% elif num > journals.number|add:'-3' and num < journals.number|add:'3' %}
-                                <li class="page-item"><a class="page-link" href="?page={{ num }}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ num }}</a></li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if journals.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ journals.next_page_number }}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Next">
-                                    <i class="fas fa-angle-right"></i>
-                                </a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ journals.paginator.num_pages }}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Last">
-                                    <i class="fas fa-angle-double-right"></i>
-                                </a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            </div>
-            {% endif %}
-        </div>
+        </form>
     </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script>
-$(document).ready(function() {
-    // Enable tooltips
-    $('[data-bs-toggle="tooltip"]').tooltip();
+{% block report_content %}
+<!-- Header Actions -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">
+            <i class="fas fa-clipboard-list text-teal-600 mr-3"></i>Stock Journal
+        </h1>
+        <p class="text-gray-600 mt-2">Track all stock movements, adjustments, and transfers</p>
+    </div>
+    <div class="flex space-x-3 mt-4 md:mt-0">
+        <a href="{% url 'add_stock_journal' %}" 
+           class="inline-flex items-center px-4 py-2 bg-teal-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+            <i class="fas fa-plus mr-2"></i> Add Movement
+        </a>
+        <button type="button" onclick="exportToCSV()" 
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+            <i class="fas fa-file-export mr-2"></i> Export CSV
+        </button>
+        <button type="button" onclick="window.print()" 
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+            <i class="fas fa-print mr-2"></i> Print
+        </button>
+    </div>
+</div>
+
+<!-- Stock Movements Table -->
+<div class="bg-white shadow rounded-xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-teal-100">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="p-2 bg-teal-500 rounded-lg mr-3">
+                    <i class="fas fa-exchange-alt text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">Stock Movements</h2>
+                    <p class="text-sm text-gray-600">Showing {{ journals|length }} entries</p>
+                </div>
+            </div>
+            <div class="text-sm text-gray-600">
+                {% if start_date and end_date %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                    <i class="fas fa-calendar-alt mr-1"></i>
+                    {{ start_date }} to {{ end_date }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
     
-    // Add animation to table rows
-    $('table tbody tr').hover(
-        function() {
-            $(this).addClass('shadow-sm');
-        },
-        function() {
-            $(this).removeClass('shadow-sm');
-        }
-    );
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date & Time
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Batch
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Quantity
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Reference
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Notes
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        User
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for journal in journals %}
+                <tr class="hover:bg-gray-50 transition duration-150 ease-in-out">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">{{ journal.date|date:"M d, Y" }}</div>
+                        <div class="text-xs text-gray-500">{{ journal.date|time:"H:i" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ journal.product.name }}</div>
+                        <div class="text-xs text-gray-500">{{ journal.product.sku|default:"No SKU" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if journal.batch %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            {{ journal.batch.batch_number|truncatechars:10 }}
+                        </span>
+                        {% else %}
+                        <span class="text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if journal.movement_type == 'in' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-arrow-down mr-1"></i> {{ journal.get_movement_type_display }}
+                        </span>
+                        {% elif journal.movement_type == 'out' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <i class="fas fa-arrow-up mr-1"></i> {{ journal.get_movement_type_display }}
+                        </span>
+                        {% elif journal.movement_type == 'adjustment' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <i class="fas fa-adjust mr-1"></i> {{ journal.get_movement_type_display }}
+                        </span>
+                        {% elif journal.movement_type == 'transfer' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <i class="fas fa-exchange-alt mr-1"></i> {{ journal.get_movement_type_display }}
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {{ journal.get_movement_type_display }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <div class="flex items-center">
+                            {% if journal.movement_type == 'in' %}
+                            <div class="mr-2 text-green-600">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <span class="font-bold text-green-700">+{{ journal.quantity }}</span>
+                            {% elif journal.movement_type == 'out' %}
+                            <div class="mr-2 text-red-600">
+                                <i class="fas fa-minus-circle"></i>
+                            </div>
+                            <span class="font-bold text-red-700">-{{ journal.quantity }}</span>
+                            {% else %}
+                            <span class="font-bold text-gray-700">{{ journal.quantity }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ journal.reference|default:"-" }}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if journal.notes %}
+                        <div class="group relative">
+                            <div class="text-sm text-gray-500 truncate max-w-xs" data-tooltip="{{ journal.notes }}">
+                                {{ journal.notes|truncatechars:30 }}
+                            </div>
+                            <div class="absolute z-10 invisible group-hover:visible w-64 p-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                {{ journal.notes }}
+                            </div>
+                        </div>
+                        {% else %}
+                        <span class="text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {{ journal.user.username|truncatechars:15 }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="px-6 py-12 text-center">
+                        <div class="text-gray-400">
+                            <i class="fas fa-clipboard-list fa-4x mb-4"></i>
+                            <p class="mt-2 text-lg font-medium text-gray-900">No stock movements found</p>
+                            <p class="text-gray-500">Try adjusting your filters or add a new movement</p>
+                            <a href="{% url 'add_stock_journal' %}" 
+                               class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                                <i class="fas fa-plus mr-2"></i> Add First Movement
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if journals.has_other_pages %}
+    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                Showing <span class="font-medium">{{ journals.start_index }}</span> to 
+                <span class="font-medium">{{ journals.end_index }}</span> of 
+                <span class="font-medium">{{ journals.paginator.count }}</span> results
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if journals.has_previous %}
+                    <a href="?page=1{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
+                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">First</span>
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                    <a href="?page={{ journals.previous_page_number }}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
+                       class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Previous</span>
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                    {% endif %}
+                    
+                    {% for num in journals.paginator.page_range %}
+                        {% if journals.number == num %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-teal-500 bg-teal-50 text-sm font-medium text-teal-600">
+                            {{ num }}
+                        </span>
+                        {% elif num > journals.number|add:'-3' and num < journals.number|add:'3' %}
+                        <a href="?page={{ num }}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
+                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ num }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if journals.has_next %}
+                    <a href="?page={{ journals.next_page_number }}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
+                       class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Next</span>
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                    <a href="?page={{ journals.paginator.num_pages }}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_movement_type %}&movement_type={{ selected_movement_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
+                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Last</span>
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Summary Stats -->
+{% if journals %}
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
+    <!-- Total Incoming -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-green-500">
+        <div class="flex items-center">
+            <div class="p-3 bg-green-100 rounded-lg mr-4">
+                <i class="fas fa-arrow-down text-green-600 text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">Total Incoming</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    {{ total_incoming|default:"0" }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Stock additions</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Outgoing -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-red-500">
+        <div class="flex items-center">
+            <div class="p-3 bg-red-100 rounded-lg mr-4">
+                <i class="fas fa-arrow-up text-red-600 text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">Total Outgoing</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    {{ total_outgoing|default:"0" }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Stock deductions</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unique Products -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-blue-500">
+        <div class="flex items-center">
+            <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                <i class="fas fa-boxes text-blue-600 text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">Products Tracked</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    {{ unique_products|default:"0" }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Unique items moved</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Net Movement -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-teal-500">
+        <div class="flex items-center">
+            <div class="p-3 bg-teal-100 rounded-lg mr-4">
+                <i class="fas fa-exchange-alt text-teal-600 text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">Net Movement</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900 {% if net_movement >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                    {{ net_movement|default:"0" }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Incoming minus outgoing</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates if not set
+    const today = new Date().toISOString().split('T')[0];
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (!startDateInput.value) {
+        startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+    }
+    
+    if (!endDateInput.value) {
+        endDateInput.value = today;
+    }
+    
+    // Initialize DataTable if jQuery is available
+    if (typeof jQuery !== 'undefined' && $.fn.DataTable) {
+        $('table').DataTable({
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            order: [[0, 'desc']], // Sort by date descending
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search movements...",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)"
+            }
+        });
+    }
+    
+    // Tooltip functionality
+    const tooltipElements = document.querySelectorAll('[data-tooltip]');
+    tooltipElements.forEach(element => {
+        element.addEventListener('mouseenter', function() {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'fixed z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm';
+            tooltip.textContent = this.getAttribute('data-tooltip');
+            document.body.appendChild(tooltip);
+            
+            const rect = this.getBoundingClientRect();
+            tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2}px`;
+            tooltip.style.top = `${rect.top - tooltip.offsetHeight - 10}px`;
+            
+            this.tooltipElement = tooltip;
+        });
+        
+        element.addEventListener('mouseleave', function() {
+            if (this.tooltipElement) {
+                document.body.removeChild(this.tooltipElement);
+                this.tooltipElement = null;
+            }
+        });
+    });
+});
+
+// Export to CSV function
+function exportToCSV() {
+    const form = document.createElement('form');
+    form.method = 'get';
+    form.style.display = 'none';
+    
+    // Add current filter parameters
+    const params = new URLSearchParams(window.location.search);
+    params.forEach((value, key) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+    });
+    
+    // Add export parameter
+    const exportInput = document.createElement('input');
+    exportInput.type = 'hidden';
+    exportInput.name = 'export';
+    exportInput.value = 'csv';
+    form.appendChild(exportInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl + N for new movement
+    if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        window.location.href = "{% url 'add_stock_journal' %}";
+    }
+    
+    // Ctrl + F for filter focus
+    if (e.ctrlKey && e.key === 'f') {
+        e.preventDefault();
+        const filterInput = document.querySelector('input[name="product"]') || 
+                           document.querySelector('select[name="product"]');
+        if (filterInput) filterInput.focus();
+    }
+});
+
+// Auto-submit form on some filter changes
+document.getElementById('start_date')?.addEventListener('change', function() {
+    this.form.submit();
+});
+
+document.getElementById('end_date')?.addEventListener('change', function() {
+    this.form.submit();
 });
 </script>
+
+<style>
+/* Custom animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+tbody tr {
+    animation: fadeInUp 0.5s ease-out;
+    animation-fill-mode: both;
+}
+
+/* Stagger row animations */
+tbody tr:nth-child(1) { animation-delay: 0.1s; }
+tbody tr:nth-child(2) { animation-delay: 0.2s; }
+tbody tr:nth-child(3) { animation-delay: 0.3s; }
+tbody tr:nth-child(4) { animation-delay: 0.4s; }
+tbody tr:nth-child(5) { animation-delay: 0.5s; }
+
+/* Hover effects */
+tbody tr:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .bg-white {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    table {
+        border-collapse: collapse;
+    }
+    
+    table th,
+    table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    
+    .rounded-xl {
+        border-radius: 0 !important;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .grid-cols-1 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-cols-4 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-cols-5 {
+        grid-template-columns: 1fr;
+    }
+    
+    .text-2xl {
+        font-size: 1.25rem;
+    }
+    
+    .text-3xl {
+        font-size: 1.5rem;
+    }
+    
+    .px-6 {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    table {
+        font-size: 0.875rem;
+    }
+    
+    .hidden-mobile {
+        display: none;
+    }
+}
+</style>
 {% endblock %}

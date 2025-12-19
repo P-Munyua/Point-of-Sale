@@ -4,6 +4,9 @@ from django.core.exceptions import ValidationError
 from django import forms
 from .models import Product
 from django.core.exceptions import ValidationError
+from django.utils import timezone
+from django.forms import inlineformset_factory
+from .models import StockJournal, StockJournalItem
 
 class ProductForm(forms.ModelForm):
     class Meta:
@@ -117,19 +120,28 @@ class SaleForm(forms.ModelForm):
             'is_credit': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+# forms.py - PurchaseForm
 from django import forms
-from .models import Purchase, Supplier
+from .models import Purchase, Supplier, Product
 
 class PurchaseForm(forms.ModelForm):
     class Meta:
         model = Purchase
-        fields = ['supplier', 'invoice_number']
-        
+        fields = ['supplier', 'invoice_number', 'payment_method', 'is_paid', 'notes']
+        widgets = {
+            'invoice_number': forms.TextInput(attrs={
+                'readonly': 'readonly',
+                'class': 'bg-gray-50'
+            }),
+            'supplier': forms.Select(attrs={'class': 'form-control'}),
+            'payment_method': forms.Select(attrs={'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+        }
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['supplier'].required = True
-        self.fields['invoice_number'].required = False
         self.fields['supplier'].queryset = Supplier.objects.all().order_by('name')
+        self.fields['is_paid'].required = False
 
 class ExpenseForm(forms.ModelForm):
     class Meta:
@@ -367,23 +379,48 @@ class PurchaseReturnForm(forms.ModelForm):
 
 
 
+# In forms.py - Update StockJournalForm
 class StockJournalForm(forms.ModelForm):
     class Meta:
         model = StockJournal
-        fields = ['product', 'batch', 'movement_type', 'quantity', 'reference', 'notes']
-        
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['batch'].queryset = Batch.objects.none()
-        
-        if 'product' in self.data:
-            try:
-                product_id = int(self.data.get('product'))
-                self.fields['batch'].queryset = Batch.objects.filter(product_id=product_id).order_by('-expiry_date')
-            except (ValueError, TypeError):
-                pass
-        elif self.instance.pk:
-            self.fields['batch'].queryset = self.instance.product.batches.order_by('-expiry_date')
+        fields = ['reference', 'notes']  # Removed movement_type
+        widgets = {
+            'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Reference (optional)'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Notes (optional)'}),
+        }
+        labels = {
+            'reference': 'Reference',
+            'notes': 'Notes',
+        }
+
+class StockJournalItemForm(forms.ModelForm):
+    class Meta:
+        model = StockJournalItem
+        fields = ['product', 'batch', 'movement_type', 'quantity', 'notes']
+        widgets = {
+            'product': forms.Select(attrs={'class': 'form-control product-select'}),
+            'batch': forms.Select(attrs={'class': 'form-control batch-select'}),
+            'movement_type': forms.Select(attrs={'class': 'form-control movement-type-select'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control quantity-input', 'step': '0.01', 'min': '0.01'}),
+            'notes': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Notes (optional)'}),
+        }
+        labels = {
+            'product': 'Product *',
+            'batch': 'Batch',
+            'movement_type': 'Movement Type *',
+            'quantity': 'Quantity *',
+            'notes': 'Notes',
+        }
+
+# Update the formset factory
+StockJournalItemFormSet = inlineformset_factory(
+    StockJournal,
+    StockJournalItem,
+    form=StockJournalItemForm,
+    extra=1,
+    can_delete=True,
+    fields=['product', 'batch', 'movement_type', 'quantity', 'notes']
+)
 
 
 from django import forms

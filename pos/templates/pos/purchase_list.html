@@ -1,6 +1,8 @@
 {% extends 'pos/base.html' %}
 
 {% block content %}
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
 <div class="bg-white rounded-lg shadow p-6">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold">Purchases & Returns</h2>
@@ -182,6 +184,10 @@
                             <i class="fas fa-cog"></i>
                         </a>
                         {% endif %}
+                        <button type="button" onclick="confirmDelete('{% url 'delete_purchase' purchase.id %}', '{{ purchase.invoice_number }}')" 
+            class="text-red-600 hover:text-red-900" title="Delete">
+        <i class="fas fa-trash"></i>
+    </button>
                     </td>
                 </tr>
                 {% empty %}
@@ -246,4 +252,73 @@
         </a>
     </div>
 </div>
+
+<!-- Add this JavaScript at the bottom of purchase_list.html, before closing the content block -->
+<script>
+// Get CSRF token from meta tag or form input
+function getCSRFToken() {
+    // Try to get from meta tag first
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        return metaToken.getAttribute('content');
+    }
+    
+    // Try to get from form input
+    const inputToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (inputToken) {
+        return inputToken.value;
+    }
+    
+    // If still not found, try to get from cookies (Django default)
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+    
+    return cookieValue || '';
+}
+
+function confirmDelete(url, invoiceNumber) {
+    if (confirm(`Are you sure you want to delete purchase #${invoiceNumber}?\n\nThis action cannot be undone.`)) {
+        const csrfToken = getCSRFToken();
+        
+        if (!csrfToken) {
+            alert('Security token missing. Please refresh the page and try again.');
+            return;
+        }
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                alert(data.message || 'Purchase deleted successfully!');
+                // Reload the page after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } else {
+                alert('Error: ' + (data.message || 'Unknown error occurred'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the purchase. Please check the console for details.');
+        });
+    }
+}
+</script>
 {% endblock %}

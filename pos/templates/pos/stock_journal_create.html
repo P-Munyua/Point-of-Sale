@@ -1,0 +1,510 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-800">Record Stock Movement</h2>
+        <div class="flex space-x-2">
+            <a href="{% url 'stock_journal_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Journal
+            </a>
+        </div>
+    </div>
+
+    <form method="post" id="stock-movement-form" class="px-6 py-4" novalidate>
+        {% csrf_token %}
+        
+        <!-- Journal Header -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 p-4 bg-blue-50 rounded-lg">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Reference</label>
+                {{ journal_form.reference }}
+                {% if journal_form.reference.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ journal_form.reference.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                {{ journal_form.notes }}
+                {% if journal_form.notes.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ journal_form.notes.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Products Section -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Products *</h3>
+                <button type="button" id="add-product" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                    <i class="fas fa-plus mr-2"></i> Add Product
+                </button>
+            </div>
+
+            <table class="min-w-full divide-y divide-gray-200 mb-4">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Movement Type</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="formset-container" class="bg-white divide-y divide-gray-200">
+                    {{ formset.management_form }}
+                    {% for form in formset %}
+                    <tr class="item-row">
+                        <td class="px-4 py-3">
+                            <div class="relative">
+                                <input type="hidden" name="items-{{ forloop.counter0 }}-product" 
+                                       id="id_items-{{ forloop.counter0 }}-product" 
+                                       class="product-id-input" value="{{ form.product.value|default:'' }}">
+                                <input type="text" 
+                                       class="form-control product-search" 
+                                       placeholder="Type to search products..."
+                                       autocomplete="off"
+                                       data-row="{{ forloop.counter0 }}"
+                                       value="{% if form.product.value %}{% for product in products %}{% if product.id == form.product.value %}{{ product.name }}{% endif %}{% endfor %}{% endif %}">
+                                <div class="search-results hidden absolute z-50 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto" 
+                                     id="search-results-{{ forloop.counter0 }}"></div>
+                                {% if form.product.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.product.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            {{ form.batch }}
+                            {% if form.batch.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.batch.errors.0 }}</p>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            {{ form.movement_type }}
+                            {% if form.movement_type.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.movement_type.errors.0 }}</p>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            {{ form.quantity }}
+                            {% if form.quantity.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.quantity.errors.0 }}</p>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            {{ form.notes }}
+                        </td>
+                        <td class="px-4 py-3">
+                            <button type="button" class="remove-row text-red-600 hover:text-red-900">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {{ form.DELETE }}
+                            {{ form.id }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-end space-x-4">
+            <button type="reset" class="inline-flex items-center px-6 py-3 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+                <i class="fas fa-times mr-2"></i> Reset All
+            </button>
+            <button type="submit" id="save-movement" class="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                <i class="fas fa-save mr-2"></i> Save Stock Movement
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Product Search Template -->
+<template id="product-option-template">
+    <div class="product-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+        <div class="font-medium text-gray-900" data-name></div>
+        <div class="text-sm text-gray-600">Stock: <span data-stock></span></div>
+        <div class="text-xs text-gray-500" data-barcode></div>
+    </div>
+</template>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formsetContainer = document.getElementById('formset-container');
+    const addProductBtn = document.getElementById('add-product');
+    const managementForm = document.querySelector('#id_items-TOTAL_FORMS');
+    const productOptionTemplate = document.getElementById('product-option-template');
+    let formCount = parseInt(managementForm.value);
+    let searchTimeouts = {};
+    
+    // Add new row
+    addProductBtn.addEventListener('click', function() {
+        const newRow = document.createElement('tr');
+        newRow.className = 'item-row';
+        newRow.id = `row-${formCount}`;
+        
+        newRow.innerHTML = `
+            <td class="px-4 py-3">
+                <div class="relative">
+                    <input type="hidden" name="items-${formCount}-product" 
+                           id="id_items-${formCount}-product" 
+                           class="product-id-input">
+                    <input type="text" 
+                           class="form-control product-search" 
+                           placeholder="Type to search products..."
+                           autocomplete="off"
+                           data-row="${formCount}">
+                    <div class="search-results hidden absolute z-50 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto" 
+                         id="search-results-${formCount}"></div>
+                </div>
+            </td>
+            <td class="px-4 py-3">
+                <select name="items-${formCount}-batch" id="id_items-${formCount}-batch" class="form-control batch-select">
+                    <option value="">Select Batch</option>
+                </select>
+            </td>
+            <td class="px-4 py-3">
+                <select name="items-${formCount}-movement_type" id="id_items-${formCount}-movement_type" class="form-control movement-type-select">
+                    <option value="">Select Type</option>
+                    <option value="in">Stock In</option>
+                    <option value="out">Stock Out</option>
+                    <option value="missing">Missing</option>
+                    <option value="damaged">Damaged</option>
+                    <option value="broken">Broken</option>
+                    <option value="expired">Expired</option>
+                    <option value="adjustment">Adjustment</option>
+                    <option value="transfer">Transfer</option>
+                </select>
+            </td>
+            <td class="px-4 py-3">
+                <input type="number" name="items-${formCount}-quantity" id="id_items-${formCount}-quantity" 
+                       step="0.01" min="0.01" class="form-control quantity-input" required>
+            </td>
+            <td class="px-4 py-3">
+                <input type="text" name="items-${formCount}-notes" id="id_items-${formCount}-notes" 
+                       class="form-control" placeholder="Optional">
+            </td>
+            <td class="px-4 py-3">
+                <button type="button" class="remove-row text-red-600 hover:text-red-900">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <input type="hidden" name="items-${formCount}-id" id="id_items-${formCount}-id">
+                <input type="hidden" name="items-${formCount}-DELETE" id="id_items-${formCount}-DELETE">
+            </td>
+        `;
+        
+        formsetContainer.appendChild(newRow);
+        formCount++;
+        managementForm.value = formCount;
+        
+        // Initialize search for new row
+        initializeSearch(newRow);
+    });
+    
+    // Remove row
+    formsetContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-row')) {
+            const row = e.target.closest('.item-row');
+            const deleteInput = row.querySelector('input[name$="-DELETE"]');
+            
+            if (deleteInput) {
+                deleteInput.value = 'on';
+                row.style.display = 'none';
+            } else {
+                row.remove();
+                updateFormIndices();
+            }
+        }
+    });
+    
+    // Initialize search for all existing rows
+    document.querySelectorAll('.item-row').forEach(row => {
+        initializeSearch(row);
+    });
+    
+    function initializeSearch(row) {
+        const searchInput = row.querySelector('.product-search');
+        const searchResults = row.querySelector('.search-results');
+        const productIdInput = row.querySelector('.product-id-input');
+        const rowIndex = searchInput ? searchInput.dataset.row : null;
+        
+        if (!searchInput || !searchResults || !rowIndex) return;
+        
+        // Clear previous timeout for this row
+        if (searchTimeouts[rowIndex]) {
+            clearTimeout(searchTimeouts[rowIndex]);
+        }
+        
+        searchInput.addEventListener('input', function(e) {
+            const query = this.value.trim();
+            
+            // Clear previous timeout
+            if (searchTimeouts[rowIndex]) {
+                clearTimeout(searchTimeouts[rowIndex]);
+            }
+            
+            // Hide results if query is too short
+            if (query.length < 2) {
+                searchResults.classList.add('hidden');
+                searchResults.innerHTML = '';
+                return;
+            }
+            
+            // Set new timeout for search
+            searchTimeouts[rowIndex] = setTimeout(() => {
+                performProductSearch(query, row);
+            }, 300);
+        });
+        
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!row.contains(e.target)) {
+                searchResults.classList.add('hidden');
+            }
+        });
+    }
+    
+    function performProductSearch(query, row) {
+        const searchResults = row.querySelector('.search-results');
+        const searchInput = row.querySelector('.product-search');
+        const rowIndex = searchInput.dataset.row;
+        
+        searchResults.innerHTML = '<div class="px-3 py-2 text-gray-500">Searching...</div>';
+        searchResults.classList.remove('hidden');
+        
+        fetch(`/pos/ajax/search-products/?q=${encodeURIComponent(query)}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Network error');
+                return response.json();
+            })
+            .then(products => {
+                searchResults.innerHTML = '';
+                
+                if (products.length === 0) {
+                    searchResults.innerHTML = '<div class="px-3 py-2 text-gray-500">No products found</div>';
+                    return;
+                }
+                
+                products.forEach(product => {
+                    const optionTemplate = productOptionTemplate.content.cloneNode(true);
+                    const optionDiv = optionTemplate.querySelector('.product-option');
+                    
+                    optionDiv.querySelector('[data-name]').textContent = product.name;
+                    optionDiv.querySelector('[data-stock]').textContent = product.quantity;
+                    
+                    if (product.barcode) {
+                        optionDiv.querySelector('[data-barcode]').textContent = `Barcode: ${product.barcode}`;
+                    }
+                    
+                    optionDiv.addEventListener('click', function() {
+                        handleProductSelection(product, row, searchResults);
+                    });
+                    
+                    searchResults.appendChild(optionTemplate);
+                });
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                searchResults.innerHTML = '<div class="px-3 py-2 text-red-500">Error searching products</div>';
+            });
+    }
+    
+    function handleProductSelection(product, row, searchResults) {
+        const productIdInput = row.querySelector('.product-id-input');
+        const searchInput = row.querySelector('.product-search');
+        const batchSelect = row.querySelector('.batch-select');
+        const quantityInput = row.querySelector('.quantity-input');
+        
+        // Update product ID hidden input
+        if (productIdInput) {
+            productIdInput.value = product.id;
+        }
+        
+        // Update search input display
+        if (searchInput) {
+            searchInput.value = product.name;
+        }
+        
+        // Set default quantity if empty
+        if (quantityInput && !quantityInput.value) {
+            quantityInput.value = '1';
+        }
+        
+        // Hide search results
+        if (searchResults) {
+            searchResults.classList.add('hidden');
+            searchResults.innerHTML = '';
+        }
+        
+        // Load batches for this product
+        if (batchSelect) {
+            loadBatches(product.id, batchSelect);
+        }
+        
+        // Focus on quantity field
+        if (quantityInput) {
+            setTimeout(() => {
+                quantityInput.focus();
+                quantityInput.select();
+            }, 100);
+        }
+    }
+    
+    function loadBatches(productId, batchSelect) {
+        if (!batchSelect) return;
+        
+        fetch(`/pos/ajax/get-batches/?product_id=${productId}`)
+            .then(response => response.text())
+            .then(html => {
+                batchSelect.innerHTML = '<option value="">Select Batch</option>' + html;
+            })
+            .catch(error => {
+                console.error('Error loading batches:', error);
+                batchSelect.innerHTML = '<option value="">Error loading batches</option>';
+            });
+    }
+    
+    function updateFormIndices() {
+        const rows = formsetContainer.querySelectorAll('.item-row:not([style*="display: none"])');
+        formCount = rows.length;
+        managementForm.value = formCount;
+        
+        rows.forEach((row, index) => {
+            row.id = `row-${index}`;
+            
+            row.querySelectorAll('input, select').forEach(input => {
+                const name = input.name || '';
+                const newName = name.replace(/items-\d+/, `items-${index}`);
+                input.name = newName;
+                
+                const id = input.id || '';
+                const newId = id.replace(/id_items_\d+_/, `id_items_${index}_`);
+                input.id = newId;
+                
+                if (input.classList.contains('product-search')) {
+                    input.dataset.row = index;
+                    
+                    const searchResults = row.querySelector('.search-results');
+                    if (searchResults) {
+                        searchResults.id = `search-results-${index}`;
+                    }
+                }
+            });
+        });
+    }
+    
+    // Form validation
+    const stockMovementForm = document.getElementById('stock-movement-form');
+    if (stockMovementForm) {
+        stockMovementForm.addEventListener('submit', function(e) {
+            const rows = formsetContainer.querySelectorAll('.item-row:not([style*="display: none"])');
+            let isValid = true;
+            const errors = [];
+            
+            if (rows.length === 0) {
+                errors.push('Please add at least one product');
+                isValid = false;
+            }
+            
+            rows.forEach((row, index) => {
+                const productIdInput = row.querySelector('.product-id-input');
+                const movementTypeSelect = row.querySelector('.movement-type-select');
+                const quantityInput = row.querySelector('.quantity-input');
+                
+                if (!productIdInput || !productIdInput.value) {
+                    errors.push(`Row ${index + 1}: Please select a product`);
+                    isValid = false;
+                }
+                
+                if (!movementTypeSelect || !movementTypeSelect.value) {
+                    errors.push(`Row ${index + 1}: Please select a movement type`);
+                    isValid = false;
+                }
+                
+                if (!quantityInput || !quantityInput.value || parseFloat(quantityInput.value) <= 0) {
+                    errors.push(`Row ${index + 1}: Please enter a valid quantity`);
+                    isValid = false;
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('Please fix the following errors:\n\n' + errors.join('\n'));
+            }
+        });
+    }
+    
+    // Initialize existing rows with any pre-selected products
+    document.querySelectorAll('.item-row').forEach(row => {
+        const productIdInput = row.querySelector('.product-id-input');
+        const searchInput = row.querySelector('.product-search');
+        const batchSelect = row.querySelector('.batch-select');
+        const quantityInput = row.querySelector('.quantity-input');
+        
+        if (productIdInput && productIdInput.value) {
+            // Load batches for pre-selected product
+            loadBatches(productIdInput.value, batchSelect);
+            
+            // Set default quantity if empty
+            if (quantityInput && !quantityInput.value) {
+                quantityInput.value = '1';
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.form-control {
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #374151;
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #3b82f6;
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+input[name$="-DELETE"] {
+    display: none;
+}
+
+/* Hide the original product select field */
+select[name$="-product"] {
+    display: none !important;
+}
+
+.search-results {
+    z-index: 9999;
+}
+
+.product-search {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+
+.product-option:hover {
+    background-color: #f0f9ff;
+}
+
+.product-option.active {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.product-option.active div {
+    color: white !important;
+}
+</style>
+{% endblock %}

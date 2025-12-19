@@ -41,7 +41,8 @@ from .models import (
 from .forms import (
     ProductForm, CustomerForm, SupplierForm, PurchaseForm, 
     ExpenseForm, BatchForm, DiscountForm, CompanyPriceForm,
-    BulkUploadForm, PurchaseReturnForm,CompanyForm, SupplierPaymentForm, ExpenseFormSet, BulkExpenseForm
+    BulkUploadForm, PurchaseReturnForm,CompanyForm, SupplierPaymentForm, ExpenseFormSet, BulkExpenseForm, StockJournalItemForm, 
+    StockJournalItemFormSet, StockJournalForm, StockJournalItem
 )
 
 # ============== Dashboard Views ==============
@@ -653,105 +654,137 @@ def edit_sale(request, pk):
     sale = get_object_or_404(Sale, pk=pk)
     
     if request.method == 'POST':
-        with transaction.atomic():
-            # Restore original quantities first
-            for item in sale.items.all():
-                product = item.product
-                product.quantity += item.quantity
-                product.save()
+        try:
+            with transaction.atomic():
+                # Get posted data
+                customer_id = request.POST.get('customer')
+                payment_method = request.POST.get('payment_method')
+                amount_paid = Decimal(request.POST.get('amount_paid', '0.00'))
+                is_credit = request.POST.get('is_credit') == 'on'
+                notes = request.POST.get('notes', '')
                 
-                if item.batch:
-                    batch = item.batch
-                    batch.quantity += item.quantity
-                    batch.save()
-            
-            # Update customer balance if credit sale
-            if sale.is_credit and sale.customer:
-                sale.customer.balance -= sale.balance
-                sale.customer.save()
-            
-            # Delete old items
-            sale.items.all().delete()
-            
-            # Process new sale data
-            data = json.loads(request.POST.get('sale_data'))
-            
-            sale.subtotal = Decimal(data['subtotal'])
-            sale.discount_amount = Decimal(data.get('discount_amount', 0))
-            sale.discount_percent = Decimal(data.get('discount_percent', 0))
-            sale.total = Decimal(data['total'])
-            sale.payment_method = data['payment_method']
-            sale.amount_paid = Decimal(data['amount_paid'])
-            sale.balance = max(Decimal(data['total']) - Decimal(data['amount_paid']), Decimal(0))
-            sale.is_credit = data.get('is_credit', False)
-            sale.notes = data.get('notes', '')
-            
-            # Update payment details
-            payment_details = data.get('payment_details', {})
-            sale.mpesa_amount = Decimal(payment_details.get('mpesa', 0))
-            sale.cash_amount = Decimal(payment_details.get('cash', 0))
-            sale.card_amount = Decimal(payment_details.get('card', 0))
-            sale.cheque_amount = Decimal(payment_details.get('cheque', 0))
-            sale.mpesa_code = payment_details.get('mpesa_code', '')
-            sale.cheque_number = payment_details.get('cheque_number', '')
-            
-            sale.save()
-            
-            # Create new sale items
-            for item in data['items']:
-                product = Product.objects.get(id=item['id'])
-                batch = None
+                # Handle payment details
+                mpesa_code = request.POST.get('mpesa_code', '')
+                cheque_number = request.POST.get('cheque_number', '')
                 
-                if item.get('batch_id'):
-                    batch = Batch.objects.get(id=item['batch_id'])
+                # First, restore original stock for all items
+                for item in sale.items.all():
+                    product = item.product
+                    product.quantity += item.quantity
+                    product.save()
+                    
+                    if item.batch:
+                        batch = item.batch
+                        batch.quantity += item.quantity
+                        batch.save()
                 
-                SaleItem.objects.create(
-                    sale=sale,
-                    product=product,
-                    batch=batch,
-                    quantity=item['quantity'],
-                    price=Decimal(item['price']),
-                    discount_amount=Decimal(item.get('discount_amount', 0)),
-                    discount_percent=Decimal(item.get('discount_percent', 0)),
-                    total=Decimal(item['total'])
-                )
+                # Update customer balance if credit sale
+                if sale.is_credit and sale.customer:
+                    customer = sale.customer
+                    customer.balance -= sale.balance
+                    customer.save()
                 
-                # Update product quantity
-                product.quantity -= item['quantity']
-                product.save()
+                # Update sale details
+                sale.customer_id = customer_id if customer_id else None
+                sale.payment_method = payment_method
+                sale.amount_paid = amount_paid
+                sale.is_credit = is_credit
+                sale.notes = notes
+                sale.mpesa_code = mpesa_code
+                sale.cheque_number = cheque_number
                 
-                # Update batch quantity if batch was specified
-                if batch:
-                    batch.quantity -= item['quantity']
-                    batch.save()
-            
-            # Update customer balance if credit sale
-            if sale.is_credit and sale.customer:
-                sale.customer.balance += sale.balance
-                sale.customer.save()
-            
-            return JsonResponse({'success': True})
+                # Initialize totals
+                subtotal = Decimal('0.00')
+                discount_amount = Decimal('0.00')
+                
+                # Update sale items
+                for item in sale.items.all():
+                    product_id = str(item.product.id)
+                    
+                    # Get new quantity and price from POST data
+                    quantity_key = f'quantity_{product_id}'
+                    price_key = f'price_{product_id}'
+                    
+                    new_quantity = Decimal(request.POST.get(quantity_key, str(item.quantity)))
+                    new_price = Decimal(request.POST.get(price_key, str(item.price)))
+                    
+                    # Validate quantity doesn't exceed available stock
+                    available_stock = item.product.quantity + item.quantity  # Original stock restored + current quantity
+                    if new_quantity > available_stock:
+                        messages.error(request, f"Quantity for {item.product.name} exceeds available stock ({available_stock})")
+                        return redirect('edit_sale', pk=sale.id)
+                    
+                    # Update item
+                    item.quantity = new_quantity
+                    item.price = new_price
+                    item.total = new_quantity * new_price
+                    item.save()
+                    
+                    # Add to subtotal
+                    subtotal += item.total
+                    
+                    # Update product stock
+                    product = item.product
+                    product.quantity -= new_quantity
+                    if product.quantity < 0:
+                        product.quantity = Decimal('0')
+                    product.save()
+                    
+                    # Update batch stock if exists
+                    if item.batch:
+                        batch = item.batch
+                        batch.quantity -= new_quantity
+                        if batch.quantity < 0:
+                            batch.quantity = Decimal('0')
+                        batch.save()
+                
+                # Get discount values
+                discount_amount = Decimal(request.POST.get('discount_amount', '0.00'))
+                discount_percent = Decimal(request.POST.get('discount_percent', '0.00'))
+                
+                # Calculate discount if percentage is provided
+                if discount_percent > 0:
+                    discount_amount = subtotal * (discount_percent / 100)
+                
+                # Calculate totals
+                sale.subtotal = subtotal
+                sale.discount_amount = discount_amount
+                sale.discount_percent = discount_percent
+                sale.total = subtotal - discount_amount
+                sale.balance = sale.total - amount_paid if not is_credit else sale.total
+                
+                # Handle payment details
+                if sale.payment_method == 'cash':
+                    sale.cash_amount = amount_paid
+                elif sale.payment_method == 'mpesa':
+                    sale.mpesa_amount = amount_paid
+                elif sale.payment_method == 'card':
+                    sale.card_amount = amount_paid
+                elif sale.payment_method == 'cheque':
+                    sale.cheque_amount = amount_paid
+                
+                sale.save()
+                
+                # Update customer balance if credit sale
+                if sale.is_credit and sale.customer:
+                    customer = sale.customer
+                    customer.balance += sale.balance
+                    customer.save()
+                
+                messages.success(request, f'Sale #{sale.sale_number} updated successfully!')
+                return redirect('sale_detail', pk=sale.id)
+                
+        except Exception as e:
+            messages.error(request, f'Error updating sale: {str(e)}')
     
     # GET request - prepare data for editing
-    products = Product.objects.filter(is_active=True).order_by('name')
-    categories = Category.objects.all()
     customers = Customer.objects.all().order_by('name')
-    
-    # Get currently valid discounts
-    today = timezone.now().date()
-    discounts = Discount.objects.filter(
-        is_active=True,
-        start_date__lte=today,
-        end_date__gte=today
-    )
+    company = Company.objects.first()
     
     context = {
         'sale': sale,
-        'products': products,
-        'categories': categories,
         'customers': customers,
-        'discounts': discounts,
-        'company': Company.objects.first()
+        'company': company
     }
     return render(request, 'pos/edit_sale.html', context)
 
@@ -1846,14 +1879,31 @@ from .models import Product, Supplier, Purchase, PurchaseItem
 from .forms import PurchaseForm
 
 @login_required
-@login_required
 def add_purchase(request):
-    # Generate invoice number
+    # Auto-generate invoice number
     today = timezone.now().date()
-    purchases_today = Purchase.objects.filter(date__date=today).count()
-    next_invoice_number = purchases_today + 1
-    invoice_number = f"INV-{today.strftime('%Y%m%d')}-{next_invoice_number:04d}"
-
+    
+    # Check for existing purchases today to determine next number
+    last_purchase = Purchase.objects.filter(
+        date__date=today
+    ).order_by('-date').first()
+    
+    if last_purchase and last_purchase.invoice_number:
+        try:
+            # Extract number from invoice like INV-20240115-0001
+            parts = last_purchase.invoice_number.split('-')
+            if len(parts) == 3:
+                last_num = int(parts[2])
+                next_num = last_num + 1
+            else:
+                next_num = 1
+        except:
+            next_num = 1
+    else:
+        next_num = 1
+    
+    invoice_number = f"INV-{today.strftime('%Y%m%d')}-{next_num:04d}"
+    
     if request.method == 'POST':
         form = PurchaseForm(request.POST)
         
@@ -1864,41 +1914,63 @@ def add_purchase(request):
                     purchase = form.save(commit=False)
                     purchase.user = request.user
                     purchase.invoice_number = invoice_number
+                    purchase.date = timezone.now()
                     purchase.save()  # Save the purchase first to get an ID
                     
                     # Calculate totals from items
-                    items = []
+                    items_data = []
                     item_count = 0
                     subtotal = Decimal('0.00')
                     
                     # Process items from POST data
                     i = 0
-                    while f'items[{i}][product_id]' in request.POST:
+                    item_keys = [key for key in request.POST if key.startswith('items[')]
+                    max_index = max([int(key.split('[')[1].split(']')[0]) for key in item_keys]) if item_keys else -1
+                    
+                    for i in range(max_index + 1):
                         product_id = request.POST.get(f'items[{i}][product_id]')
-                        quantity = Decimal(request.POST.get(f'items[{i}][quantity]', '0'))
+                        quantity_str = request.POST.get(f'items[{i}][quantity]')
+                        price_str = request.POST.get(f'items[{i}][price]')
                         
+                        if not product_id or not quantity_str or not price_str:
+                            continue
+                            
                         try:
                             product = Product.objects.get(id=product_id)
+                            quantity = Decimal(str(quantity_str))
+                            price = Decimal(str(price_str))
                             
-                            # Get the price - use purchase_price as default if not provided
-                            price_str = request.POST.get(f'items[{i}][price]')
-                            price = Decimal(price_str) if price_str else product.purchase_price
-                            
-                            batch_number = request.POST.get(f'items[{i}][batch_number]', '')
-                            expiry_date = request.POST.get(f'items[{i}][expiry_date]')
+                            batch_number = request.POST.get(f'items[{i}][batch_number]', '').strip()
+                            expiry_date_str = request.POST.get(f'items[{i}][expiry_date]', '')
                             
                             # Create batch if batch number provided
                             batch = None
                             if batch_number:
-                                batch = Batch.objects.create(
+                                expiry_date = None
+                                if expiry_date_str:
+                                    try:
+                                        expiry_date = datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
+                                    except ValueError:
+                                        expiry_date = None
+                                
+                                batch, created = Batch.objects.get_or_create(
                                     product=product,
                                     batch_number=batch_number,
-                                    quantity=quantity,
-                                    purchase_price=price,  # Use the entered price
-                                    expiry_date=expiry_date if expiry_date else None
+                                    defaults={
+                                        'quantity': quantity,
+                                        'purchase_price': price,
+                                        'expiry_date': expiry_date
+                                    }
                                 )
+                                
+                                if not created:
+                                    batch.quantity += quantity
+                                    batch.purchase_price = price
+                                    if expiry_date:
+                                        batch.expiry_date = expiry_date
+                                    batch.save()
                             
-                            # Create purchase item with the saved purchase
+                            # Create purchase item
                             PurchaseItem.objects.create(
                                 purchase=purchase,
                                 product=product,
@@ -1916,13 +1988,28 @@ def add_purchase(request):
                             subtotal += quantity * price
                             item_count += 1
                             
+                            items_data.append({
+                                'product': product,
+                                'quantity': quantity,
+                                'price': price,
+                                'batch_number': batch_number
+                            })
+                            
                         except Product.DoesNotExist:
-                            raise ValidationError(f"Product with ID {product_id} does not exist")
-                        
-                        i += 1
+                            messages.error(request, f"Product with ID {product_id} does not exist")
+                            continue
+                        except Exception as e:
+                            messages.error(request, f"Error processing item: {str(e)}")
+                            continue
                     
                     if item_count == 0:
-                        raise ValidationError("Please add at least one item to the purchase")
+                        messages.error(request, "Please add at least one item to the purchase")
+                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                            return JsonResponse({
+                                'success': False,
+                                'message': 'Please add at least one item to the purchase'
+                            }, status=400)
+                        return redirect('add_purchase')
                     
                     # Update purchase totals
                     purchase.subtotal = subtotal
@@ -1930,13 +2017,47 @@ def add_purchase(request):
                     purchase.item_count = item_count
                     purchase.save()
                     
+                    # FIXED: Create stock journal entry using new structure
+                    if items_data:
+                        # Create the stock journal
+                        journal = StockJournal.objects.create(
+                            movement_type='adjustment',
+                            reference=f"Purchase: {invoice_number}",
+                            notes=f"Purchase from {purchase.supplier.name}",
+                            user=request.user,
+                            total_items=len(items_data)
+                        )
+                        
+                        # Create journal items for each product
+                        for item_data in items_data:
+                            try:
+                                product = item_data['product']
+                                quantity = item_data['quantity']
+                                
+                                StockJournalItem.objects.create(
+                                    journal=journal,
+                                    product=product,
+                                    movement_type='in',
+                                    quantity=quantity,
+                                    current_stock=product.quantity - quantity,  # Stock before purchase
+                                    new_stock=product.quantity,  # Stock after purchase
+                                    notes=f"Purchase from {purchase.supplier.name}"
+                                )
+                            except Exception as e:
+                                print(f"Error creating stock journal item: {str(e)}")
+                                continue
+                    
                     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                         return JsonResponse({
                             'success': True,
-                            'redirect_url': reverse('view_purchase', args=[purchase.id])
+                            'message': 'Purchase saved successfully!',
+                            'redirect_url': reverse('view_purchase', args=[purchase.id]),
+                            'invoice_number': purchase.invoice_number
                         })
-                    return redirect('purchase_list')
-        
+                    
+                    messages.success(request, f'Purchase #{purchase.invoice_number} saved successfully!')
+                    return redirect('view_purchase', pk=purchase.id)
+            
         except Exception as e:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
@@ -1958,9 +2079,59 @@ def add_purchase(request):
         'products': products,
         'suppliers': suppliers,
         'today': today,
-        'next_invoice_number': next_invoice_number
+        'invoice_number': invoice_number
     }
     return render(request, 'pos/add_purchase.html', context)
+
+
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+
+@login_required
+@require_POST
+def delete_purchase(request, pk):
+    """Delete a purchase"""
+    purchase = get_object_or_404(Purchase, pk=pk)
+    
+    try:
+        with transaction.atomic():
+            # If it's a completed purchase, restore stock quantities
+            if not purchase.is_return:
+                for item in purchase.items.all():
+                    product = item.product
+                    product.quantity -= item.quantity
+                    if product.quantity < 0:
+                        product.quantity = Decimal('0')
+                    product.save()
+                    
+                    if item.batch:
+                        batch = item.batch
+                        batch.quantity -= item.quantity
+                        if batch.quantity < 0:
+                            batch.quantity = Decimal('0')
+                        batch.save()
+            
+            # Delete the purchase
+            purchase.delete()
+            
+            messages.success(request, f'Purchase #{purchase.invoice_number} has been deleted successfully!')
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Purchase deleted successfully!'
+                })
+            return redirect('purchase_list')
+    
+    except Exception as e:
+        error_message = f'Error deleting purchase: {str(e)}'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': error_message
+            }, status=500)
+        messages.error(request, error_message)
+        return redirect('purchase_list')
 
 
 @login_required
@@ -4591,6 +4762,18 @@ def get_purchase_items(request, purchase_id):
     
     return JsonResponse(results, safe=False)
 
+@login_required
+def get_batches_for_product(request):
+    product_id = request.GET.get('product_id')
+    batches = Batch.objects.filter(product_id=product_id).order_by('-expiry_date')
+    
+    options = '<option value="">Select Batch</option>'
+    for batch in batches:
+        expiry_info = f" (Exp: {batch.expiry_date.strftime('%Y-%m-%d')})" if batch.expiry_date else ''
+        options += f'<option value="{batch.id}">{batch.batch_number}{expiry_info} - Qty: {batch.quantity}</option>'
+    
+    return HttpResponse(options)
+
 # ============== Bulk Upload Views ==============
 import pandas as pd
 from decimal import Decimal
@@ -5388,7 +5571,8 @@ from .models import StockJournal
 
 @login_required
 def stock_journal_list(request):
-    journals = StockJournal.objects.all().select_related('product', 'batch', 'user').order_by('-date')
+    # Get journals with their items and user
+    journals = StockJournal.objects.all().select_related('user').prefetch_related('items__product', 'items__batch').order_by('-date')
     
     # Filtering
     product_id = request.GET.get('product')
@@ -5397,9 +5581,12 @@ def stock_journal_list(request):
     end_date = request.GET.get('end_date')
     
     if product_id:
-        journals = journals.filter(product_id=product_id)
+        journals = journals.filter(items__product_id=product_id).distinct()
+    
+    # FIXED: Get movement types from StockJournalItem instead of StockJournal
     if movement_type:
-        journals = journals.filter(movement_type=movement_type)
+        journals = journals.filter(items__movement_type=movement_type).distinct()
+    
     if start_date:
         journals = journals.filter(date__date__gte=start_date)
     if end_date:
@@ -5417,10 +5604,13 @@ def stock_journal_list(request):
     
     products = Product.objects.filter(is_active=True).order_by('name')
     
+    # FIXED: Get movement types from StockJournalItem model
+    from .models import StockJournalItem
+    
     context = {
         'journals': page_obj,
         'products': products,
-        'movement_types': StockJournal.MOVEMENT_TYPES,
+        'movement_types': StockJournalItem.MOVEMENT_TYPES,  # Changed to StockJournalItem
         'selected_product': product_id,
         'selected_movement_type': movement_type,
         'start_date': start_date,
@@ -5428,42 +5618,110 @@ def stock_journal_list(request):
     }
     return render(request, 'pos/stock_journal_list.html', context)
 
+    
 @login_required
 def add_stock_journal(request):
     if request.method == 'POST':
-        form = StockJournalForm(request.POST)
-        if form.is_valid():
-            journal = form.save(commit=False)
-            journal.user = request.user
-            
-            # Update product quantity based on movement type
-            product = journal.product
-            if journal.movement_type == 'in':
-                product.quantity += journal.quantity
-            elif journal.movement_type == 'out':
-                product.quantity -= journal.quantity
-            product.save()
-            
-            # Update batch quantity if batch is specified
-            if journal.batch:
-                batch = journal.batch
-                if journal.movement_type == 'in':
-                    batch.quantity += journal.quantity
-                elif journal.movement_type == 'out':
-                    batch.quantity -= journal.quantity
-                batch.save()
-            
-            journal.save()
-            messages.success(request, 'Stock movement recorded successfully!')
-            return redirect('stock_journal_list')
+        journal_form = StockJournalForm(request.POST)
+        formset = StockJournalItemFormSet(request.POST)
+        
+        if journal_form.is_valid() and formset.is_valid():
+            with transaction.atomic():
+                # Save the journal
+                journal = journal_form.save(commit=False)
+                journal.user = request.user
+                journal.save()
+                
+                # Process formset instances
+                instances = formset.save(commit=False)
+                total_items = 0
+                
+                for instance in instances:
+                    instance.journal = journal
+                    product = instance.product
+                    movement_type = instance.movement_type
+                    
+                    # Calculate current stock before changes
+                    instance.current_stock = product.quantity
+                    
+                    # Update stock based on movement type
+                    if movement_type in ['out', 'missing', 'damaged', 'broken', 'expired']:
+                        # Stock reduction
+                        instance.new_stock = max(Decimal('0'), product.quantity - instance.quantity)
+                        product.quantity = instance.new_stock
+                    elif movement_type == 'in':
+                        # Stock addition
+                        instance.new_stock = product.quantity + instance.quantity
+                        product.quantity = instance.new_stock
+                    elif movement_type == 'adjustment':
+                        # Direct adjustment
+                        instance.new_stock = instance.quantity
+                        product.quantity = instance.quantity
+                    elif movement_type == 'transfer':
+                        # Transfer (typically positive)
+                        instance.new_stock = product.quantity + instance.quantity
+                        product.quantity = instance.new_stock
+                    
+                    # Save product changes
+                    product.save()
+                    
+                    # Update batch if specified
+                    if instance.batch:
+                        batch = instance.batch
+                        if movement_type in ['out', 'missing', 'damaged', 'broken', 'expired']:
+                            batch.quantity = max(Decimal('0'), batch.quantity - instance.quantity)
+                        elif movement_type in ['in', 'transfer']:
+                            batch.quantity += instance.quantity
+                        elif movement_type == 'adjustment':
+                            batch.quantity = instance.quantity
+                        batch.save()
+                    
+                    # Save the instance
+                    instance.save()
+                    total_items += 1
+                
+                # Update journal with total items count
+                journal.total_items = total_items
+                journal.save()
+                
+                # Delete any forms marked for deletion
+                for form in formset.deleted_forms:
+                    if form.instance.pk:
+                        form.instance.delete()
+                
+                messages.success(request, f'Stock movement recorded successfully! {total_items} products updated.')
+                return redirect('stock_journal_list')
+        
+        else:
+            # Show errors
+            messages.error(request, 'Please correct the errors below.')
+    
     else:
-        form = StockJournalForm()
+        journal_form = StockJournalForm()
+        formset = StockJournalItemFormSet(queryset=StockJournalItem.objects.none())
+    
+    # Get all products for the dropdown
+    products = Product.objects.filter(is_active=True).order_by('name')
     
     context = {
-        'form': form,
+        'journal_form': journal_form,
+        'formset': formset,
+        'products': products,
         'title': 'Record Stock Movement'
     }
-    return render(request, 'pos/add_stock_journal.html', context)
+    return render(request, 'pos/stock_journal_create.html', context)
+
+
+
+@login_required
+def stock_journal_detail(request, pk):
+    journal = get_object_or_404(StockJournal.objects.prefetch_related('items__product', 'items__batch'), pk=pk)
+    
+    context = {
+        'journal': journal,
+        'title': f'Stock Movement: {journal.movement_number}'
+    }
+    return render(request, 'pos/stock_journal_detail.html', context)
 
 def generate_stock_journal_export(queryset):
     response = HttpResponse(content_type='text/csv')
@@ -5471,21 +5729,41 @@ def generate_stock_journal_export(queryset):
     
     writer = csv.writer(response)
     writer.writerow([
-        'Date', 'Product', 'Batch', 'Movement Type', 
-        'Quantity', 'Reference', 'Notes', 'User'
+        'Movement Number', 'Date', 'Movement Type', 
+        'Product', 'Batch', 'Quantity', 
+        'Current Stock', 'New Stock', 
+        'Reference', 'Notes', 'User'
     ])
     
     for journal in queryset:
-        writer.writerow([
-            journal.date.strftime('%Y-%m-%d %H:%M'),
-            journal.product.name,
-            journal.batch.batch_number if journal.batch else '',
-            journal.get_movement_type_display(),
-            journal.quantity,
-            journal.reference,
-            journal.notes,
-            journal.user.username
-        ])
+        # Get all items for this journal
+        items = journal.items.all()
+        if not items.exists():
+            # Write at least the journal info
+            writer.writerow([
+                journal.movement_number,
+                journal.date.strftime('%Y-%m-%d %H:%M'),
+                journal.get_movement_type_display(),
+                '', '', '', '', '',  # Empty product-related fields
+                journal.reference,
+                journal.notes,
+                journal.user.username if journal.user else ''
+            ])
+        else:
+            for item in items:
+                writer.writerow([
+                    journal.movement_number,
+                    journal.date.strftime('%Y-%m-%d %H:%M'),
+                    journal.get_movement_type_display(),
+                    item.product.name if item.product else '',
+                    item.batch.batch_number if item.batch else '',
+                    item.quantity,
+                    item.current_stock,
+                    item.new_stock,
+                    journal.reference,
+                    item.notes if item.notes else journal.notes,
+                    journal.user.username if journal.user else ''
+                ])
     
     return response
 

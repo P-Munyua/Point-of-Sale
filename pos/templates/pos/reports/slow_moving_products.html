@@ -1,124 +1,29 @@
 {% extends 'pos/reports/base_report.html' %}
-{% load static humanize %}
+{% load static humanize custom_filters %}
 
 {% block title %}Slow Moving Products Report{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Page Header -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-clock text-warning me-2"></i>Slow Moving Products Report
-        </h1>
-        <div class="d-flex">
-            <button type="button" onclick="window.print()" class="btn btn-outline-primary btn-sm me-2">
-                <i class="fas fa-print me-1"></i>Print
-            </button>
-            <a href="?export=excel" class="btn btn-success btn-sm">
-                <i class="fas fa-file-excel me-1"></i>Export Excel
-            </a>
-        </div>
-    </div>
+{% with report_title="Slow Moving Products Report" report_icon="fa-clock" report_color="orange" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
 
-    <!-- Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Slow Moving Products
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_slow_moving|default:0 }}</div>
-                            <div class="mt-2 small">
-                                Not sold in {{ days_threshold }} days
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+{% block filters %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <div class="flex items-center mb-4">
+            <i class="fas fa-filter text-orange-600 mr-2"></i>
+            <h3 class="text-lg font-medium text-gray-900">Filter Report</h3>
         </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                Excess Stock
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_excess_stock|default:0 }}</div>
-                            <div class="mt-2 small">
-                                Stock > 3x reorder level
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Total Stock Value
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">KSh {{ total_stock_value|default:0|floatformat:2|intcomma }}</div>
-                            <div class="mt-2 small">
-                                At risk value
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-coins fa-2x text-info"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Products Analyzed
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ products|length }}</div>
-                            <div class="mt-2 small">
-                                All active products
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-boxes fa-2x text-primary"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-warning">
-                <i class="fas fa-filter me-2"></i>Filter Report
-            </h6>
-        </div>
-        <div class="card-body">
-            <form method="get" class="row g-3 align-items-end">
-                <div class="col-md-4">
-                    <label for="days" class="form-label">Days Threshold</label>
-                    <select class="form-select" id="days" name="days">
+        
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Days Threshold -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Days Threshold</label>
+                    <select name="days" id="days"
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500">
                         <option value="30" {% if days_threshold == 30 %}selected{% endif %}>30 days (1 month)</option>
                         <option value="60" {% if days_threshold == 60 %}selected{% endif %}>60 days (2 months)</option>
                         <option value="90" {% if days_threshold == 90 %}selected{% endif %}>90 days (3 months)</option>
@@ -126,154 +31,415 @@
                         <option value="365" {% if days_threshold == 365 %}selected{% endif %}>365 days (1 year)</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="show_all" name="show_all" {% if request.GET.show_all %}checked{% endif %}>
-                        <label class="form-check-label" for="show_all">
-                            Show all products (including non-slow moving)
+                
+                <!-- Show All Products -->
+                <div class="flex items-center">
+                    <div class="flex items-center h-5">
+                        <input type="checkbox" id="show_all" name="show_all" 
+                               {% if request.GET.show_all %}checked{% endif %}
+                               class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="show_all" class="font-medium text-gray-700">
+                            Show all products
                         </label>
+                        <p class="text-gray-500">Including non-slow moving products</p>
                     </div>
                 </div>
-                <div class="col-md-4 text-end">
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-filter me-1"></i> Apply Filter
+                
+                <!-- Apply Button -->
+                <div class="flex items-end">
+                    <button type="submit" 
+                            class="w-full bg-orange-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                        <i class="fas fa-filter mr-2"></i> Apply Filter
                     </button>
                 </div>
-            </form>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- Report Info -->
+<div class="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-xl p-6 mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Inventory Health Analysis</h2>
+            <p class="text-gray-700">
+                Identify products with low turnover and excess inventory to optimize stock levels
+                {% if days_threshold %}
+                <span class="font-semibold text-orange-600">({{ days_threshold }} days threshold)</span>
+                {% endif %}
+            </p>
+        </div>
+        <div class="text-sm text-gray-600">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white text-gray-800 border border-orange-300">
+                <i class="fas fa-calendar-check mr-1"></i>
+                Generated: {{ today|date:"M d, Y" }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Slow Moving Products -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-yellow-500">
+        <div class="flex items-center">
+            <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                <i class="fas fa-clock text-yellow-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900">Slow Moving</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    {{ total_slow_moving|default:"0" }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">
+                    Not sold in {{ days_threshold }} days
+                </p>
+            </div>
         </div>
     </div>
 
-    <!-- Products Table -->
-    <div class="card shadow">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-warning">
-                <i class="fas fa-table me-2"></i>Slow Moving & Excess Stock Analysis
-            </h6>
-            <div>
-                <span class="badge bg-warning me-2">Slow Moving: {{ total_slow_moving }}</span>
-                <span class="badge bg-danger">Excess: {{ total_excess_stock }}</span>
+    <!-- Excess Stock -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-red-500">
+        <div class="flex items-center">
+            <div class="p-3 bg-red-100 rounded-lg mr-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900">Excess Stock</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    {{ total_excess_stock|default:"0" }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">
+                    Stock > 3x reorder level
+                </p>
             </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th>Product</th>
-                            <th>Category</th>
-                            <th class="text-center">Current Stock</th>
-                            <th class="text-center">Reorder Level</th>
-                            <th class="text-center">Last Sale Date</th>
-                            <th class="text-center">Days Since Sale</th>
-                            <th class="text-end">Stock Value</th>
-                            <th class="text-center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for product in products %}
-                        <tr>
-                            <td>
-                                <strong>{{ product.product.name }}</strong><br>
-                                <small class="text-muted">{{ product.product.sku|default:"-" }}</small>
-                            </td>
-                            <td>
-                                {% if product.product.category %}
-                                <span class="badge bg-info">{{ product.product.category.name }}</span>
-                                {% else %}
-                                <span class="badge bg-secondary">Uncategorized</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">{{ product.current_stock|intcomma }}</td>
-                            <td class="text-center">{{ product.reorder_level|intcomma }}</td>
-                            <td class="text-center">
-                                {% if product.last_sale_date %}
-                                {{ product.last_sale_date|date:"M d, Y" }}
-                                {% else %}
-                                <span class="text-muted">Never sold</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                {% if product.days_since_sale %}
-                                <span class="{% if product.days_since_sale > days_threshold %}text-danger{% else %}text-success{% endif %}">
-                                    {{ product.days_since_sale }} days
-                                </span>
-                                {% else %}
-                                <span class="text-muted">N/A</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                <strong>KSh {{ product.stock_value|floatformat:2|intcomma }}</strong>
-                            </td>
-                            <td class="text-center">
-                                {% if product.is_slow_moving and product.is_excess_stock %}
-                                <span class="badge bg-danger">Slow & Excess</span>
-                                {% elif product.is_slow_moving %}
-                                <span class="badge bg-warning">Slow Moving</span>
-                                {% elif product.is_excess_stock %}
-                                <span class="badge bg-primary">Excess Stock</span>
-                                {% else %}
-                                <span class="badge bg-success">Normal</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="fas fa-clock fa-3x mb-3"></i><br>
-                                    No slow moving products found for the selected threshold.
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    </div>
+
+    <!-- Stock Value at Risk -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-blue-500">
+        <div class="flex items-center">
+            <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                <i class="fas fa-coins text-blue-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900">Value at Risk</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    KSh {{ total_stock_value|default:0|floatformat:2|intcomma }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">
+                    Slow & excess stock value
+                </p>
             </div>
         </div>
-        <div class="card-footer">
-            <div class="row">
-                <div class="col">
-                    <small class="text-muted">
-                        Showing {{ products|length }} products
-                    </small>
+    </div>
+
+    <!-- Products Analyzed -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-green-500">
+        <div class="flex items-center">
+            <div class="p-3 bg-green-100 rounded-lg mr-4">
+                <i class="fas fa-boxes text-green-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900">Products Analyzed</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    {{ products|length }}
                 </div>
-                <div class="col text-end">
-                    <small class="text-muted">
-                        Generated on {{ today|date:"F d, Y H:i" }}
-                    </small>
-                </div>
+                <p class="text-sm text-gray-500 mt-2">
+                    All active products
+                </p>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-.table th {
-    background-color: #f8f9fc;
-    border-top: none;
-}
+<!-- Products Analysis Table -->
+<div class="bg-white shadow rounded-xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="p-2 bg-orange-500 rounded-lg mr-3">
+                    <i class="fas fa-table text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">Slow Moving & Excess Stock Analysis</h2>
+                    <p class="text-sm text-gray-600">Detailed inventory performance by product</p>
+                </div>
+            </div>
+            <div class="flex space-x-3">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                    <i class="fas fa-clock mr-1"></i> Slow: {{ total_slow_moving }}
+                </span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> Excess: {{ total_excess_stock }}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Stock Levels
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last Sale
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Days Since
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Stock Value
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for product in products %}
+                <tr class="{% if product.is_slow_moving and product.is_excess_stock %}bg-red-50 hover:bg-red-100{% elif product.is_slow_moving %}bg-yellow-50 hover:bg-yellow-100{% elif product.is_excess_stock %}bg-blue-50 hover:bg-blue-100{% else %}hover:bg-gray-50{% endif %} transition duration-150 ease-in-out">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-lg {% if product.is_slow_moving and product.is_excess_stock %}bg-red-100 text-red-600{% elif product.is_slow_moving %}bg-yellow-100 text-yellow-600{% elif product.is_excess_stock %}bg-blue-100 text-blue-600{% else %}bg-gray-100 text-gray-600{% endif %} flex items-center justify-center">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-bold text-gray-900">{{ product.product.name }}</div>
+                                <div class="text-xs text-gray-500">{{ product.product.sku|default:"No SKU" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if product.product.category %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            {{ product.product.category.name|truncatechars:15 }}
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Uncategorized
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">{{ product.current_stock|intcomma }}</div>
+                        <div class="text-xs text-gray-500">Reorder: {{ product.reorder_level|intcomma }}</div>
+                        <div class="mt-1">
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="h-1.5 rounded-full {% if product.is_excess_stock %}bg-red-500{% else %}bg-green-500{% endif %}" 
+                                     style="width: {% if product.reorder_level > 0 %}{% widthratio product.current_stock product.reorder_level 100 %}{% else %}100{% endif %}%">
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {% if product.last_sale_date %}
+                        {{ product.last_sale_date|date:"M d, Y" }}
+                        {% else %}
+                        <span class="text-gray-400">Never sold</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {% if product.days_since_sale %}
+                        <div class="flex items-center">
+                            <div class="mr-2 {% if product.days_since_sale > days_threshold %}text-red-600{% else %}text-green-600{% endif %}">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <span class="font-medium {% if product.days_since_sale > days_threshold %}text-red-700{% else %}text-green-700{% endif %}">
+                                {{ product.days_since_sale }} days
+                            </span>
+                        </div>
+                        {% else %}
+                        <span class="text-gray-400">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                        KSh {{ product.stock_value|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if product.is_slow_moving and product.is_excess_stock %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
+                            Slow & Excess
+                        </span>
+                        {% elif product.is_slow_moving %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <span class="w-2 h-2 bg-yellow-500 rounded-full mr-1"></span>
+                            Slow Moving
+                        </span>
+                        {% elif product.is_excess_stock %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mr-1"></span>
+                            Excess Stock
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                            Normal
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center">
+                        <div class="text-gray-400">
+                            <i class="fas fa-clock fa-4x mb-4"></i>
+                            <p class="mt-2 text-lg font-medium text-gray-900">No slow moving products found</p>
+                            <p class="text-gray-500">
+                                {% if request.GET.show_all %}
+                                No products to display
+                                {% else %}
+                                Try adjusting your filters or select a higher days threshold
+                                {% endif %}
+                            </p>
+                            {% if not request.GET.show_all %}
+                            <a href="?show_all=true" 
+                               class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                                <i class="fas fa-eye mr-2"></i> Show All Products
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                Showing {{ products|length }} products
+            </div>
+            <div class="flex space-x-3">
+                <button type="button" onclick="window.print()" 
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                    <i class="fas fa-print mr-2"></i> Print
+                </button>
+                <a href="?export=excel" 
+                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-file-excel mr-2"></i> Export Excel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
-#dataTable tbody tr:hover {
-    background-color: #f8f9fc;
-}
-
-.badge.bg-warning {
-    color: #000;
-}
-
-.badge.bg-danger {
-    color: #fff;
-}
-</style>
+<!-- Recommendations Section -->
+{% if total_slow_moving > 0 or total_excess_stock > 0 %}
+<div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Action Recommendations -->
+    <div class="bg-white shadow rounded-xl p-6">
+        <div class="flex items-center mb-4">
+            <div class="p-3 bg-purple-100 rounded-lg mr-3">
+                <i class="fas fa-lightbulb text-purple-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900">Recommended Actions</h3>
+        </div>
+        <ul class="space-y-3">
+            {% if total_slow_moving > 0 %}
+            <li class="flex items-start">
+                <div class="flex-shrink-0 h-6 w-6 text-yellow-600 mt-0.5">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">{{ total_slow_moving }} slow moving products:</span>
+                        Consider promotions, discounts, or bundling strategies
+                    </p>
+                </div>
+            </li>
+            {% endif %}
+            {% if total_excess_stock > 0 %}
+            <li class="flex items-start">
+                <div class="flex-shrink-0 h-6 w-6 text-red-600 mt-0.5">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">{{ total_excess_stock }} excess stock items:</span>
+                        Review purchase orders and reduce inventory levels
+                    </p>
+                </div>
+            </li>
+            {% endif %}
+            {% if total_stock_value > 0 %}
+            <li class="flex items-start">
+                <div class="flex-shrink-0 h-6 w-6 text-blue-600 mt-0.5">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">KSh {{ total_stock_value|floatformat:2|intcomma }} at risk:</span>
+                        Potential opportunity cost from tied-up capital
+                    </p>
+                </div>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    
+    <!-- Status Legend -->
+    <div class="bg-white shadow rounded-xl p-6">
+        <div class="flex items-center mb-4">
+            <div class="p-3 bg-gray-100 rounded-lg mr-3">
+                <i class="fas fa-info-circle text-gray-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900">Status Legend</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex items-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-3">
+                    Slow Moving
+                </span>
+                <span class="text-sm text-gray-600">Not sold in {{ days_threshold }}+ days</span>
+            </div>
+            <div class="flex items-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-3">
+                    Slow & Excess
+                </span>
+                <span class="text-sm text-gray-600">Both slow moving and excess stock</span>
+            </div>
+            <div class="flex items-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-3">
+                    Excess Stock
+                </span>
+                <span class="text-sm text-gray-600">Stock > 3x reorder level</span>
+            </div>
+            <div class="flex items-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-3">
+                    Normal
+                </span>
+                <span class="text-sm text-gray-600">Healthy inventory levels</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize DataTable if jQuery is available
     if (typeof jQuery !== 'undefined' && $.fn.DataTable) {
-        $('#dataTable').DataTable({
+        $('table').DataTable({
             pageLength: 25,
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-            order: [[5, 'desc']], // Sort by days since sale descending
+            order: [[4, 'desc']], // Sort by days since sale descending
             dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
             language: {
                 search: "_INPUT_",
@@ -282,9 +448,150 @@ document.addEventListener('DOMContentLoaded', function() {
                 info: "Showing _START_ to _END_ of _TOTAL_ entries",
                 infoEmpty: "Showing 0 to 0 of 0 entries",
                 infoFiltered: "(filtered from _MAX_ total entries)"
-            }
+            },
+            columnDefs: [
+                {
+                    targets: [2, 3, 4, 5, 6],
+                    className: 'text-center'
+                }
+            ]
         });
     }
+    
+    // Auto-submit form on days threshold change
+    document.getElementById('days').addEventListener('change', function() {
+        this.form.submit();
+    });
+    
+    // Add hover effects to table rows
+    const tableRows = document.querySelectorAll('tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+            this.style.transition = 'all 0.2s ease';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+    });
+    
+    // Export function with confirmation
+    window.exportReport = function(format) {
+        if (format === 'excel') {
+            // Add loading state
+            const exportBtn = document.querySelector('a[href*="export=excel"]');
+            const originalHTML = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Exporting...';
+            
+            setTimeout(() => {
+                exportBtn.innerHTML = originalHTML;
+            }, 2000);
+        }
+    };
+    
+    // Highlight critical items
+    const criticalItems = document.querySelectorAll('.bg-red-50, .bg-yellow-50');
+    criticalItems.forEach(item => {
+        item.classList.add('border-l-4', 'border-red-400');
+    });
 });
 </script>
+
+<style>
+/* Custom animations */
+@keyframes pulseWarning {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.bg-yellow-50 {
+    animation: pulseWarning 2s ease-in-out infinite;
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .bg-white {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    .bg-gradient-to-r {
+        background: #f97316 !important;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .rounded-xl {
+        border-radius: 0 !important;
+    }
+    
+    table {
+        break-inside: avoid;
+    }
+    
+    tbody tr {
+        break-inside: avoid;
+    }
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-slow-moving { background-color: #f59e0b; }
+.status-excess { background-color: #3b82f6; }
+.status-critical { background-color: #ef4444; }
+-status-normal { background-color: #10b981; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .grid-cols-1 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-cols-4 {
+        grid-template-columns: 1fr;
+    }
+    
+    .text-2xl {
+        font-size: 1.25rem;
+    }
+    
+    .p-6 {
+        padding: 1rem;
+    }
+    
+    .px-6 {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    table {
+        font-size: 0.875rem;
+    }
+    
+    .hidden-mobile {
+        display: none;
+    }
+}
+</style>
 {% endblock %}

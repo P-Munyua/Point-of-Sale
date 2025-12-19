@@ -77,6 +77,8 @@ path('purchases/<int:pk>/payment/', views.record_payment, name='record_payment')
 path('purchases/save-pending/', views.save_purchase_as_pending, name='save_purchase_as_pending'),
 path('purchases/<int:purchase_id>/items/', views.get_purchase_items, name='get_purchase_items'),
 path('purchases/save-pending/', views.save_purchase_as_pending, name='save_purchase_as_pending'),
+path('purchases/delete/<int:pk>/', views.delete_purchase, name='delete_purchase'),
+
 # Pending Purchases
 path('pending-purchases/', views.pending_purchases, name='pending_purchases'),
 path('pending-purchases/<int:pk>/cancel/', views.cancel_pending_purchase, name='cancel_pending_purchase'),
@@ -140,6 +142,8 @@ path('supplier-returns/export/', views.export_supplier_returns, name='export_sup
     path('product/<int:pk>/details/', views.get_product_details, name='get_product_details'),
     path('customer/<int:pk>/details/', views.get_customer_details, name='get_customer_details'),
     path('product/<int:pk>/pricing/', views.get_product_pricing, name='get_product_pricing'),
+    path('stock-journal/<int:pk>/', views.stock_journal_detail, name='stock_journal_detail'),
+
 
 
     path('stock-journal/', views.stock_journal_list, name='stock_journal_list'),
@@ -159,4 +163,6 @@ path('supplier-returns/export/', views.export_supplier_returns, name='export_sup
     
     # Export URLs
     path('reports/export/<str:report_type>/', views.export_report, name='export_report'),
+    path('ajax/search-products/', views.search_products, name='search_products'),
+    path('ajax/get-batches/', views.get_batches_for_product, name='get_batches_for_product'),
 ]

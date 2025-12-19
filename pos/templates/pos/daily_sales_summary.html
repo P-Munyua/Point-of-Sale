@@ -1,435 +1,539 @@
-{% extends 'pos/base.html' %}
-{% load static %}
+{% extends 'pos/reports/base_report.html' %}
+{% load static humanize custom_filters %}
 
-{% block extra_css %}
-<style>
-    /* Summary Card Styles */
-    .summary-card {
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: none;
-        margin-bottom: 2rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        overflow: hidden;
-    }
-    
-    .summary-card-header {
-        background: rgba(255,255,255,0.1);
-        border-bottom: 1px solid rgba(255,255,255,0.2);
-        padding: 1.5rem;
-    }
-    
-    /* Stat Cards */
-    .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-        border: 1px solid #e9ecef;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        height: 100%;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-    
-    .stat-icon {
-        font-size: 2.5rem;
-        opacity: 0.8;
-        margin-bottom: 1rem;
-    }
-    
-    .stat-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #2c3e50;
-        margin: 0.5rem 0;
-        line-height: 1.2;
-    }
-    
-    .stat-title {
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #7f8c8d;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-subtitle {
-        font-size: 0.8rem;
-        color: #95a5a6;
-        font-weight: 500;
-    }
-    
-    /* Payment Method Cards */
-    .payment-card {
-        background: white;
-        border-radius: 10px;
-        padding: 1.25rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-        border-left: 4px solid #667eea;
-    }
-    
-    .payment-card.cash { border-left-color: #28a745; }
-    .payment-card.mpesa { border-left-color: #17a2b8; }
-    .payment-card.card { border-left-color: #ffc107; }
-    .payment-card.cheque { border-left-color: #6f42c1; }
-    .payment-card.credit { border-left-color: #e74a3b; }
-    
-    .payment-icon {
-        font-size: 1.5rem;
-        margin-right: 1rem;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-    }
-    
-    .payment-icon.cash { background: #28a745; }
-    .payment-icon.mpesa { background: #17a2b8; }
-    .payment-icon.card { background: #ffc107; }
-    .payment-icon.cheque { background: #6f42c1; }
-    .payment-icon.credit { background: #e74a3b; }
-    
-    .payment-amount {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #2c3e50;
-    }
-    
-    .payment-label {
-        font-size: 0.85rem;
-        color: #7f8c8d;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    /* Net Cash Highlight */
-    .net-cash-card {
-        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-        color: white;
-        border-radius: 15px;
-        padding: 2rem;
-        text-align: center;
-        box-shadow: 0 8px 25px rgba(46, 204, 113, 0.3);
-    }
-    
-    .net-cash-card.negative {
-        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-        box-shadow: 0 8px 25px rgba(231, 76, 60, 0.3);
-    }
-    
-    .net-cash-title {
-        font-size: 1.1rem;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        margin-bottom: 1rem;
-        opacity: 0.9;
-    }
-    
-    .net-cash-amount {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 0.5rem;
-    }
-    
-    .net-cash-subtitle {
-        font-size: 0.9rem;
-        opacity: 0.8;
-    }
-    
-    /* Date Display */
-    .date-display {
-        background: rgba(255,255,255,0.1);
-        padding: 0.75rem 1.5rem;
-        border-radius: 25px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-    
-    /* Responsive Adjustments */
-    @media (max-width: 768px) {
-        .stat-value {
-            font-size: 1.5rem;
-        }
-        
-        .payment-amount {
-            font-size: 1.25rem;
-        }
-        
-        .net-cash-amount {
-            font-size: 2rem;
-        }
-        
-        .stat-card, .payment-card {
-            padding: 1rem;
-        }
-    }
-    
-    /* Print Styles */
-    @media print {
-        .stat-card {
-            break-inside: avoid;
-            box-shadow: none;
-            border: 1px solid #ddd;
-        }
-        
-        .summary-card {
-            box-shadow: none;
-            background: none;
-            color: black;
-        }
-        
-        .btn {
-            display: none;
-        }
-    }
-</style>
-{% endblock %}
+{% block title %}Daily Sales Summary{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Header Card -->
-    <div class="summary-card">
-        <div class="summary-card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="mb-1"><i class="fas fa-chart-line mr-2"></i>Daily Sales Summary</h2>
-                    <p class="mb-0 opacity-75">Complete overview of today's financial performance</p>
-                </div>
-                <div class="date-display">
-                    <i class="fas fa-calendar-day mr-2"></i>{{ date|date:"F j, Y" }}
-                </div>
-            </div>
+{% with report_title="Daily Sales Summary" report_icon="fa-chart-line" report_color="blue" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+{% block report_content %}
+<!-- Date Header -->
+<div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 mb-8 shadow-lg">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div class="text-white">
+            <h1 class="text-3xl font-bold mb-2">
+                <i class="fas fa-chart-line mr-3"></i>Daily Sales Summary
+            </h1>
+            <p class="text-blue-100 opacity-90">Complete overview of today's financial performance</p>
         </div>
-        
-        <div class="card-body">
-            <!-- Action Buttons -->
-            <div class="d-flex gap-2 mb-4">
-                <button class="btn btn-light" onclick="window.print()">
-                    <i class="fas fa-print mr-1"></i>Print Report
+        <div class="flex items-center space-x-4 mt-4 md:mt-0">
+            <div class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                <div class="text-blue-100 text-sm font-medium">
+                    <i class="fas fa-calendar-day mr-2"></i>{{ date|date:"l, F j, Y" }}
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <button type="button" onclick="window.print()" 
+                        class="inline-flex items-center px-4 py-2 bg-white text-blue-600 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition">
+                    <i class="fas fa-print mr-2"></i> Print
                 </button>
-                <button class="btn btn-outline-light" onclick="location.reload()">
-                    <i class="fas fa-sync-alt mr-1"></i>Refresh
+                <button type="button" onclick="location.reload()" 
+                        class="inline-flex items-center px-4 py-2 border border-white text-white font-medium rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition">
+                    <i class="fas fa-sync-alt mr-2"></i> Refresh
                 </button>
-            </div>
-            
-            <!-- Main Stats Row -->
-            <div class="row mb-4">
-                <!-- Total Sales -->
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon text-primary">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div class="stat-title">Total Sales</div>
-                        <div class="stat-value">KSh {{ total_sales|floatformat:2 }}</div>
-                        <div class="stat-subtitle">All completed transactions</div>
-                    </div>
-                </div>
-                
-                <!-- Total Expenses -->
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon text-danger">
-                            <i class="fas fa-money-bill-wave"></i>
-                        </div>
-                        <div class="stat-title">Total Expenses</div>
-                        <div class="stat-value">KSh {{ total_expenses|floatformat:2 }}</div>
-                        <div class="stat-subtitle">Daily operational costs</div>
-                    </div>
-                </div>
-                
-                <!-- Total Purchases -->
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon text-warning">
-                            <i class="fas fa-truck-loading"></i>
-                        </div>
-                        <div class="stat-title">Total Purchases</div>
-                        <div class="stat-value">KSh {{ total_purchases|floatformat:2 }}</div>
-                        <div class="stat-subtitle">Inventory acquisitions</div>
-                    </div>
-                </div>
-                
-                <!-- Credit Sales -->
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon text-info">
-                            <i class="fas fa-credit-card"></i>
-                        </div>
-                        <div class="stat-title">Credit Sales</div>
-                        <div class="stat-value">KSh {{ credit_sales|floatformat:2 }}</div>
-                        <div class="stat-subtitle">Pending customer payments</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Payment Methods and Net Cash Row -->
-            <div class="row">
-                <!-- Payment Methods -->
-                <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-money-check-alt mr-2"></i>Payment Methods Breakdown</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <!-- Cash -->
-                                <div class="col-md-6 mb-3">
-                                    <div class="payment-card cash">
-                                        <div class="d-flex align-items-center">
-                                            <div class="payment-icon cash">
-                                                <i class="fas fa-money-bill-wave"></i>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <div class="payment-label">Cash Payments</div>
-                                                <div class="payment-amount">KSh {{ cash_sales|floatformat:2 }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- M-Pesa -->
-                                <div class="col-md-6 mb-3">
-                                    <div class="payment-card mpesa">
-                                        <div class="d-flex align-items-center">
-                                            <div class="payment-icon mpesa">
-                                                <i class="fas fa-mobile-alt"></i>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <div class="payment-label">M-Pesa Payments</div>
-                                                <div class="payment-amount">KSh {{ mpesa_sales|floatformat:2 }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Card -->
-                                <div class="col-md-6 mb-3">
-                                    <div class="payment-card card">
-                                        <div class="d-flex align-items-center">
-                                            <div class="payment-icon card">
-                                                <i class="fas fa-credit-card"></i>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <div class="payment-label">Card Payments</div>
-                                                <div class="payment-amount">KSh {{ card_sales|floatformat:2 }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Cheque -->
-                                <div class="col-md-6 mb-3">
-                                    <div class="payment-card cheque">
-                                        <div class="d-flex align-items-center">
-                                            <div class="payment-icon cheque">
-                                                <i class="fas fa-file-invoice-dollar"></i>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <div class="payment-label">Cheque Payments</div>
-                                                <div class="payment-amount">KSh {{ cheque_sales|floatformat:2 }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Net Cash -->
-                <div class="col-lg-4">
-                    <div class="net-cash-card {% if net_cash < 0 %}negative{% endif %}">
-                        <div class="net-cash-title">
-                            <i class="fas fa-wallet mr-2"></i>Net Cash Position
-                        </div>
-                        <div class="net-cash-amount">
-                            KSh {{ net_cash|floatformat:2 }}
-                        </div>
-                        <div class="net-cash-subtitle">
-                            Cash + M-Pesa + Card + Cheque<br>minus Expenses & Purchases
-                        </div>
-                    </div>
-                    
-                    <!-- Quick Stats -->
-                    <div class="mt-3 p-3 bg-light rounded">
-                        <h6 class="text-muted mb-3"><i class="fas fa-info-circle mr-2"></i>Quick Stats</h6>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Cash Payments:</span>
-                            <strong>KSh {{ cash_sales|floatformat:2 }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Digital Payments:</span>
-                            <strong>KSh {{ mpesa_sales|add:card_sales|floatformat:2 }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Total Expenses:</span>
-                            <strong>KSh {{ total_expenses|floatformat:2 }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Net Cash Flow:</span>
-                            <strong class="{% if net_cash >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                KSh {{ net_cash|floatformat:2 }}
-                            </strong>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Summary Notes -->
-            <div class="mt-4 p-3 bg-light rounded">
-                <h6><i class="fas fa-sticky-note mr-2"></i>Daily Summary Notes</h6>
-                <p class="mb-1"><strong>Total Sales:</strong> KSh {{ total_sales|floatformat:2 }} across all payment methods</p>
-                <p class="mb-1"><strong>Cash Position:</strong> KSh {{ net_cash|floatformat:2 }} available after expenses</p>
-                <p class="mb-0"><strong>Credit Sales:</strong> KSh {{ credit_sales|floatformat:2 }} to be collected from customers</p>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<!-- Main Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Sales -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-blue-500 hover:shadow-xl transition-shadow duration-300">
+        <div class="flex items-center mb-4">
+            <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900">Total Sales</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    KSh {{ total_sales|floatformat:2|intcomma }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">All completed transactions</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Expenses -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-red-500 hover:shadow-xl transition-shadow duration-300">
+        <div class="flex items-center mb-4">
+            <div class="p-3 bg-red-100 rounded-lg mr-4">
+                <i class="fas fa-money-bill-wave text-red-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900">Total Expenses</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    KSh {{ total_expenses|floatformat:2|intcomma }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Daily operational costs</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Purchases -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-yellow-500 hover:shadow-xl transition-shadow duration-300">
+        <div class="flex items-center mb-4">
+            <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                <i class="fas fa-truck-loading text-yellow-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900">Total Purchases</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    KSh {{ total_purchases|floatformat:2|intcomma }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Inventory acquisitions</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credit Sales -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-indigo-500 hover:shadow-xl transition-shadow duration-300">
+        <div class="flex items-center mb-4">
+            <div class="p-3 bg-indigo-100 rounded-lg mr-4">
+                <i class="fas fa-credit-card text-indigo-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900">Credit Sales</h3>
+                <div class="mt-1 text-2xl font-bold text-gray-900">
+                    KSh {{ credit_sales|floatformat:2|intcomma }}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Pending customer payments</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Breakdown and Net Cash -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Payment Methods Breakdown -->
+    <div class="lg:col-span-2 bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+            <div class="flex items-center">
+                <i class="fas fa-money-check-alt text-blue-600 mr-3 text-xl"></i>
+                <h2 class="text-xl font-bold text-gray-900">Payment Methods Breakdown</h2>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Cash -->
+                <div class="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-500 rounded-lg mr-4">
+                            <i class="fas fa-money-bill-wave text-white text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-600 mb-1">Cash Payments</h4>
+                            <div class="text-xl font-bold text-gray-900">
+                                KSh {{ cash_sales|floatformat:2|intcomma }}
+                            </div>
+                            {% if total_sales > 0 %}
+                            <div class="text-xs text-green-600 mt-1">
+                                {{ cash_sales|divide:total_sales|multiply:100|floatformat:1 }}% of total
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- M-Pesa -->
+                <div class="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-500 rounded-lg mr-4">
+                            <i class="fas fa-mobile-alt text-white text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-600 mb-1">M-Pesa Payments</h4>
+                            <div class="text-xl font-bold text-gray-900">
+                                KSh {{ mpesa_sales|floatformat:2|intcomma }}
+                            </div>
+                            {% if total_sales > 0 %}
+                            <div class="text-xs text-blue-600 mt-1">
+                                {{ mpesa_sales|divide:total_sales|multiply:100|floatformat:1 }}% of total
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card -->
+                <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-500 rounded-lg mr-4">
+                            <i class="fas fa-credit-card text-white text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-600 mb-1">Card Payments</h4>
+                            <div class="text-xl font-bold text-gray-900">
+                                KSh {{ card_sales|floatformat:2|intcomma }}
+                            </div>
+                            {% if total_sales > 0 %}
+                            <div class="text-xs text-yellow-600 mt-1">
+                                {{ card_sales|divide:total_sales|multiply:100|floatformat:1 }}% of total
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cheque -->
+                <div class="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-500 rounded-lg mr-4">
+                            <i class="fas fa-file-invoice-dollar text-white text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-600 mb-1">Cheque Payments</h4>
+                            <div class="text-xl font-bold text-gray-900">
+                                KSh {{ cheque_sales|floatformat:2|intcomma }}
+                            </div>
+                            {% if total_sales > 0 %}
+                            <div class="text-xs text-purple-600 mt-1">
+                                {{ cheque_sales|divide:total_sales|multiply:100|floatformat:1 }}% of total
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Net Cash Position -->
+    <div class="bg-gradient-to-br {% if net_cash >= 0 %}from-green-500 to-green-600{% else %}from-red-500 to-red-600{% endif %} rounded-xl shadow-lg p-6 text-white">
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
+                <i class="fas fa-wallet text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Net Cash Position</h3>
+            <div class="text-3xl font-bold mb-2">
+                KSh {{ net_cash|floatformat:2|intcomma }}
+            </div>
+            <p class="text-sm opacity-90">Cash + M-Pesa + Card + Cheque<br>minus Expenses & Purchases</p>
+        </div>
+        
+        <div class="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+            <h4 class="font-medium mb-3">Quick Stats</h4>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm">Cash Payments:</span>
+                    <span class="font-semibold">KSh {{ cash_sales|floatformat:2|intcomma }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm">Digital Payments:</span>
+                    <span class="font-semibold">KSh {{ mpesa_sales|add:card_sales|floatformat:2|intcomma }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm">Total Expenses:</span>
+                    <span class="font-semibold">KSh {{ total_expenses|floatformat:2|intcomma }}</span>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-white/20">
+                    <span class="font-medium">Net Cash Flow:</span>
+                    <span class="font-bold text-lg {% if net_cash >= 0 %}text-green-200{% else %}text-red-200{% endif %}">
+                        KSh {{ net_cash|floatformat:2|intcomma }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Daily Summary Notes -->
+<div class="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+        <div class="flex items-center">
+            <i class="fas fa-sticky-note text-blue-600 mr-3 text-xl"></i>
+            <h2 class="text-xl font-bold text-gray-900">Daily Summary Notes</h2>
+        </div>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-blue-50 rounded-lg p-4">
+                <div class="flex items-center mb-3">
+                    <div class="p-2 bg-blue-100 rounded-lg mr-3">
+                        <i class="fas fa-shopping-cart text-blue-600"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900">Total Sales</h3>
+                </div>
+                <p class="text-gray-600">KSh {{ total_sales|floatformat:2|intcomma }} across all payment methods</p>
+            </div>
+            
+            <div class="bg-green-50 rounded-lg p-4">
+                <div class="flex items-center mb-3">
+                    <div class="p-2 bg-green-100 rounded-lg mr-3">
+                        <i class="fas fa-wallet text-green-600"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900">Cash Position</h3>
+                </div>
+                <p class="text-gray-600">KSh {{ net_cash|floatformat:2|intcomma }} available after expenses</p>
+            </div>
+            
+            <div class="bg-indigo-50 rounded-lg p-4">
+                <div class="flex items-center mb-3">
+                    <div class="p-2 bg-indigo-100 rounded-lg mr-3">
+                        <i class="fas fa-credit-card text-indigo-600"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900">Credit Sales</h3>
+                </div>
+                <p class="text-gray-600">KSh {{ credit_sales|floatformat:2|intcomma }} to be collected from customers</p>
+            </div>
+        </div>
+        
+        <!-- Additional Insights -->
+        <div class="mt-6 pt-6 border-t border-gray-100">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mb-1">Cash % of Total</div>
+                    <div class="text-lg font-bold text-gray-900">
+                        {% if total_sales > 0 %}
+                        {{ cash_sales|divide:total_sales|multiply:100|floatformat:1 }}%
+                        {% else %}0%{% endif %}
+                    </div>
+                </div>
+                
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mb-1">Digital % of Total</div>
+                    <div class="text-lg font-bold text-gray-900">
+                        {% if total_sales > 0 %}
+                        {{ mpesa_sales|add:card_sales|divide:total_sales|multiply:100|floatformat:1 }}%
+                        {% else %}0%{% endif %}
+                    </div>
+                </div>
+                
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mb-1">Expense Ratio</div>
+                    <div class="text-lg font-bold text-gray-900">
+                        {% if total_sales > 0 %}
+                        {{ total_expenses|divide:total_sales|multiply:100|floatformat:1 }}%
+                        {% else %}0%{% endif %}
+                    </div>
+                </div>
+                
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mb-1">Net Cash Ratio</div>
+                    <div class="text-lg font-bold text-gray-900">
+                        {% if total_sales > 0 %}
+                        {{ net_cash|divide:total_sales|multiply:100|floatformat:1 }}%
+                        {% else %}0%{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-// Auto-refresh every 5 minutes for real-time updates
-setTimeout(function() {
-    location.reload();
-}, 300000); // 300000 ms = 5 minutes
-
-// Add some interactive elements
 document.addEventListener('DOMContentLoaded', function() {
-    // Add animation to stat cards
-    const statCards = document.querySelectorAll('.stat-card');
-    statCards.forEach((card, index) => {
+    // Auto-refresh every 5 minutes
+    setTimeout(function() {
+        location.reload();
+    }, 300000); // 5 minutes
+
+    // Add animation to cards
+    const cards = document.querySelectorAll('.bg-white.rounded-xl, .bg-gradient-to-br');
+    cards.forEach((card, index) => {
         card.style.animationDelay = `${index * 0.1}s`;
         card.classList.add('animate__animated', 'animate__fadeInUp');
     });
-    
-    // Format numbers with commas
-    const formatNumbers = () => {
-        document.querySelectorAll('.stat-value, .payment-amount, .net-cash-amount').forEach(el => {
-            let text = el.textContent;
-            let number = parseFloat(text.replace(/[^\d.]/g, ''));
-            if (!isNaN(number)) {
-                el.textContent = text.replace(number.toFixed(2), number.toLocaleString('en-KE', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }));
-            }
+
+    // Add hover effects
+    const statCards = document.querySelectorAll('.bg-white.rounded-xl');
+    statCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+            this.style.transition = 'all 0.3s ease';
         });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Real-time clock update
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-KE', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        const dateString = now.toLocaleDateString('en-KE', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        // Update date display if it exists
+        const dateElement = document.querySelector('[data-date]');
+        if (dateElement) {
+            dateElement.textContent = dateString;
+        }
+    }
+
+    // Update clock every second
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Print function with better formatting
+    const originalPrint = window.print;
+    window.print = function() {
+        // Add print-specific styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @media print {
+                .no-print { display: none !important; }
+                .bg-gradient-to-r { background: #667eea !important; color: white !important; }
+                .shadow-lg { box-shadow: none !important; }
+                .rounded-xl { border-radius: 0 !important; }
+                body { font-size: 12pt !important; }
+                .text-3xl { font-size: 18pt !important; }
+                .text-2xl { font-size: 16pt !important; }
+                .text-xl { font-size: 14pt !important; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        originalPrint.call(window);
+        
+        // Remove print styles after printing
+        setTimeout(() => {
+            document.head.removeChild(style);
+        }, 100);
     };
-    
-    formatNumbers();
+
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl + P for print
+        if (e.ctrlKey && e.key === 'p') {
+            e.preventDefault();
+            window.print();
+        }
+        
+        // Ctrl + R for refresh
+        if (e.ctrlKey && e.key === 'r') {
+            e.preventDefault();
+            location.reload();
+        }
+    });
 });
+
+// Refresh data function
+function refreshData() {
+    const refreshBtn = document.querySelector('[onclick="location.reload()"]');
+    if (refreshBtn) {
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Refreshing...';
+        refreshBtn.disabled = true;
+    }
+    location.reload();
+}
 </script>
+
+<style>
+/* Custom animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate__animated {
+    animation-duration: 0.6s;
+    animation-fill-mode: both;
+}
+
+.animate__fadeInUp {
+    animation-name: fadeInUp;
+}
+
+/* Stagger animations */
+.bg-white.rounded-xl:nth-child(1) { animation-delay: 0.1s; }
+.bg-white.rounded-xl:nth-child(2) { animation-delay: 0.2s; }
+.bg-white.rounded-xl:nth-child(3) { animation-delay: 0.3s; }
+.bg-white.rounded-xl:nth-child(4) { animation-delay: 0.4s; }
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .bg-gradient-to-r {
+        background: #667eea !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .shadow-lg {
+        box-shadow: none !important;
+    }
+    
+    .rounded-xl {
+        border-radius: 0 !important;
+    }
+    
+    body {
+        font-size: 12pt !important;
+    }
+    
+    .text-3xl {
+        font-size: 18pt !important;
+    }
+    
+    .text-2xl {
+        font-size: 16pt !important;
+    }
+    
+    .text-xl {
+        font-size: 14pt !important;
+    }
+    
+    .grid {
+        break-inside: avoid;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .grid-cols-1 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-cols-3 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-cols-4 {
+        grid-template-columns: 1fr;
+    }
+    
+    .text-3xl {
+        font-size: 1.5rem;
+    }
+    
+    .text-2xl {
+        font-size: 1.25rem;
+    }
+    
+    .p-6 {
+        padding: 1rem;
+    }
+    
+    .px-6 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+</style>
 {% endblock %}
