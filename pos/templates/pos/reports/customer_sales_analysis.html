@@ -18,7 +18,7 @@
         </div>
         
         <form method="get" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <!-- Start Date -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
@@ -35,6 +35,26 @@
                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 
+                <!-- Customer Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+                    <select name="customer" id="customer" 
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Customers</option>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}" 
+                                {% if selected_customer and selected_customer|add:"0" == customer.id %}selected{% endif %}
+                                data-balance="{{ customer.balance|default:0 }}">
+                            {{ customer.name }} 
+                            {% if customer.phone %}({{ customer.phone }}){% endif %}
+                            {% if customer.balance %}
+                                - Balance: KSh {{ customer.balance|floatformat:2|intcomma }}
+                            {% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
                 <!-- Apply Button -->
                 <div class="flex items-end">
                     <button type="submit" 
@@ -42,6 +62,19 @@
                         <i class="fas fa-filter mr-2"></i> Apply Filters
                     </button>
                 </div>
+            </div>
+            
+            <div class="flex justify-between">
+                <button type="button" onclick="clearFilters()" 
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-times mr-2"></i> Clear Filters
+                </button>
+                
+                {% if selected_customer and selected_customer_obj %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <i class="fas fa-user mr-1"></i> Single Customer Analysis
+                </span>
+                {% endif %}
             </div>
         </form>
     </div>
@@ -65,6 +98,23 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Customer Info if selected -->
+        {% if selected_customer and selected_customer_obj %}
+        <div class="text-right">
+            <h4 class="text-sm font-medium text-blue-800">Customer Analysis</h4>
+            <div class="mt-1">
+                <span class="text-lg font-semibold text-gray-900">{{ selected_customer_obj.name }}</span>
+                <div class="text-sm text-gray-600">
+                    {{ selected_customer_obj.phone|default:"No phone" }}
+                    {% if selected_customer_obj.balance %}
+                    • Balance: KSh {{ selected_customer_obj.balance|floatformat:2|intcomma }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         <div>
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                 <i class="fas fa-calendar-check mr-1"></i>
@@ -87,10 +137,10 @@
                 </div>
                 <div class="ml-4">
                     <div class="text-sm font-medium text-gray-500 truncate">
-                        Total Customers
+                        {% if selected_customer %}Customer{% else %}Total Customers{% endif %}
                     </div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900">
-                        {{ summary.total_customers|default:0 }}
+                        {% if selected_customer %}1{% else %}{{ summary.total_customers|default:0 }}{% endif %}
                     </div>
                 </div>
             </div>
@@ -161,7 +211,8 @@
     </div>
 </div>
 
-<!-- Additional Stats -->
+{% if not selected_customer %}
+<!-- Additional Stats (only shown when viewing all customers) -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
     <!-- Active Customers -->
     <div class="bg-gradient-to-r from-blue-50 to-white shadow rounded-lg overflow-hidden">
@@ -227,6 +278,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- Customer Analysis Table -->
 <div class="bg-white shadow rounded-lg">
@@ -234,16 +286,23 @@
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-lg font-medium text-gray-900">
-                    <i class="fas fa-table text-blue-600 mr-2"></i>Customer Profitability Analysis
+                    <i class="fas fa-table text-blue-600 mr-2"></i>
+                    {% if selected_customer %}Customer Profitability Details{% else %}Customer Profitability Analysis{% endif %}
                 </h3>
-                <p class="mt-1 text-sm text-gray-500">Detailed analysis of customer purchasing behavior</p>
+                <p class="mt-1 text-sm text-gray-500">
+                    {% if selected_customer %}
+                    Detailed analysis of selected customer's purchasing behavior
+                    {% else %}
+                    Detailed analysis of customer purchasing behavior
+                    {% endif %}
+                </p>
             </div>
             <div class="flex space-x-3">
                 <button type="button" onclick="window.print()" 
                         class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <i class="fas fa-print mr-2"></i> Print
                 </button>
-                <a href="?export=excel" 
+                <a href="?export=excel&start_date={{ start_date }}&end_date={{ end_date }}{% if selected_customer %}&customer={{ selected_customer }}{% endif %}" 
                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                     <i class="fas fa-file-excel mr-2"></i> Export Excel
                 </a>
@@ -283,13 +342,16 @@
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Last Purchase
                     </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 {% for customer in customer_analysis %}
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4">
-                        <div class="text-sm font-medium text-gray-900">{{ customer.customer__name }}</div>
+                        <div class="text-sm font-medium text-gray-900">{{ customer.customer__name|default:"Walk-in Customer" }}</div>
                         <div class="text-xs text-gray-500">
                             Balance: KSh {{ customer.customer__balance|default:0|floatformat:2|intcomma }}
                         </div>
@@ -345,6 +407,16 @@
                         <span class="text-gray-400">-</span>
                         {% endif %}
                     </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {% if customer.customer__id %}
+                        <a href="?customer={{ customer.customer__id }}&start_date={{ start_date }}&end_date={{ end_date }}" 
+                           class="text-blue-600 hover:text-blue-900 inline-flex items-center">
+                            <i class="fas fa-filter mr-1"></i> Filter
+                        </a>
+                        {% else %}
+                        <span class="text-gray-400">No ID</span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -355,10 +427,10 @@
         <div class="px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
                 <div class="text-sm text-gray-700">
-                    Showing <span class="font-medium">{{ customer_analysis|length }}</span> customers
+                    Showing <span class="font-medium">{{ customer_analysis|length }}</span> customer{% if customer_analysis|length != 1 %}s{% endif %}
                 </div>
                 <div class="text-sm text-gray-500">
-                    Generated on {{ today|date:"F d, Y H:i" }}
+                    Generated on {{ today|date:"F d, Y" }}
                 </div>
             </div>
         </div>
@@ -369,14 +441,14 @@
         <div class="text-gray-400">
             <i class="fas fa-users fa-4x mb-4"></i>
             <p class="mt-2 text-lg font-medium text-gray-900">No customer sales data found</p>
-            <p class="text-gray-500">Try adjusting your date range</p>
+            <p class="text-gray-500">Try adjusting your date range or customer filter</p>
         </div>
     </div>
     {% endif %}
 </div>
 
-<!-- Performance Segments -->
-{% if customer_analysis %}
+<!-- Performance Segments (only shown when viewing all customers) -->
+{% if customer_analysis and not selected_customer and customer_analysis|length > 1 %}
 <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
     <!-- Top Customers by Sales -->
     <div class="bg-white shadow rounded-lg">
@@ -391,13 +463,21 @@
                 <li class="py-3">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-900">{{ customer.customer__name|truncatechars:20 }}</p>
-                            <p class="text-xs text-gray-500">{{ customer.sale_count }} purchases</p>
+                            <p class="text-sm font-medium text-gray-900">{{ customer.customer__name|truncatechars:20|default:"Walk-in Customer" }}</p>
+                            <p class="text-xs text-gray-500">{{ customer.sale_count }} purchase{% if customer.sale_count != 1 %}s{% endif %}</p>
                         </div>
                         <div class="text-sm font-bold text-gray-900">
                             KSh {{ customer.total_sales|floatformat:0|intcomma }}
                         </div>
                     </div>
+                    {% if customer.customer__id %}
+                    <div class="mt-2">
+                        <a href="?customer={{ customer.customer__id }}&start_date={{ start_date }}&end_date={{ end_date }}" 
+                           class="text-xs text-blue-600 hover:text-blue-900 inline-flex items-center">
+                            <i class="fas fa-filter mr-1"></i> Focus on this customer
+                        </a>
+                    </div>
+                    {% endif %}
                 </li>
                 {% endfor %}
             </ul>
@@ -417,13 +497,21 @@
                 <li class="py-3">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-900">{{ customer.customer__name|truncatechars:20 }}</p>
-                            <p class="text-xs text-gray-500">{{ customer.sale_count }} purchases</p>
+                            <p class="text-sm font-medium text-gray-900">{{ customer.customer__name|truncatechars:20|default:"Walk-in Customer" }}</p>
+                            <p class="text-xs text-gray-500">{{ customer.sale_count }} purchase{% if customer.sale_count != 1 %}s{% endif %}</p>
                         </div>
                         <div class="text-sm font-bold {% if customer.total_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
                             KSh {{ customer.total_profit|floatformat:0|intcomma }}
                         </div>
                     </div>
+                    {% if customer.customer__id %}
+                    <div class="mt-2">
+                        <a href="?customer={{ customer.customer__id }}&start_date={{ start_date }}&end_date={{ end_date }}" 
+                           class="text-xs text-blue-600 hover:text-blue-900 inline-flex items-center">
+                            <i class="fas fa-filter mr-1"></i> Focus on this customer
+                        </a>
+                    </div>
+                    {% endif %}
                 </li>
                 {% endfor %}
             </ul>
@@ -443,20 +531,30 @@
                     <p class="text-sm font-medium text-gray-700">Most Active</p>
                     <p class="mt-1 text-lg font-bold text-gray-900">
                         {% with top=customer_analysis|dictsortreversed:"sale_count"|first %}
-                        {{ top.customer__name|truncatechars:20 }}
+                        {{ top.customer__name|truncatechars:20|default:"Walk-in Customer" }}
                         {% endwith %}
                     </p>
                     <p class="text-xs text-gray-500">
                         {% with top=customer_analysis|dictsortreversed:"sale_count"|first %}
-                        {{ top.sale_count }} purchases
+                        {{ top.sale_count }} purchase{% if top.sale_count != 1 %}s{% endif %}
                         {% endwith %}
                     </p>
+                    <div class="mt-2">
+                        {% with top=customer_analysis|dictsortreversed:"sale_count"|first %}
+                        {% if top.customer__id %}
+                        <a href="?customer={{ top.customer__id }}&start_date={{ start_date }}&end_date={{ end_date }}" 
+                           class="text-xs text-blue-600 hover:text-blue-900 inline-flex items-center">
+                            <i class="fas fa-filter mr-1"></i> Focus on this customer
+                        </a>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
                 </div>
                 <div class="pt-4 border-t border-gray-200">
                     <p class="text-sm font-medium text-gray-700">Highest Average Purchase</p>
                     <p class="mt-1 text-lg font-bold text-gray-900">
                         {% with top=customer_analysis|dictsortreversed:"avg_sale_value"|first %}
-                        {{ top.customer__name|truncatechars:20 }}
+                        {{ top.customer__name|truncatechars:20|default:"Walk-in Customer" }}
                         {% endwith %}
                     </p>
                     <p class="text-xs text-gray-500">
@@ -464,9 +562,41 @@
                         KSh {{ top.avg_sale_value|floatformat:0|intcomma }} avg
                         {% endwith %}
                     </p>
+                    <div class="mt-2">
+                        {% with top=customer_analysis|dictsortreversed:"avg_sale_value"|first %}
+                        {% if top.customer__id %}
+                        <a href="?customer={{ top.customer__id }}&start_date={{ start_date }}&end_date={{ end_date }}" 
+                           class="text-xs text-blue-600 hover:text-blue-900 inline-flex items-center">
+                            <i class="fas fa-filter mr-1"></i> Focus on this customer
+                        </a>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Customer Links (only shown when viewing all customers) -->
+{% if not selected_customer and customers|length > 0 %}
+<div class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+    <h4 class="text-sm font-medium text-gray-900 mb-3">
+        <i class="fas fa-bolt mr-2"></i>Quick Customer Analysis
+    </h4>
+    <div class="flex flex-wrap gap-2">
+        {% for customer in customers|slice:":8" %}
+        <a href="?customer={{ customer.id }}&start_date={{ start_date }}&end_date={{ end_date }}" 
+           class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium bg-white text-gray-800 border border-gray-300 hover:bg-gray-50">
+            <i class="fas fa-chart-line mr-2"></i> {{ customer.name|truncatechars:15 }}
+        </a>
+        {% endfor %}
+        {% if customers|length > 8 %}
+        <span class="inline-flex items-center px-3 py-2 text-sm text-gray-500">
+            +{{ customers|length|add:"-8" }} more...
+        </span>
+        {% endif %}
     </div>
 </div>
 {% endif %}
@@ -488,6 +618,36 @@ document.addEventListener('DOMContentLoaded', function() {
         endDateInput.value = today;
     }
     
+    // Clear filters function
+    window.clearFilters = function() {
+        document.getElementById('start_date').value = '';
+        document.getElementById('end_date').value = '';
+        document.getElementById('customer').value = '';
+        
+        // Submit the form
+        const form = document.querySelector('form[method="get"]');
+        if (form) {
+            form.submit();
+        }
+    };
+    
+    // Customer balance color coding in dropdown
+    const customerSelect = document.getElementById('customer');
+    if (customerSelect) {
+        // Color code options based on balance
+        Array.from(customerSelect.options).forEach(option => {
+            const balanceText = option.textContent.match(/Balance: KSh ([\d,\.]+)/);
+            if (balanceText) {
+                const balance = parseFloat(balanceText[1].replace(/,/g, ''));
+                if (balance > 0) {
+                    option.style.color = '#dc2626'; // Red for positive balance (customer owes)
+                } else if (balance < 0) {
+                    option.style.color = '#059669'; // Green for negative balance (overpaid)
+                }
+            }
+        });
+    }
+    
     // Initialize DataTable if jQuery is available
     if (typeof jQuery !== 'undefined' && $.fn.DataTable) {
         $('table').DataTable({
@@ -505,6 +665,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Add tooltips for customer names
+    const customerNames = document.querySelectorAll('[title]');
+    customerNames.forEach(name => {
+        name.addEventListener('mouseenter', function(e) {
+            if (this.offsetWidth < this.scrollWidth) {
+                this.title = this.textContent;
+            }
+        });
+    });
 });
 </script>
 {% endblock %}

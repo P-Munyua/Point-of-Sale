@@ -1,6 +1,11 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 from . import views
+# At the top of your urls.py, add batch_profit_report to the imports
+from pos.views import (
+    # ... your existing imports ...
+    batch_profit_report,  # Add this line
+)
 
 urlpatterns = [
 
@@ -9,6 +14,7 @@ urlpatterns = [
     path('password-change/', views.password_change, name='password_change'),
     path('password-reset/', views.password_reset_request, name='password_reset_request'),
     path('password-reset-confirm/<uidb64>/<token>/', views.password_reset_confirm, name='password_reset_confirm'),
+    
     # Dashboard
     path('', views.dashboard, name='dashboard'),
 
@@ -27,12 +33,22 @@ urlpatterns = [
     path('receipt/<int:receipt_id>/print/', views.print_receipt, name='print_receipt'),
     path('sale/<int:sale_id>/generate-receipt/', views.generate_receipt, name='generate_receipt'),
     path('receipts/', views.receipt_history, name='receipt_history'),
+    path('sale/<int:sale_id>/print-direct/', views.print_receipt_direct, name='print_receipt_direct'),
+    path('sale/delete/<int:pk>/', views.delete_sale, name='delete_sale'),
     path('load-pending-sale/<int:pk>/', views.load_pending_sale, name='load_pending_sale'),
-    
+    path('get-sale-id/<str:sale_number>/', views.get_sale_id, name='get_sale_id'),
+    path('get-edit-sale-data/<int:pk>/', views.get_edit_sale_data, name='get_edit_sale_data'),
+    path('get-product-batches/<int:product_id>/', views.get_product_batches_with_prices, name='get_product_batches'),
+    path('check-batch-availability/<int:batch_id>/<str:quantity>/', views.check_batch_availability, name='check_batch_availability'),
+
+
     # Credit Payments
     path('credit-payments/', views.credit_payments, name='credit_payments'),
     path('credit-payments/<int:pk>/process/', views.process_credit_payment, name='process_credit_payment'),
-    
+    path('sale/<int:pk>/load-to-pos/', views.load_sale_to_pos, name='load_sale_to_pos'),
+    path('clear-edit-session/', views.clear_edit_session, name='clear_edit_session'),
+
+
 
     # Products & Inventory
     path('products/', views.product_list, name='product_list'),
@@ -48,6 +64,9 @@ urlpatterns = [
     path('batches/', views.batch_list, name='batch_list'),
     path('batches/add/', views.add_batch, name='add_batch'),
     path('batches/edit/<int:pk>/', views.edit_batch, name='edit_batch'),
+    path('batches/<int:pk>/', views.batch_detail, name='batch_detail'),
+    path('batches/<int:pk>/delete/', views.delete_batch, name='delete_batch'),
+    
     
     # Customers
     path('customers/', views.customer_list, name='customer_list'),
@@ -149,20 +168,71 @@ path('supplier-returns/export/', views.export_supplier_returns, name='export_sup
     path('stock-journal/', views.stock_journal_list, name='stock_journal_list'),
     path('stock-journal/add/', views.add_stock_journal, name='add_stock_journal'),
     path('ajax/get-batches/', views.get_batches_for_product, name='get_batches_for_product'),
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
     path('reports/', views.reports_dashboard, name='reports_dashboard'),
     path('reports/sales-by-product/', views.sales_by_product_report, name='sales_by_product_report'),
     path('reports/purchase-by-product/', views.purchase_by_product_report, name='purchase_by_product_report'),
     path('reports/customer-payments/', views.customer_payment_report, name='customer_payment_report'),
     path('reports/supplier-payments/', views.supplier_payment_report, name='supplier_payment_report'),
     path('reports/profit-by-product/', views.profit_by_product_report, name='profit_by_product_report'),
-    path('reports/daily-opening-stock/', views.daily_opening_stock_report, name='daily_opening_stock_report'),
+    path('reports/daily-opening-stock/', views.daily_opening_stock_report, name='daily_opening_stock_report'), 
     path('reports/top-selling-products/', views.top_selling_products_report, name='top_selling_products_report'),
     path('reports/slow-moving-products/', views.slow_moving_products_report, name='slow_moving_products_report'),
     path('reports/customer-sales-analysis/', views.customer_sales_analysis, name='customer_sales_analysis'),
     path('reports/supplier-purchase-analysis/', views.supplier_purchase_analysis, name='supplier_purchase_analysis'),
+    path('reports/product-performance/', views.product_performance_report, name='product_performance_report'),
+    path('reports/weekly-sales-profit/', views.weekly_sales_profit_report, name='weekly_sales_profit_report'),
+
     
     # Export URLs
     path('reports/export/<str:report_type>/', views.export_report, name='export_report'),
     path('ajax/search-products/', views.search_products, name='search_products'),
-    path('ajax/get-batches/', views.get_batches_for_product, name='get_batches_for_product'),
+    path('reports/daily-opening-stock/export/', views.export_opening_stock, name='export_opening_stock'),
+    path('supplier-payments/', views.supplier_payment_summary, name='supplier_payment_summary'),
+    path('supplier-payments/<int:supplier_id>/', views.supplier_payment_summary, name='supplier_payment_summary'),
+    path('admin/users/dashboard/', views.user_management_dashboard, name='user_management_dashboard'),
+    path('admin/users/', views.user_list, name='user_list'),
+    path('admin/users/create/', views.create_user, name='create_user'),
+    path('admin/users/<int:pk>/', views.user_detail, name='user_detail'),
+    path('admin/users/<int:pk>/edit/', views.edit_user, name='edit_user'),
+    path('admin/users/<int:pk>/toggle-status/', views.toggle_user_status, name='toggle_user_status'),
+    path('admin/users/<int:pk>/reset-password/', views.reset_user_password, name='reset_user_password'),
+    path('admin/users/bulk-import/', views.bulk_import_users, name='bulk_import_users'),
+    
+    # Role Management URLs
+    path('admin/roles/', views.role_list, name='role_list'),
+    path('admin/roles/create/', views.create_role, name='create_role'),
+    path('admin/roles/<int:pk>/', views.role_detail, name='role_detail'),
+    path('admin/roles/<int:pk>/edit/', views.edit_role, name='edit_role'),
+    path('admin/roles/<int:pk>/toggle-status/', views.toggle_role_status, name='toggle_role_status'),
+    path('admin/roles/<int:pk>/duplicate/', views.duplicate_role, name='duplicate_role'),
+    
+    # Activity Logs
+    path('admin/activity-logs/', views.activity_logs, name='activity_logs'),
+    
+    # Permissions
+    path('admin/permissions/summary/', views.user_permissions_summary, name='user_permissions_summary'),
+    path('admin/users/<int:pk>/permissions/', views.get_user_permissions, name='get_user_permissions'),
+    path('credit/payments/', views.credit_payments, name='credit_payments'),
+    path('credit/payment/<int:pk>/product-level/', views.product_level_credit_payment, name='product_level_credit_payment'),
+    path('credit/payment/history/<int:pk>/', views.credit_payment_history, name='credit_payment_history'),
+    path('credit/payment/detail/<int:payment_id>/', views.credit_payment_detail, name='credit_payment_detail'),
+    path('credit/payment/process/<int:pk>/', views.process_credit_payment, name='process_credit_payment'),
+    path('stock-management/', views.stock_management, name='stock_management'),
+    path('batch-profit/', views.batch_profit_report, name='batch_profit_report'),
+    path('reports/expiry-tracking/', views.expiry_tracking, name='expiry_tracking'),
+    
+    # Expected Profits
+    path('reports/expected-profits/', views.expected_profits_report, name='expected_profits_report'),
+    path('purchases/<int:pk>/invoice/', views.purchase_invoice, name='purchase_invoice'),
+    path('purchases/<int:pk>/print/', views.print_purchase_invoice, name='print_purchase_invoice'),
+    path('pos/initialize-paystack-payment/', views.initialize_paystack_payment, name='initialize_paystack_payment'),
+    path('pos/initialize-mpesa-payment/', views.initialize_mpesa_payment, name='initialize_mpesa_payment'),
+    path('pos/generate-qr-payment/<int:sale_id>/', views.generate_qr_payment, name='generate_qr_payment'),
+    path('pos/paystack-webhook/', views.paystack_webhook, name='paystack_webhook'),
+    path('pos/verify-payment/', views.verify_payment, name='verify_payment'),
+    path('pos/payment-callback/', views.payment_callback, name='payment_callback'),
+    path('sale/<int:sale_id>/thermal-print/', views.thermal_print_receipt, name='thermal_print_receipt'),
+    # In your urls.py, make sure you have:
+
 ]

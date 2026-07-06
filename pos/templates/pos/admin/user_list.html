@@ -1,0 +1,758 @@
+{% extends 'pos/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block page_title %}User Management{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Users</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">User Management</h1>
+            <p class="text-muted mb-0">Manage and monitor system users</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'create_user' %}" class="btn btn-primary d-flex align-items-center gap-2">
+                <i class="fas fa-user-plus"></i>
+                Create User
+            </a>
+            <a href="{% url 'bulk_import_users' %}" class="btn btn-success d-flex align-items-center gap-2">
+                <i class="fas fa-file-import"></i>
+                Bulk Import
+            </a>
+            {% if request.GET %}
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <i class="fas fa-times"></i>
+                Clear Filters
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card shadow-md mb-4">
+        <div class="card-header d-flex align-items-center justify-content-between py-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrapper bg-primary bg-opacity-10 text-primary p-2 rounded">
+                    <i class="fas fa-filter fa-lg"></i>
+                </div>
+                <div>
+                    <h5 class="card-title mb-0">Filter Users</h5>
+                    <p class="card-subtitle text-muted mb-0">Refine user search with criteria</p>
+                </div>
+            </div>
+            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                {{ total_users }} user{{ total_users|pluralize }} found
+            </span>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-lg-4 col-md-6">
+                    <label for="role" class="form-label fw-semibold">Role</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-user-tag text-primary"></i>
+                        </span>
+                        <select name="role" id="role" class="form-select border-start-0 ps-0">
+                            <option value="">All Roles</option>
+                            {% for role in roles %}
+                                <option value="{{ role.id }}" {% if form.role.value == role.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ role.get_name_display }}
+                                    <small class="text-muted">({{ role.user_count }})</small>
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <label for="is_active" class="form-label fw-semibold">Status</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-toggle-on text-primary"></i>
+                        </span>
+                        <select name="is_active" id="is_active" class="form-select border-start-0 ps-0">
+                            <option value="">All Status</option>
+                            <option value="true" {% if form.is_active.value == "true" %}selected{% endif %}>Active Users</option>
+                            <option value="false" {% if form.is_active.value == "false" %}selected{% endif %}>Inactive Users</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-12">
+                    <label for="search" class="form-label fw-semibold">Search</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-search text-primary"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0 ps-0" id="search" name="search" 
+                               placeholder="Search by name, email, or phone" value="{{ form.search.value|default:'' }}">
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="d-flex gap-3 align-items-center">
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2">
+                            <i class="fas fa-filter"></i>
+                            Apply Filters
+                        </button>
+                        <a href="?export=csv{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="btn btn-outline-success px-4 py-2 d-flex align-items-center gap-2">
+                            <i class="fas fa-file-csv"></i>
+                            Export CSV
+                        </a>
+                        <a href="?export=pdf{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="btn btn-outline-danger px-4 py-2 d-flex align-items-center gap-2">
+                            <i class="fas fa-file-pdf"></i>
+                            Export PDF
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Users Table Card -->
+    <div class="card shadow-md">
+        <div class="card-header d-flex align-items-center justify-content-between py-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrapper bg-primary bg-opacity-10 text-primary p-2 rounded">
+                    <i class="fas fa-users fa-lg"></i>
+                </div>
+                <div>
+                    <h5 class="card-title mb-0">Users List</h5>
+                    <p class="card-subtitle text-muted mb-0">
+                        Showing {{ users.start_index|default:1 }} - {{ users.end_index|default:users|length }} of {{ total_users }} users
+                    </p>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2" type="button" 
+                            data-bs-toggle="dropdown">
+                        <i class="fas fa-cog"></i>
+                        Bulk Actions
+                        <span id="selectedCount" class="badge bg-primary rounded-pill d-none">0</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg">
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" id="sendEmailBulk">
+                                <i class="fas fa-envelope text-primary"></i>
+                                Send Email to Selected
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" id="resetPasswordBulk">
+                                <i class="fas fa-key text-warning"></i>
+                                Reset Passwords
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" id="deactivateBulk">
+                                <i class="fas fa-user-slash"></i>
+                                Deactivate Selected
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2" type="button" 
+                            data-bs-toggle="dropdown">
+                        <i class="fas fa-columns"></i>
+                        Columns
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg">
+                        <li class="px-3 py-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="colRole" checked>
+                                <label class="form-check-label" for="colRole">Role</label>
+                            </div>
+                        </li>
+                        <li class="px-3 py-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="colContact" checked>
+                                <label class="form-check-label" for="colContact">Contact</label>
+                            </div>
+                        </li>
+                        <li class="px-3 py-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="colLastLogin" checked>
+                                <label class="form-check-label" for="colLastLogin">Last Login</label>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="usersTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4" width="50">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="selectAll">
+                                        <label class="form-check-label" for="selectAll"></label>
+                                    </div>
+                                </th>
+                                <th>User Information</th>
+                                <th class="role-column">Role</th>
+                                <th class="contact-column">Contact Details</th>
+                                <th>Status</th>
+                                <th class="lastlogin-column">Last Activity</th>
+                                <th class="pe-4" width="180">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr class="align-middle">
+                                <td class="ps-4">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input user-checkbox" value="{{ user.id }}">
+                                        <label class="form-check-label" for="user_{{ user.id }}"></label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="position-relative">
+                                            {% if user.profile.profile_picture %}
+                                                <img src="{{ user.profile.profile_picture.url }}" 
+                                                     alt="{{ user.username }}" 
+                                                     class="rounded-circle border border-2 border-primary"
+                                                     width="48" height="48" 
+                                                     style="object-fit: cover;">
+                                            {% else %}
+                                                <div class="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center rounded-circle border border-2 border-primary"
+                                                     style="width: 48px; height: 48px; font-size: 1rem;">
+                                                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                                                </div>
+                                            {% endif %}
+                                            <span class="position-absolute bottom-0 end-0 translate-middle badge 
+                                                {% if user.is_active %}bg-success{% else %}bg-danger{% endif %} 
+                                                border border-2 border-white"
+                                                style="width: 12px; height: 12px; padding: 0;">
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <a href="{% url 'user_detail' user.id %}" class="text-decoration-none">
+                                                <h6 class="mb-1 fw-semibold">{{ user.get_full_name|default:user.username }}</h6>
+                                            </a>
+                                            <div class="text-muted small d-flex align-items-center gap-1">
+                                                <i class="fas fa-user-circle"></i>
+                                                {{ user.username }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="role-column">
+                                    {% if user.profile.role %}
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info px-3 py-2 rounded-pill d-inline-flex align-items-center gap-1">
+                                            <i class="fas fa-user-tag fa-xs"></i>
+                                            {{ user.profile.role.get_name_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-3 py-2 rounded-pill">
+                                            No Role
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="contact-column">
+                                    <div class="d-flex flex-column">
+                                        <div class="d-flex align-items-center gap-1 mb-1">
+                                            <i class="fas fa-envelope fa-xs text-primary"></i>
+                                            <a href="mailto:{{ user.email }}" class="small text-decoration-none">
+                                                {{ user.email|truncatechars:25 }}
+                                            </a>
+                                        </div>
+                                        {% if user.profile.phone %}
+                                        <div class="d-flex align-items-center gap-1">
+                                            <i class="fas fa-phone fa-xs text-success"></i>
+                                            <span class="small text-muted">{{ user.profile.phone }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="badge 
+                                            {% if user.is_active %}bg-success bg-opacity-10 text-success border border-success
+                                            {% else %}bg-danger bg-opacity-10 text-danger border border-danger{% endif %}
+                                            px-3 py-1 rounded-pill">
+                                            <i class="fas fa-circle fa-xs me-1" style="font-size: 0.5rem;"></i>
+                                            {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                                        </span>
+                                        <small class="text-muted mt-1">
+                                            Joined {{ user.date_joined|date:"M d, Y" }}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td class="lastlogin-column">
+                                    {% if user.last_login %}
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-medium">{{ user.last_login|date:"M d, Y" }}</span>
+                                        <small class="text-muted">{{ user.last_login|date:"H:i" }}</small>
+                                    </div>
+                                    {% else %}
+                                    <div class="d-flex align-items-center gap-1">
+                                        <i class="fas fa-ban text-muted"></i>
+                                        <span class="text-muted small">Never logged in</span>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td class="pe-4">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'user_detail' user.id %}" 
+                                           class="btn btn-sm btn-outline-info d-flex align-items-center justify-content-center"
+                                           title="View Details" style="width: 36px; height: 36px;">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'edit_user' user.id %}" 
+                                           class="btn btn-sm btn-outline-primary d-flex align-items-center justify-content-center"
+                                           title="Edit User" style="width: 36px; height: 36px;">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-{% if user.is_active %}warning{% else %}success{% endif %} toggle-status d-flex align-items-center justify-content-center"
+                                                data-user-id="{{ user.id }}" 
+                                                data-user-name="{{ user.get_full_name|default:user.username }}"
+                                                data-is-active="{{ user.is_active|lower }}"
+                                                title="{% if user.is_active %}Deactivate User{% else %}Activate User{% endif %}"
+                                                style="width: 36px; height: 36px;">
+                                            <i class="fas {% if user.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                                        </button>
+                                        <a href="{% url 'reset_user_password' user.id %}" 
+                                           class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center"
+                                           title="Reset Password" style="width: 36px; height: 36px;">
+                                            <i class="fas fa-key"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if users.has_other_pages %}
+                <div class="card-footer border-top-0 pt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted">
+                                Showing {{ users.start_index }} - {{ users.end_index }} of {{ total_users }} users
+                            </span>
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if users.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ users.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                        <i class="fas fa-angle-left"></i>
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                                </li>
+                                {% endif %}
+
+                                {% for num in users.paginator.page_range %}
+                                    {% if users.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                    {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if users.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ users.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                        <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ users.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                {% endif %}
+                
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-users fa-4x text-light bg-primary bg-opacity-10 p-4 rounded-circle"></i>
+                    </div>
+                    <h4 class="mb-2">No Users Found</h4>
+                    <p class="text-muted mb-4">Try adjusting your filters or create a new user to get started</p>
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="{% url 'create_user' %}" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2">
+                            <i class="fas fa-user-plus"></i>
+                            Create New User
+                        </a>
+                        {% if request.GET %}
+                        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2">
+                            <i class="fas fa-redo"></i>
+                            Reset Filters
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Status Toggle Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-{% if user.is_active %}warning{% else %}success{% endif %} border-2">
+            <div class="modal-header bg-{% if user.is_active %}warning{% else %}success{% endif %} bg-opacity-10 border-{% if user.is_active %}warning{% else %}success{% endif %}">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    <i class="fas fa-{% if user.is_active %}user-slash text-warning{% else %}user-check text-success{% endif %}"></i>
+                    <span id="statusModalLabel">Confirm Status Change</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-start gap-3 mb-4">
+                    <div class="icon-wrapper bg-{% if user.is_active %}warning{% else %}success{% endif %} bg-opacity-10 text-{% if user.is_active %}warning{% else %}success{% endif %} p-3 rounded">
+                        <i class="fas fa-{% if user.is_active %}exclamation-triangle{% else %}check-circle{% endif %} fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-semibold mb-2" id="statusTitle">
+                            {% if user.is_active %}Deactivate User?{% else %}Activate User?{% endif %}
+                        </h6>
+                        <p class="mb-0">
+                            Are you sure you want to 
+                            <span id="statusAction">deactivate</span> 
+                            user <strong id="userName"></strong>?
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="alert 
+                    {% if user.is_active %}alert-warning border-warning bg-warning bg-opacity-5
+                    {% else %}alert-success border-success bg-success bg-opacity-5{% endif %}">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="fas 
+                            {% if user.is_active %}fa-exclamation-triangle text-warning
+                            {% else %}fa-check-circle text-success{% endif %} mt-1"></i>
+                        <div>
+                            <small class="fw-semibold d-block">
+                                {% if user.is_active %}Important:{% else %}Note:{% endif %}
+                            </small>
+                            <small id="statusWarning">
+                                {% if user.is_active %}
+                                Deactivated users cannot log in to the system and will lose access to all features.
+                                {% else %}
+                                Activated users will be able to log in immediately with their current permissions.
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancel
+                </button>
+                <form id="statusForm" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-{% if user.is_active %}warning{% else %}success{% endif %} d-flex align-items-center gap-2">
+                        <i class="fas fa-{% if user.is_active %}user-slash{% else %}user-check{% endif %}"></i>
+                        <span id="statusButtonText">
+                            {% if user.is_active %}Deactivate User{% else %}Activate User{% endif %}
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Select All checkbox
+    $('#selectAll').on('click', function() {
+        const isChecked = $(this).prop('checked');
+        $('.user-checkbox').prop('checked', isChecked);
+        updateSelectedCount();
+    });
+    
+    // Update selected count
+    function updateSelectedCount() {
+        const selectedCount = $('.user-checkbox:checked').length;
+        const badge = $('#selectedCount');
+        
+        if (selectedCount > 0) {
+            badge.text(selectedCount).removeClass('d-none');
+        } else {
+            badge.addClass('d-none');
+        }
+    }
+    
+    $('.user-checkbox').on('change', updateSelectedCount);
+    
+    // Status toggle
+    $('.toggle-status').on('click', function() {
+        const userId = $(this).data('user-id');
+        const userName = $(this).data('user-name');
+        const isActive = $(this).data('is-active') === 'true';
+        
+        // Update modal content
+        if (isActive) {
+            $('#statusModalLabel').text('Deactivate User');
+            $('#statusTitle').text('Deactivate User?');
+            $('#statusAction').text('deactivate');
+            $('#statusButtonText').text('Deactivate User');
+            $('#statusWarning').text('Deactivated users cannot log in to the system and will lose access to all features.');
+            
+            // Update modal styling for deactivation
+            $('#statusModal .modal-content').removeClass('border-success').addClass('border-warning');
+            $('#statusModal .modal-header').removeClass('bg-success bg-opacity-10 border-success').addClass('bg-warning bg-opacity-10 border-warning');
+            $('#statusModal .icon-wrapper').removeClass('bg-success bg-opacity-10 text-success').addClass('bg-warning bg-opacity-10 text-warning');
+            $('#statusModal .icon-wrapper i').removeClass('fa-check-circle').addClass('fa-exclamation-triangle');
+            $('#statusModal .alert').removeClass('alert-success border-success bg-success bg-opacity-5').addClass('alert-warning border-warning bg-warning bg-opacity-5');
+            $('#statusModal .alert i').removeClass('fa-check-circle text-success').addClass('fa-exclamation-triangle text-warning');
+            $('#statusModal .btn-warning, #statusModal .btn-success').removeClass('btn-success').addClass('btn-warning');
+            $('#statusModal .modal-title i').removeClass('fa-user-check text-success').addClass('fa-user-slash text-warning');
+        } else {
+            $('#statusModalLabel').text('Activate User');
+            $('#statusTitle').text('Activate User?');
+            $('#statusAction').text('activate');
+            $('#statusButtonText').text('Activate User');
+            $('#statusWarning').text('Activated users will be able to log in immediately with their current permissions.');
+            
+            // Update modal styling for activation
+            $('#statusModal .modal-content').removeClass('border-warning').addClass('border-success');
+            $('#statusModal .modal-header').removeClass('bg-warning bg-opacity-10 border-warning').addClass('bg-success bg-opacity-10 border-success');
+            $('#statusModal .icon-wrapper').removeClass('bg-warning bg-opacity-10 text-warning').addClass('bg-success bg-opacity-10 text-success');
+            $('#statusModal .icon-wrapper i').removeClass('fa-exclamation-triangle').addClass('fa-check-circle');
+            $('#statusModal .alert').removeClass('alert-warning border-warning bg-warning bg-opacity-5').addClass('alert-success border-success bg-success bg-opacity-5');
+            $('#statusModal .alert i').removeClass('fa-exclamation-triangle text-warning').addClass('fa-check-circle text-success');
+            $('#statusModal .btn-warning, #statusModal .btn-success').removeClass('btn-warning').addClass('btn-success');
+            $('#statusModal .modal-title i').removeClass('fa-user-slash text-warning').addClass('fa-user-check text-success');
+        }
+        
+        $('#userName').text(userName);
+        $('#statusForm').attr('action', `/admin/users/${userId}/toggle-status/`);
+        
+        $('#statusModal').modal('show');
+    });
+    
+    // Bulk actions
+    $('#sendEmailBulk, #resetPasswordBulk, #deactivateBulk').on('click', function(e) {
+        e.preventDefault();
+        const selectedUsers = $('.user-checkbox:checked');
+        
+        if (selectedUsers.length === 0) {
+            showToast('Please select at least one user.', 'warning');
+            return false;
+        }
+        
+        const actionType = $(this).attr('id');
+        const count = selectedUsers.length;
+        
+        if (actionType === 'deactivateBulk') {
+            if (!confirm(`Are you sure you want to deactivate ${count} user${count !== 1 ? 's' : ''}?`)) {
+                return false;
+            }
+        }
+        
+        // Here you would handle bulk actions
+        // For now, just show a message
+        showToast(`${count} user${count !== 1 ? 's' : ''} selected for bulk action`, 'info');
+    });
+    
+    // Column visibility toggle
+    $('#colRole').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('.role-column').show();
+        } else {
+            $('.role-column').hide();
+        }
+    });
+    
+    $('#colContact').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('.contact-column').show();
+        } else {
+            $('.contact-column').hide();
+        }
+    });
+    
+    $('#colLastLogin').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('.lastlogin-column').show();
+        } else {
+            $('.lastlogin-column').hide();
+        }
+    });
+    
+    // Row hover effect
+    $('tbody tr').on('mouseenter', function() {
+        $(this).addClass('table-active');
+    }).on('mouseleave', function() {
+        $(this).removeClass('table-active');
+    });
+    
+    // Click to select row
+    $('tbody tr').on('click', function(e) {
+        if (!$(e.target).closest('a, button, input').length) {
+            const checkbox = $(this).find('.user-checkbox');
+            checkbox.prop('checked', !checkbox.prop('checked'));
+            updateSelectedCount();
+        }
+    });
+    
+    function showToast(message, type = 'info') {
+        const toast = `<div class="toast align-items-center text-bg-${type} border-0 shadow-lg" role="alert">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>`;
+        
+        $('.toast-container').remove();
+        $('body').append(`<div class="toast-container position-fixed bottom-0 end-0 p-3">${toast}</div>`);
+        $('.toast').toast('show');
+    }
+});
+</script>
+
+<style>
+.icon-wrapper {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.avatar-circle {
+    transition: all 0.3s ease;
+}
+
+.avatar-circle:hover {
+    transform: scale(1.05);
+}
+
+.table tbody tr {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.03) !important;
+    transform: translateY(-1px);
+}
+
+.table tbody tr:active {
+    transform: translateY(0);
+}
+
+.badge.border {
+    border-width: 1px !important;
+}
+
+.btn-group .btn {
+    border-radius: 6px !important;
+    margin: 0 2px;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+}
+
+.border-2 {
+    border-width: 2px !important;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.toast-container {
+    z-index: 9999;
+}
+
+#usersTable th, #usersTable td {
+    vertical-align: middle;
+}
+
+#selectedCount {
+    font-size: 0.75rem;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropdown-menu {
+    min-width: 200px;
+}
+
+@media (max-width: 768px) {
+    .icon-wrapper {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn-group .btn {
+        margin: 0 1px;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .d-flex.gap-3 {
+        flex-wrap: wrap;
+    }
+}
+</style>
+{% endblock %}

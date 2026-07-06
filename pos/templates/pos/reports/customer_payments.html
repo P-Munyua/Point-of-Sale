@@ -1,10 +1,10 @@
 {% extends 'pos/reports/base_report.html' %}
 {% load static humanize custom_filters %}
 
-{% block title %}Profit by Product Report{% endblock %}
+{% block title %}Customer Payments Report{% endblock %}
 
 {% block content %}
-{% with report_title="Profit by Product Report" report_icon="fa-money-bill-wave" report_color="green" %}
+{% with report_title="Customer Payments Report" report_icon="fa-user-check" report_color="indigo" %}
 {{ block.super }}
 {% endwith %}
 {% endblock %}
@@ -16,29 +16,42 @@
             <i class="fas fa-filter me-2"></i>Filter Report
         </h3>
         <form method="get" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                     <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date</label>
                     <input type="date" name="start_date" id="start_date" 
                            value="{{ start_date }}" 
-                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 
                 <div>
                     <label for="end_date" class="block text-sm font-medium text-gray-700">End Date</label>
                     <input type="date" name="end_date" id="end_date" 
                            value="{{ end_date }}" 
-                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 
                 <div>
-                    <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
-                    <select name="category" id="category" 
-                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
-                        <option value="">All Categories</option>
-                        {% for category in categories %}
-                        <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"i" %}selected{% endif %}>
-                            {{ category.name }}
+                    <label for="customer" class="block text-sm font-medium text-gray-700">Customer</label>
+                    <select name="customer" id="customer" 
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">All Customers</option>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}" {% if selected_customer == customer.id|stringformat:"i" %}selected{% endif %}>
+                            {{ customer.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="payment_method" class="block text-sm font-medium text-gray-700">Payment Method</label>
+                    <select name="payment_method" id="payment_method" 
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">All Methods</option>
+                        {% for method_code, method_name in payment_methods %}
+                        <option value="{{ method_code }}" {% if selected_payment_method == method_code %}selected{% endif %}>
+                            {{ method_name }}
                         </option>
                         {% endfor %}
                     </select>
@@ -46,10 +59,18 @@
                 
                 <div class="flex items-end">
                     <button type="submit" 
-                            class="w-full bg-green-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            class="w-full bg-indigo-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <i class="fas fa-filter mr-2"></i> Apply Filters
                     </button>
                 </div>
+            </div>
+            
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700">Search (Customer, Sale #, Reference)</label>
+                <input type="text" name="search" id="search" 
+                       value="{{ search_query }}" 
+                       placeholder="Search customer, sale number, or reference..."
+                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
             </div>
         </form>
     </div>
@@ -58,20 +79,20 @@
 
 {% block report_content %}
 <!-- Date Range Info -->
-<div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+<div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
     <div class="flex items-center">
         <div class="flex-shrink-0">
-            <i class="fas fa-calendar-alt text-green-600 text-lg"></i>
+            <i class="fas fa-calendar-alt text-indigo-600 text-lg"></i>
         </div>
         <div class="ml-4">
-            <h4 class="text-sm font-medium text-green-800">Report Period</h4>
+            <h4 class="text-sm font-medium text-indigo-800">Report Period</h4>
             <div class="mt-1">
                 <span class="text-lg font-semibold text-gray-900">{{ start_date }} to {{ end_date }}</span>
                 <span class="ml-2 text-sm text-gray-600">({{ days_diff }} days)</span>
             </div>
         </div>
         <div class="ml-auto">
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
                 <i class="fas fa-calendar-check mr-1"></i>
                 Generated: {{ today|date:"M d, Y" }}
             </span>
@@ -85,16 +106,16 @@
         <div class="p-5">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <i class="fas fa-boxes text-blue-600"></i>
+                    <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <i class="fas fa-money-bill-wave text-indigo-600"></i>
                     </div>
                 </div>
                 <div class="ml-5">
                     <div class="text-sm font-medium text-gray-500 truncate">
-                        Total Products
+                        Total Payments
                     </div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900">
-                        {{ summary.total_products|default:0 }}
+                        KSh {{ totals.total_amount|default:0|floatformat:2|intcomma }}
                     </div>
                 </div>
             </div>
@@ -106,15 +127,15 @@
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                        <i class="fas fa-money-bill-wave text-green-600"></i>
+                        <i class="fas fa-receipt text-green-600"></i>
                     </div>
                 </div>
                 <div class="ml-5">
                     <div class="text-sm font-medium text-gray-500 truncate">
-                        Total Profit
+                        Total Transactions
                     </div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900">
-                        KSh {{ summary.total_profit|default:0|floatformat:2|intcomma }}
+                        {{ totals.total_count|default:0|intcomma }}
                     </div>
                 </div>
             </div>
@@ -125,16 +146,16 @@
         <div class="p-5">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                        <i class="fas fa-chart-line text-indigo-600"></i>
+                    <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-users text-blue-600"></i>
                     </div>
                 </div>
                 <div class="ml-5">
                     <div class="text-sm font-medium text-gray-500 truncate">
-                        Total Sales
+                        Total Customers
                     </div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900">
-                        KSh {{ summary.total_sales|default:0|floatformat:2|intcomma }}
+                        {{ customer_summary|length }}
                     </div>
                 </div>
             </div>
@@ -146,15 +167,15 @@
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <div class="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                        <i class="fas fa-percentage text-yellow-600"></i>
+                        <i class="fas fa-chart-line text-yellow-600"></i>
                     </div>
                 </div>
                 <div class="ml-5">
                     <div class="text-sm font-medium text-gray-500 truncate">
-                        Avg Margin
+                        Average Payment
                     </div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900">
-                        {{ summary.avg_profit_margin|default:0|floatformat:1 }}%
+                        KSh {{ totals.avg_amount|default:0|floatformat:2|intcomma }}
                     </div>
                 </div>
             </div>
@@ -162,23 +183,121 @@
     </div>
 </div>
 
-<!-- Products Table -->
+<!-- Payment Summary by Method -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg font-medium text-gray-900">
+            <i class="fas fa-credit-card me-2"></i>Payments by Method
+        </h3>
+        <p class="mt-1 text-sm text-gray-500">Breakdown of payments by payment method</p>
+    </div>
+    <div class="px-4 py-5 sm:p-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {% for method in method_summary %}
+            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-medium text-gray-500">{{ method.payment_method|title }}</div>
+                        <div class="mt-1 text-lg font-semibold text-gray-900">
+                            KSh {{ method.total_amount|default:0|floatformat:2|intcomma }}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-500">{{ method.count }} transactions</div>
+                        {% if totals.total_amount > 0 %}
+                        <div class="mt-1 text-sm font-medium text-indigo-600">
+                            {{ method.total_amount|divide:totals.total_amount|multiply:100|floatformat:1 }}%
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Customer Summary -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg font-medium text-gray-900">
+            <i class="fas fa-users me-2"></i>Top Customers by Payments
+        </h3>
+        <p class="mt-1 text-sm text-gray-500">Customers with highest payment amounts</p>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Payments
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Transactions
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Average Payment
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last Payment
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for customer in customer_summary|slice:":10" %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-medium text-gray-900">{{ customer.customer__name|default:"Walk-in" }}</div>
+                        <div class="text-sm text-gray-500">{{ customer.customer__phone|default:"No phone" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900">
+                        KSh {{ customer.total_payments|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                        {{ customer.payment_count }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                        KSh {{ customer.avg_payment|default:0|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ customer.last_payment|date:"M d, Y"|default:"-" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center">
+                        <div class="text-gray-400">
+                            <i class="fas fa-user-slash fa-4x mb-4"></i>
+                            <p class="mt-2 text-lg font-medium text-gray-900">No customer payment data found</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Detailed Payments Table -->
 <div class="bg-white shadow rounded-lg">
     <div class="px-4 py-5 sm:px-6">
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-lg font-medium text-gray-900">
-                    <i class="fas fa-table me-2"></i>Product Profit Analysis
+                    <i class="fas fa-table me-2"></i>Detailed Payment Records
                 </h3>
-                <p class="mt-1 text-sm text-gray-500">Detailed profit breakdown by product</p>
+                <p class="mt-1 text-sm text-gray-500">All customer payments in the selected period</p>
             </div>
             <div class="flex space-x-2">
                 <button type="button" onclick="window.print()" 
-                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     <i class="fas fa-print mr-2"></i> Print
                 </button>
                 <a href="?export=excel" 
-                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     <i class="fas fa-file-excel mr-2"></i> Export Excel
                 </a>
             </div>
@@ -190,117 +309,93 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product
+                        Date
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Category
+                        Customer
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Quantity
+                        Sale #
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total Sales
+                        Payment Method
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total Cost
+                        Amount
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total Profit
+                        Reference
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Profit Margin
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Avg Profit/Unit
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Sales Count
+                        Processed By
                     </th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-                {% for product in product_profits %}
+                {% for payment in payments %}
                 <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4">
-                        <div class="font-medium text-gray-900">{{ product.product.name }}</div>
-                        <div class="text-sm text-gray-500">{{ product.product.sku|default:"-" }}</div>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">{{ payment.date|date:"M d, Y" }}</div>
+                        
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                            {{ product.category|default:"Uncategorized" }}
-                        </span>
+                        <div class="font-medium text-gray-900">{{ payment.customer.name|default:"Walk-in" }}</div>
+                        <div class="text-sm text-gray-500">{{ payment.customer.phone|default:"-" }}</div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
-                        {{ product.total_quantity|intcomma }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                        KSh {{ product.total_sales|floatformat:2|intcomma }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                        KSh {{ product.total_cost|floatformat:2|intcomma }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                        <span class="font-medium {% if product.total_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
-                            KSh {{ product.total_profit|floatformat:2|intcomma }}
-                        </span>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {% if payment.sale %}
+                        <a href="{% url 'view_sale' payment.sale.id %}" class="text-indigo-600 hover:text-indigo-900">
+                            {{ payment.sale.sale_number }}
+                        </a>
+                        {% else %}
+                        <span class="text-gray-400">-</span>
+                        {% endif %}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="h-2 rounded-full 
-                                    {% if product.profit_margin > 30 %}bg-green-500
-                                    {% elif product.profit_margin > 15 %}bg-yellow-500
-                                    {% else %}bg-red-500{% endif %}" 
-                                    style="width: {% if product.profit_margin > 100 %}100{% else %}{{ product.profit_margin|floatformat:0 }}{% endif %}%">
-                                </div>
-                            </div>
-                            <span class="ml-2 text-xs font-medium text-gray-700">
-                                {{ product.profit_margin|floatformat:1 }}%
-                            </span>
-                        </div>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if payment.payment_method == 'cash' %}bg-green-100 text-green-800
+                            {% elif payment.payment_method == 'mpesa' %}bg-purple-100 text-purple-800
+                            {% elif payment.payment_method == 'card' %}bg-blue-100 text-blue-800
+                            {% elif payment.payment_method == 'cheque' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ payment.get_payment_method_display }}
+                        </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
-                        KSh {{ product.avg_profit_per_unit|floatformat:2|intcomma }}
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900">
+                        KSh {{ payment.amount|floatformat:2|intcomma }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
-                        {{ product.sale_count }}
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ payment.reference|default:"-" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ payment.user.get_full_name|default:payment.user.username }}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="9" class="px-6 py-12 text-center">
+                    <td colspan="7" class="px-6 py-12 text-center">
                         <div class="text-gray-400">
-                            <i class="fas fa-chart-pie fa-4x mb-4"></i>
-                            <p class="mt-2 text-lg font-medium text-gray-900">No profit data found for the selected period</p>
-                            <p class="text-gray-500">Try adjusting your filters</p>
+                            <i class="fas fa-receipt fa-4x mb-4"></i>
+                            <p class="mt-2 text-lg font-medium text-gray-900">No payment records found</p>
+                            <p class="text-gray-500">Try adjusting your filters or date range</p>
                         </div>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
             
-            {% if product_profits %}
+            {% if payments %}
             <tfoot class="bg-gray-50">
                 <tr>
-                    <td colspan="2" class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
+                    <td colspan="4" class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
                         Totals:
                     </td>
-                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-center">
-                        {{ summary.total_products|default:0 }}
-                    </td>
                     <td class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
-                        KSh {{ summary.total_sales|default:0|floatformat:2|intcomma }}
+                        KSh {{ totals.total_amount|default:0|floatformat:2|intcomma }}
                     </td>
-                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
-                        KSh {{ summary.total_cost|default:0|floatformat:2|intcomma }}
+                    <td colspan="2" class="px-6 py-3 text-sm text-gray-500">
+                        {{ payments|length }} records
                     </td>
-                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
-                        KSh {{ summary.total_profit|default:0|floatformat:2|intcomma }}
-                    </td>
-                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-center">
-                        {{ summary.avg_profit_margin|default:0|floatformat:1 }}%
-                    </td>
-                    <td colspan="2"></td>
                 </tr>
             </tfoot>
             {% endif %}
@@ -310,7 +405,7 @@
     <div class="px-4 py-3 bg-gray-50 sm:px-6">
         <div class="flex items-center justify-between">
             <div class="text-sm text-gray-700">
-                Showing {{ product_profits|length }} products
+                Showing {{ payments|length }} payment records
             </div>
             <div class="text-sm text-gray-500">
                 Generated on {{ today|date:"F d, Y H:i" }}
@@ -347,11 +442,11 @@ document.addEventListener('DOMContentLoaded', function() {
         $('table').DataTable({
             pageLength: 25,
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-            order: [[5, 'desc']], // Sort by profit descending
+            order: [[0, 'desc']], // Sort by date descending
             dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
             language: {
                 search: "_INPUT_",
-                searchPlaceholder: "Search products...",
+                searchPlaceholder: "Search payments...",
                 lengthMenu: "Show _MENU_ entries",
                 info: "Showing _START_ to _END_ of _TOTAL_ entries",
                 infoEmpty: "Showing 0 to 0 of 0 entries",

@@ -1,0 +1,935 @@
+{% extends 'pos/admin/base_admin.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Create New Role - Admin{% endblock %}
+
+{% block page_title %}Create New Role{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'role_list' %}">Roles</a></li>
+<li class="breadcrumb-item active">Create New</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 gradient-text">Create New Role</h1>
+            <p class="text-muted mb-0">Define a new role with specific permissions</p>
+        </div>
+        <a href="{% url 'role_list' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            Back to Roles
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Role Form -->
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between py-3 gradient-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-wrapper bg-white text-primary p-2 rounded-circle shadow-sm">
+                            <i class="fas fa-user-tag fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0 text-white">Role Information</h5>
+                            <p class="card-subtitle text-white-50 mb-0">Configure role details and permissions</p>
+                        </div>
+                    </div>
+                    <span class="badge bg-white text-primary px-3 py-2 rounded-pill shadow-sm">
+                        <i class="fas fa-asterisk me-1"></i>
+                        Required Fields
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" id="roleForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information Section -->
+                        <div class="mb-5">
+                            <div class="section-header mb-4">
+                                <div class="step-badge">1</div>
+                                <h5 class="section-title mb-0">Basic Information</h5>
+                                <div class="section-line"></div>
+                            </div>
+                            
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold d-flex align-items-center gap-2">
+                                            <i class="fas fa-tag text-primary"></i>
+                                            Role Type <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 border-start-0 border-top-0 border-primary border-2 rounded-0">
+                                                <i class="fas fa-user-tag text-primary"></i>
+                                            </span>
+                                            <select name="{{ form.name.name }}" id="{{ form.name.id_for_label }}" 
+                                                    class="form-control border-0 border-bottom border-primary border-2 rounded-0 focus-ring">
+                                                {% for value, label in form.name.field.choices %}
+                                                    <option value="{{ value }}" {% if form.name.value == value %}selected{% endif %}>{{ label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        {% if form.name.errors %}
+                                            <div class="alert alert-danger mt-2 p-2 border-0 shadow-sm">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                {{ form.name.errors }}
+                                            </div>
+                                        {% endif %}
+                                        <div class="form-text mt-2 d-flex align-items-center gap-2 text-muted">
+                                            <i class="fas fa-lightbulb text-warning"></i>
+                                            Select a predefined role type or choose "Custom" to define your own
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold d-flex align-items-center gap-2">
+                                            <i class="fas fa-align-left text-primary"></i>
+                                            Description
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 border-start-0 border-top-0 border-primary border-2 rounded-0 align-items-start pt-3">
+                                                <i class="fas fa-file-alt text-primary"></i>
+                                            </span>
+                                            <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" 
+                                                      class="form-control border-0 border-bottom border-primary border-2 rounded-0 focus-ring"
+                                                      rows="3">{{ form.description.value|default:'' }}</textarea>
+                                        </div>
+                                        <div class="form-text mt-2 d-flex align-items-center gap-2 text-muted">
+                                            <i class="fas fa-info-circle text-info"></i>
+                                            Optional description for this role (visible to administrators)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Permissions Section -->
+                        <div class="mb-5">
+                            <div class="section-header mb-4">
+                                <div class="step-badge">2</div>
+                                <h5 class="section-title mb-0">Role Permissions</h5>
+                                <div class="section-line"></div>
+                                <div class="btn-group ms-auto" role="group">
+                                    <button type="button" class="btn btn-sm btn-primary d-flex align-items-center gap-2 px-3" id="selectAll">
+                                        <i class="fas fa-check-double"></i>
+                                        Select All
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 px-3" id="selectNone">
+                                        <i class="fas fa-times"></i>
+                                        Clear All
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Permission Categories Accordion -->
+                            <div class="accordion" id="permissionsAccordion">
+                                {% get_permission_categories as permission_categories %}
+                                {% for category_name, fields in permission_categories.items %}
+                                <div class="accordion-item border-0 mb-3 shadow-sm">
+                                    <div class="accordion-header">
+                                        <button class="accordion-button collapsed rounded-3 p-4" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#collapse{{ forloop.counter }}"
+                                                aria-expanded="false">
+                                            <div class="d-flex align-items-center justify-content-between w-100">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="category-icon-wrapper bg-gradient-primary text-white p-3 rounded-circle shadow">
+                                                        <i class="fas fa-{% cycle 'shield-alt' 'chart-bar' 'shopping-cart' 'box' 'users' 'cog' %}"></i>
+                                                    </div>
+                                                    <div class="text-start">
+                                                        <h6 class="mb-0 fw-semibold text-dark">{{ category_name }}</h6>
+                                                        <small class="text-muted">Manage {{ category_name|lower }} permissions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                                                        <i class="fas fa-lock me-1"></i>
+                                                        {{ fields|length }} permissions
+                                                    </span>
+                                                    <i class="fas fa-chevron-down ms-2 text-primary"></i>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                    <div id="collapse{{ forloop.counter }}" 
+                                         class="accordion-collapse collapse" 
+                                         data-bs-parent="#permissionsAccordion">
+                                        <div class="accordion-body pt-4 pb-4">
+                                            <div class="row g-3">
+                                                {% for field_name, field_label in fields %}
+                                                <div class="col-md-6">
+                                                    <label class="permission-card form-check-label p-3 border rounded-3 position-relative d-block" for="id_{{ field_name }}">
+                                                        <div class="d-flex align-items-start">
+                                                            {% with field_value=form|get_field_value:field_name %}
+                                                            <input type="checkbox" 
+                                                                   class="form-check-input permission-checkbox me-3 mt-1" 
+                                                                   name="{{ field_name }}" 
+                                                                   id="id_{{ field_name }}"
+                                                                   {% if field_value %}checked{% endif %}>
+                                                            {% endwith %}
+                                                            <div class="flex-grow-1">
+                                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                                    <span class="fw-semibold text-dark">{{ field_label }}</span>
+                                                                    <div class="permission-indicator">
+                                                                        <i class="fas fa-check-circle text-success d-none"></i>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="text-muted small">
+                                                                    <i class="fas fa-{% cycle 'key' 'eye' 'edit' 'trash' 'download' 'upload' as icons %} me-1"></i>
+                                                                    {% if "can_add" in field_name %}Create new records
+                                                                    {% elif "can_edit" in field_name %}Modify existing records
+                                                                    {% elif "can_delete" in field_name %}Remove records
+                                                                    {% elif "can_view" in field_name %}View records
+                                                                    {% elif "can_manage" in field_name %}Full management
+                                                                    {% else %}System permission{% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="permission-card-overlay"></div>
+                                                    </label>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Status Section -->
+                        <div class="mb-5">
+                            <div class="section-header mb-4">
+                                <div class="step-badge">3</div>
+                                <h5 class="section-title mb-0">Role Status</h5>
+                                <div class="section-line"></div>
+                            </div>
+                            
+                            <div class="card border-0 shadow-sm bg-gradient-light">
+                                <div class="card-body p-4">
+                                    <div class="form-check form-switch d-flex align-items-center gap-3">
+                                        <input type="checkbox" name="{{ form.is_active.name }}" id="{{ form.is_active.id_for_label }}" 
+                                               class="form-check-input status-switch" {% if form.is_active.value %}checked{% endif %}>
+                                        <label class="form-check-label fw-semibold cursor-pointer w-100" for="{{ form.is_active.id_for_label }}">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="icon-wrapper bg-white shadow-sm p-3 rounded-circle">
+                                                    <i class="fas fa-toggle-on fa-lg text-success"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1 text-dark">Active Role</h6>
+                                                    <small class="text-muted">
+                                                        This role can be assigned to users. Uncheck to disable temporarily.
+                                                    </small>
+                                                </div>
+                                                <div class="status-indicator">
+                                                    <span class="badge bg-success px-3 py-2 rounded-pill">
+                                                        <i class="fas fa-check me-1"></i>
+                                                        Active
+                                                    </span>
+                                                    <span class="badge bg-danger px-3 py-2 rounded-pill d-none">
+                                                        <i class="fas fa-times me-1"></i>
+                                                        Inactive
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="sticky-bottom bg-white pt-4 pb-3 border-top mt-5">
+                            <div class="d-flex gap-3 justify-content-center">
+                                <button type="submit" class="btn btn-primary px-5 py-3 d-flex align-items-center gap-2 shadow-lg hover-lift">
+                                    <i class="fas fa-plus-circle"></i>
+                                    Create Role
+                                </button>
+                                <button type="reset" class="btn btn-outline-primary px-5 py-3 d-flex align-items-center gap-2 hover-lift">
+                                    <i class="fas fa-redo"></i>
+                                    Reset Form
+                                </button>
+                                <a href="{% url 'role_list' %}" class="btn btn-light px-5 py-3 d-flex align-items-center gap-2 hover-lift">
+                                    <i class="fas fa-times"></i>
+                                    Cancel
+                                </a>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <small class="text-muted d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fas fa-shield-alt text-primary"></i>
+                                    All changes are logged in the audit trail
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Quick Templates -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header d-flex align-items-center gap-3 py-3 gradient-secondary">
+                    <div class="icon-wrapper bg-white text-warning p-2 rounded-circle shadow-sm">
+                        <i class="fas fa-magic fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0 text-white">Quick Templates</h5>
+                        <p class="card-subtitle text-white-50 mb-0">Apply predefined permission sets</p>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-4">Select a template to automatically configure permissions:</p>
+                    
+                    <div class="vstack gap-3">
+                        <button type="button" 
+                                class="template-btn btn text-start p-3 border-0 rounded-3 shadow-sm hover-lift" 
+                                data-template="administrator">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-wrapper bg-warning bg-opacity-25 text-warning p-2 rounded-circle">
+                                    <i class="fas fa-crown fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 fw-semibold">Administrator</h6>
+                                    <small class="text-muted d-block">Full system access and control</small>
+                                </div>
+                                <i class="fas fa-check-circle text-success template-indicator d-none"></i>
+                            </div>
+                        </button>
+                        
+                        <button type="button" 
+                                class="template-btn btn text-start p-3 border-0 rounded-3 shadow-sm hover-lift" 
+                                data-template="manager">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-wrapper bg-primary bg-opacity-25 text-primary p-2 rounded-circle">
+                                    <i class="fas fa-user-tie fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 fw-semibold">Manager</h6>
+                                    <small class="text-muted d-block">Full operational control except user management</small>
+                                </div>
+                                <i class="fas fa-check-circle text-success template-indicator d-none"></i>
+                            </div>
+                        </button>
+                        
+                        <button type="button" 
+                                class="template-btn btn text-start p-3 border-0 rounded-3 shadow-sm hover-lift" 
+                                data-template="cashier">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-wrapper bg-success bg-opacity-25 text-success p-2 rounded-circle">
+                                    <i class="fas fa-cash-register fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 fw-semibold">Cashier</h6>
+                                    <small class="text-muted d-block">Sales processing and customer service</small>
+                                </div>
+                                <i class="fas fa-check-circle text-success template-indicator d-none"></i>
+                            </div>
+                        </button>
+                        
+                        <button type="button" 
+                                class="template-btn btn text-start p-3 border-0 rounded-3 shadow-sm hover-lift" 
+                                data-template="inventory">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-wrapper bg-info bg-opacity-25 text-info p-2 rounded-circle">
+                                    <i class="fas fa-boxes fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 fw-semibold">Inventory Manager</h6>
+                                    <small class="text-muted d-block">Product and stock management</small>
+                                </div>
+                                <i class="fas fa-check-circle text-success template-indicator d-none"></i>
+                            </div>
+                        </button>
+                        
+                        <button type="button" 
+                                class="template-btn btn text-start p-3 border-0 rounded-3 shadow-sm hover-lift" 
+                                data-template="sales">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-wrapper bg-danger bg-opacity-25 text-danger p-2 rounded-circle">
+                                    <i class="fas fa-chart-line fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 fw-semibold">Sales Staff</h6>
+                                    <small class="text-muted d-block">Sales operations and reporting</small>
+                                </div>
+                                <i class="fas fa-check-circle text-success template-indicator d-none"></i>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <small class="text-muted d-flex align-items-center justify-content-center gap-2">
+                            <i class="fas fa-lightbulb text-warning"></i>
+                            Templates can be customized after applying
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permission Summary -->
+            <div class="card shadow-lg border-0">
+                <div class="card-header d-flex align-items-center gap-3 py-3 gradient-success">
+                    <div class="icon-wrapper bg-white text-success p-2 rounded-circle shadow-sm">
+                        <i class="fas fa-chart-pie fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0 text-white">Permission Summary</h5>
+                        <p class="card-subtitle text-white-50 mb-0">Real-time permission statistics</p>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Permission Counter -->
+                    <div class="text-center mb-4">
+                        <div class="position-relative d-inline-block">
+                            <div class="permission-circle">
+                                <svg width="140" height="140" viewBox="0 0 140 140">
+                                    <circle cx="70" cy="70" r="64" fill="none" stroke="#e9ecef" stroke-width="10"/>
+                                    <circle id="permissionCircle" cx="70" cy="70" r="64" fill="none" 
+                                            stroke="url(#gradient)" stroke-width="10" 
+                                            stroke-dasharray="402.124" stroke-dashoffset="402.124"
+                                            stroke-linecap="round" transform="rotate(-90 70 70)"/>
+                                    <defs>
+                                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#4e54c8" />
+                                            <stop offset="100%" stop-color="#8f94fb" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                    <h2 class="mb-0 fw-bold gradient-text" id="permissionCount">0</h2>
+                                    <small class="text-muted">Selected</small>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-muted mt-3">
+                            <span id="totalPermissions" class="fw-semibold">0</span> total permissions available
+                        </p>
+                    </div>
+                    
+                    <!-- Category Breakdown -->
+                    <div class="mt-4">
+                        <h6 class="fw-semibold mb-3 d-flex align-items-center gap-2">
+                            <i class="fas fa-layer-group text-primary"></i>
+                            Category Breakdown
+                        </h6>
+                        <div class="vstack gap-2">
+                            {% get_permission_categories as permission_categories %}
+                            {% for category_name, fields in permission_categories.items %}
+                            <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="category-dot"></span>
+                                    <span class="small text-dark">{{ category_name }}</span>
+                                </div>
+                                <div>
+                                    <span class="badge bg-light text-dark px-3 py-1 rounded-pill shadow-sm" 
+                                          id="count-{{ forloop.counter }}">
+                                        0/{{ fields|length }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Status Indicator -->
+                    <div class="alert alert-info border-0 shadow-sm mt-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="icon-wrapper bg-info bg-opacity-10 text-info p-2 rounded-circle">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div>
+                                <small class="d-block fw-medium text-dark">Role Status:</small>
+                                <small class="d-block" id="roleStatusIndicator">Inactive (draft)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize total permissions count
+    const totalPermissions = $('.permission-checkbox').length;
+    $('#totalPermissions').text(totalPermissions);
+    
+    // Permission circle animation
+    const circle = document.getElementById('permissionCircle');
+    const circumference = 2 * Math.PI * 64;
+    
+    // Update permission summary
+    function updatePermissionSummary() {
+        const selectedPermissions = $('.permission-checkbox:checked').length;
+        const percentage = totalPermissions > 0 ? (selectedPermissions / totalPermissions) : 0;
+        const offset = circumference - (percentage * circumference);
+        
+        // Update circle animation
+        circle.style.strokeDashoffset = offset;
+        
+        // Update counter
+        $('#permissionCount').text(selectedPermissions);
+        
+        // Update category counts
+        {% get_permission_categories as permission_categories %}
+        {% for category_name, fields in permission_categories.items %}
+            const count{{ forloop.counter }} = $(`#collapse{{ forloop.counter }} .permission-checkbox:checked`).length;
+            const categoryPercentage = (count{{ forloop.counter }} / {{ fields|length }}) * 100;
+            $(`#count-{{ forloop.counter }}`).text(`${count{{ forloop.counter }}}/{{ fields|length }}`);
+            
+            // Update category dot color
+            const dot = $(`#count-{{ forloop.counter }}`).closest('.d-flex').find('.category-dot');
+            dot.removeClass('bg-danger bg-warning bg-success bg-primary');
+            if (categoryPercentage === 0) {
+                dot.addClass('bg-danger');
+            } else if (categoryPercentage < 100) {
+                dot.addClass('bg-warning');
+            } else {
+                dot.addClass('bg-success');
+            }
+        {% endfor %}
+        
+        // Update role status indicator
+        if (selectedPermissions === 0) {
+            $('#roleStatusIndicator').html('<span class="text-danger">No permissions assigned</span>');
+        } else if (selectedPermissions === totalPermissions) {
+            $('#roleStatusIndicator').html('<span class="text-success">Full administrator access</span>');
+        } else if (selectedPermissions > totalPermissions * 0.7) {
+            $('#roleStatusIndicator').html('<span class="text-success">High permission level</span>');
+        } else if (selectedPermissions > totalPermissions * 0.3) {
+            $('#roleStatusIndicator').html('<span class="text-warning">Moderate permission level</span>');
+        } else {
+            $('#roleStatusIndicator').html('<span class="text-info">Limited permission level</span>');
+        }
+        
+        // Update permission cards
+        $('.permission-checkbox').each(function() {
+            const card = $(this).closest('.permission-card');
+            const indicator = card.find('.permission-indicator i');
+            
+            if ($(this).is(':checked')) {
+                card.addClass('permission-active');
+                card.find('.icon-wrapper').addClass('bg-primary text-white');
+                indicator.removeClass('d-none');
+            } else {
+                card.removeClass('permission-active');
+                card.find('.icon-wrapper').removeClass('bg-primary text-white');
+                indicator.addClass('d-none');
+            }
+        });
+    }
+    
+    // Initialize
+    updatePermissionSummary();
+    
+    // Update summary on checkbox change
+    $('.permission-checkbox').on('change', updatePermissionSummary);
+    
+    // Select All / Select None
+    $('#selectAll').on('click', function() {
+        $('.permission-checkbox').prop('checked', true).trigger('change');
+        updatePermissionSummary();
+        showToast('All permissions selected', 'success');
+    });
+    
+    $('#selectNone').on('click', function() {
+        $('.permission-checkbox').prop('checked', false).trigger('change');
+        updatePermissionSummary();
+        showToast('All permissions cleared', 'warning');
+    });
+    
+    // Template buttons
+    const templates = {
+        'administrator': function() {
+            $('.permission-checkbox').prop('checked', true);
+        },
+        'manager': function() {
+            $('.permission-checkbox').prop('checked', true);
+            $('#id_can_manage_users').prop('checked', false);
+            $('#id_can_manage_roles').prop('checked', false);
+        },
+        'cashier': function() {
+            $('.permission-checkbox').prop('checked', false);
+            $('#id_can_access_dashboard').prop('checked', true);
+            $('#id_can_access_pos').prop('checked', true);
+            $('#id_can_process_sales').prop('checked', true);
+            $('#id_can_view_own_sales').prop('checked', true);
+            $('#id_can_view_products').prop('checked', true);
+            $('#id_can_view_customers').prop('checked', true);
+            $('#id_can_add_customers').prop('checked', true);
+            $('#id_can_edit_customers').prop('checked', true);
+        },
+        'inventory': function() {
+            $('.permission-checkbox').prop('checked', false);
+            $('#id_can_access_dashboard').prop('checked', true);
+            $('#id_can_view_products').prop('checked', true);
+            $('#id_can_add_products').prop('checked', true);
+            $('#id_can_edit_products').prop('checked', true);
+            $('#id_can_delete_products').prop('checked', false);
+            $('#id_can_import_products').prop('checked', true);
+            $('#id_can_view_inventory').prop('checked', true);
+            $('#id_can_manage_stock').prop('checked', true);
+            $('#id_can_view_inventory_reports').prop('checked', true);
+            $('#id_can_view_purchases').prop('checked', true);
+            $('#id_can_add_purchases').prop('checked', true);
+            $('#id_can_edit_purchases').prop('checked', true);
+            $('#id_can_view_suppliers').prop('checked', true);
+        },
+        'sales': function() {
+            $('.permission-checkbox').prop('checked', false);
+            $('#id_can_access_dashboard').prop('checked', true);
+            $('#id_can_access_pos').prop('checked', true);
+            $('#id_can_process_sales').prop('checked', true);
+            $('#id_can_view_all_sales').prop('checked', true);
+            $('#id_can_view_sales_reports').prop('checked', true);
+            $('#id_can_view_customer_reports').prop('checked', true);
+            $('#id_can_view_products').prop('checked', true);
+            $('#id_can_view_customers').prop('checked', true);
+            $('#id_can_add_customers').prop('checked', true);
+            $('#id_can_edit_customers').prop('checked', true);
+        }
+    };
+    
+    $('.template-btn').on('click', function() {
+        const template = $(this).data('template');
+        
+        // Remove active state from all template buttons
+        $('.template-btn').removeClass('active bg-primary text-white').addClass('bg-white');
+        $('.template-btn').find('.template-indicator').addClass('d-none');
+        
+        // Add active state to clicked button
+        $(this).removeClass('bg-white').addClass('active bg-primary text-white');
+        $(this).find('.template-indicator').removeClass('d-none');
+        
+        if (templates[template]) {
+            templates[template]();
+            updatePermissionSummary();
+            
+            // Show toast notification
+            const templateName = $(this).find('h6').text();
+            showToast(`"${templateName}" template applied successfully`, 'success');
+        }
+    });
+    
+    // Status switch handler
+    $('.status-switch').on('change', function() {
+        const statusIndicator = $('.status-indicator');
+        if ($(this).is(':checked')) {
+            statusIndicator.find('.bg-success').removeClass('d-none');
+            statusIndicator.find('.bg-danger').addClass('d-none');
+        } else {
+            statusIndicator.find('.bg-success').addClass('d-none');
+            statusIndicator.find('.bg-danger').removeClass('d-none');
+        }
+    });
+    
+    // Initialize status switch
+    $('.status-switch').trigger('change');
+    
+    // Form validation
+    $('#roleForm').on('submit', function(e) {
+        const roleName = $('#id_name').val();
+        if (!roleName) {
+            e.preventDefault();
+            showToast('Please enter a role name', 'danger');
+            $('#id_name').focus();
+            return false;
+        }
+        
+        const selectedPermissions = $('.permission-checkbox:checked').length;
+        if (selectedPermissions === 0) {
+            if (!confirm('No permissions selected. Are you sure you want to create a role without any permissions?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        return true;
+    });
+    
+    function showToast(message, type = 'info') {
+        const toast = `<div class="toast align-items-center text-bg-${type} border-0 shadow-lg" role="alert">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>`;
+        
+        $('.toast-container').remove();
+        $('body').append(`<div class="toast-container position-fixed bottom-0 end-0 p-3">${toast}</div>`);
+        $('.toast').toast('show');
+    }
+    
+    // Add focus effects
+    $('.focus-ring').on('focus', function() {
+        $(this).parent().addClass('focused');
+    }).on('blur', function() {
+        $(this).parent().removeClass('focused');
+    });
+});
+</script>
+
+<style>
+/* Custom CSS for enhanced form styling */
+:root {
+    --primary-color: #4e54c8;
+    --secondary-color: #8f94fb;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --gradient-primary: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+    --gradient-secondary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-success: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.gradient-header {
+    background: var(--gradient-primary);
+}
+
+.gradient-secondary {
+    background: var(--gradient-secondary);
+}
+
+.gradient-success {
+    background: var(--gradient-success);
+}
+
+.gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.bg-gradient-light {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.step-badge {
+    width: 32px;
+    height: 32px;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    margin-right: 12px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.section-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.section-line {
+    flex-grow: 1;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, transparent 100%);
+    margin-left: 15px;
+}
+
+.category-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+}
+
+.permission-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: 2px solid #e9ecef;
+    position: relative;
+    overflow: hidden;
+}
+
+.permission-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(78, 84, 200, 0.15);
+}
+
+.permission-card.permission-active {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(78, 84, 200, 0.05) 0%, rgba(143, 148, 251, 0.05) 100%);
+    box-shadow: 0 5px 15px rgba(78, 84, 200, 0.1);
+}
+
+.permission-card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+}
+
+.permission-card:hover .permission-card-overlay {
+    opacity: 0.1;
+}
+
+.accordion-button {
+    border: none;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.accordion-button:not(.collapsed) {
+    background: white;
+    color: inherit;
+    box-shadow: 0 5px 15px rgba(78, 84, 200, 0.1);
+}
+
+.accordion-button::after {
+    display: none;
+}
+
+.category-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    background: var(--primary-color);
+    transition: all 0.3s ease;
+}
+
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(78, 84, 200, 0.25);
+}
+
+.status-switch {
+    width: 3.5em;
+    height: 1.8em;
+    background-image: none;
+    background-color: #e9ecef;
+}
+
+.status-switch:checked {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.input-group.focused {
+    box-shadow: 0 0 0 0.25rem rgba(78, 84, 200, 0.25);
+    border-radius: 0.375rem;
+}
+
+.sticky-bottom {
+    position: sticky;
+    bottom: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    margin-top: 30px;
+}
+
+.permission-circle {
+    position: relative;
+    display: inline-block;
+}
+
+.permission-circle svg circle {
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.template-btn {
+    background: white;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.template-btn.active {
+    border-color: var(--primary-color);
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.template-btn.active .icon-wrapper {
+    background: white !important;
+    color: var(--primary-color) !important;
+}
+
+.icon-wrapper {
+    transition: all 0.3s ease;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .section-line {
+        display: none;
+    }
+    
+    .sticky-bottom {
+        position: static;
+        background: transparent;
+        backdrop-filter: none;
+    }
+    
+    .permission-circle {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .permission-circle svg {
+        width: 120px;
+        height: 120px;
+    }
+}
+</style>
+{% endblock %}

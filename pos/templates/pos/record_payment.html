@@ -1,3 +1,4 @@
+<!-- templates/pos/record_payment.html -->
 {% extends 'pos/base.html' %}
 
 {% block content %}
@@ -7,6 +8,7 @@
         <p class="text-gray-600">Invoice #{{ purchase.invoice_number }} - {{ purchase.supplier.name }}</p>
     </div>
 
+    <!-- Payment Summary -->
     <div class="mb-6 p-4 bg-gray-50 rounded-lg">
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -14,24 +16,58 @@
                 <p class="text-lg font-semibold">KSh {{ purchase.total|floatformat:2 }}</p>
             </div>
             <div>
-                <p class="text-sm text-gray-500">Balance Due</p>
+                <p class="text-sm text-gray-500">Already Paid</p>
+                <p class="text-lg font-semibold">KSh {{ total_paid|floatformat:2 }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Balance Due (This Purchase)</p>
                 <p class="text-lg font-semibold">KSh {{ balance_due|floatformat:2 }}</p>
             </div>
+            <div>
+                <p class="text-sm text-gray-500">Supplier Balance</p>
+                <p class="text-lg font-semibold {% if supplier_balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                    KSh {{ supplier_balance|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+        
+        {% if supplier_balance > 0 %}
+        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <p class="text-sm text-yellow-800">
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                This supplier has an outstanding balance of <strong>KSh {{ supplier_balance|floatformat:2 }}</strong>.
+                You can choose to settle part or all of this balance with your payment.
+            </p>
+        </div>
+        {% endif %}
+        
+        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+            <p class="text-sm text-blue-800">
+                <i class="fas fa-info-circle mr-1"></i>
+                <strong>Total Available for Payment:</strong> KSh {{ total_due|floatformat:2 }}
+                (Purchase Balance: {{ balance_due|floatformat:2 }} + Supplier Balance: {{ supplier_balance|floatformat:2 }})
+            </p>
         </div>
     </div>
 
+    <!-- Payment Form -->
     <form method="post">
         {% csrf_token %}
         
         <div class="space-y-4">
+            <!-- Amount -->
             <div>
-                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
+                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">
+                    Amount to Pay *
+                    <span class="text-xs text-gray-500">(Maximum: KSh {{ total_due|floatformat:2 }})</span>
+                </label>
                 <input type="number" name="amount" id="amount" 
                        class="w-full p-2 border rounded-md" 
-                       step="0.01" min="0.01" max="{{ balance_due }}" 
+                       step="0.01" min="0.01" max="{{ total_due }}" 
                        value="{{ balance_due|floatformat:2 }}" required>
             </div>
             
+            <!-- Payment Method -->
             <div>
                 <label for="payment_method" class="block text-sm font-medium text-gray-700 mb-1">Payment Method *</label>
                 <select name="payment_method" id="payment_method" class="w-full p-2 border rounded-md" required>
@@ -43,19 +79,51 @@
                 </select>
             </div>
             
+            <!-- Reference -->
             <div>
                 <label for="reference" class="block text-sm font-medium text-gray-700 mb-1">Reference</label>
                 <input type="text" name="reference" id="reference" 
                        class="w-full p-2 border rounded-md" 
-                       placeholder="e.g. M-Pesa code, cheque number">
+                       placeholder="e.g., M-Pesa code, cheque number, transaction ID">
             </div>
             
+            <!-- Payment Date -->
             <div>
                 <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Payment Date</label>
                 <input type="date" name="date" id="date" 
                        class="w-full p-2 border rounded-md"
                        value="{% now 'Y-m-d' %}">
             </div>
+            
+            <!-- Notes -->
+            <div>
+                <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                <textarea name="notes" id="notes" 
+                          class="w-full p-2 border rounded-md" 
+                          rows="3" 
+                          placeholder="Any additional notes about this payment..."></textarea>
+            </div>
+            
+            <!-- Payment Allocation (Optional) -->
+            {% if supplier_balance > 0 %}
+            <div id="payment-allocation" class="hidden p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-medium text-gray-700 mb-2">Payment Allocation</h3>
+                <div class="space-y-2">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Purchase Balance Payment:</label>
+                        <span id="purchase-amount" class="font-medium">KSh 0.00</span>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Supplier Balance Payment:</label>
+                        <span id="supplier-amount" class="font-medium">KSh 0.00</span>
+                    </div>
+                    <div class="pt-2 border-t">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Total Payment:</label>
+                        <span id="total-amount" class="text-lg font-bold">KSh 0.00</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <div class="mt-6 flex justify-end space-x-3">
@@ -71,17 +139,121 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Validate amount doesn't exceed balance due
     const amountInput = document.getElementById('amount');
-    amountInput.addEventListener('change', function() {
-        const maxAmount = parseFloat("{{ balance_due }}");
-        const enteredAmount = parseFloat(this.value);
+    const balanceDue = parseFloat("{{ balance_due }}");
+    const supplierBalance = parseFloat("{{ supplier_balance }}");
+    const totalDue = parseFloat("{{ total_due }}");
+    const paymentAllocationDiv = document.getElementById('payment-allocation');
+    
+    // Function to update payment allocation display
+    function updatePaymentAllocation() {
+        const enteredAmount = parseFloat(amountInput.value) || 0;
         
-        if (enteredAmount > maxAmount) {
-            alert('Payment amount cannot exceed the balance due of KSh ' + maxAmount.toFixed(2));
-            this.value = maxAmount.toFixed(2);
+        // Validate max amount
+        if (enteredAmount > totalDue) {
+            alert('Payment amount cannot exceed the total due of KSh ' + totalDue.toFixed(2));
+            amountInput.value = totalDue.toFixed(2);
+            updatePaymentAllocation();
+            return;
+        }
+        
+        // Calculate allocation
+        let purchaseAmount = 0;
+        let supplierAmount = 0;
+        
+        if (enteredAmount <= balanceDue) {
+            // Only paying purchase balance
+            purchaseAmount = enteredAmount;
+            supplierAmount = 0;
+        } else {
+            // Paying more than purchase balance
+            purchaseAmount = balanceDue;
+            supplierAmount = enteredAmount - balanceDue;
+            
+            // Cap supplier amount at supplier balance
+            if (supplierAmount > supplierBalance) {
+                supplierAmount = supplierBalance;
+                purchaseAmount = enteredAmount - supplierAmount;
+            }
+        }
+        
+        // Update display
+        if (paymentAllocationDiv) {
+            document.getElementById('purchase-amount').textContent = 'KSh ' + purchaseAmount.toFixed(2);
+            document.getElementById('supplier-amount').textContent = 'KSh ' + supplierAmount.toFixed(2);
+            document.getElementById('total-amount').textContent = 'KSh ' + enteredAmount.toFixed(2);
+            
+            // Show allocation if paying more than purchase balance
+            if (enteredAmount > balanceDue) {
+                paymentAllocationDiv.classList.remove('hidden');
+            } else {
+                paymentAllocationDiv.classList.add('hidden');
+            }
+        }
+        
+        // Show/hide warning for partial payment
+        const partialWarning = document.getElementById('partial-warning');
+        if (partialWarning) {
+            if (enteredAmount < balanceDue && enteredAmount > 0) {
+                partialWarning.classList.remove('hidden');
+                const remaining = balanceDue - enteredAmount;
+                document.getElementById('remaining-balance').textContent = 'KSh ' + remaining.toFixed(2);
+            } else {
+                partialWarning.classList.add('hidden');
+            }
+        }
+    }
+    
+    // Initial update
+    updatePaymentAllocation();
+    
+    // Update on amount change
+    amountInput.addEventListener('input', updatePaymentAllocation);
+    amountInput.addEventListener('change', updatePaymentAllocation);
+    
+    // Quick amount buttons
+    const quickAmounts = [
+        { label: 'Full Purchase Balance', amount: balanceDue },
+        { label: 'Half', amount: balanceDue / 2 }
+    ];
+    
+    if (supplierBalance > 0) {
+        quickAmounts.push({ label: 'Full Settlement', amount: totalDue });
+    }
+    
+    // Add quick amount buttons
+    const quickButtonsDiv = document.createElement('div');
+    quickButtonsDiv.className = 'flex flex-wrap gap-2 mb-4';
+    quickButtonsDiv.innerHTML = '<span class="text-sm text-gray-600 self-center mr-2">Quick amounts:</span>';
+    
+    quickAmounts.forEach(item => {
+        if (item.amount > 0) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-md';
+            button.textContent = item.label + ' (KSh ' + item.amount.toFixed(2) + ')';
+            button.addEventListener('click', function() {
+                amountInput.value = item.amount.toFixed(2);
+                updatePaymentAllocation();
+            });
+            quickButtonsDiv.appendChild(button);
         }
     });
+    
+    amountInput.parentElement.parentElement.appendChild(quickButtonsDiv);
+    
+    // Add partial payment warning
+    const warningDiv = document.createElement('div');
+    warningDiv.id = 'partial-warning';
+    warningDiv.className = 'hidden mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded';
+    warningDiv.innerHTML = `
+        <p class="text-sm text-yellow-800">
+            <i class="fas fa-exclamation-circle mr-1"></i>
+            This will be a <strong>partial payment</strong>. 
+            Remaining balance for this purchase: <span id="remaining-balance" class="font-bold">KSh 0.00</span>
+        </p>
+    `;
+    amountInput.parentElement.parentElement.appendChild(warningDiv);
 });
 </script>
 {% endblock %}

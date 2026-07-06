@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.forms import inlineformset_factory
 from .models import StockJournal, StockJournalItem
+from decimal import Decimal, InvalidOperation
 
 class ProductForm(forms.ModelForm):
     class Meta:
@@ -16,13 +17,13 @@ class ProductForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'barcode': forms.TextInput(attrs={'class': 'form-control'}),
             'category': forms.Select(attrs={'class': 'form-control'}),
-            'purchase_price': forms.NumberInput(attrs={'class': 'form-control'}),
-            'selling_price': forms.NumberInput(attrs={'class': 'form-control'}),
-            'least_selling_price': forms.NumberInput(attrs={'class': 'form-control'}),
-            'wholesale_price': forms.NumberInput(attrs={'class': 'form-control'}),
-            'wholesale_min_quantity': forms.NumberInput(attrs={'class': 'form-control'}),
-            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': 'any'}),
-            'reorder_level': forms.NumberInput(attrs={'class': 'form-control'}),
+            'purchase_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001'}),
+            'selling_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001'}),
+            'least_selling_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001'}),
+            'wholesale_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001'}),
+            'wholesale_min_quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'reorder_level': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
             'supplier': forms.Select(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
@@ -35,6 +36,9 @@ class ProductForm(forms.ModelForm):
         selling_price = cleaned_data.get('selling_price')
         least_selling_price = cleaned_data.get('least_selling_price')
         wholesale_price = cleaned_data.get('wholesale_price')
+        quantity = cleaned_data.get('quantity')
+        reorder_level = cleaned_data.get('reorder_level')
+        wholesale_min_quantity = cleaned_data.get('wholesale_min_quantity')
         
         # Validation rules
         errors = {}
@@ -54,6 +58,29 @@ class ProductForm(forms.ModelForm):
                     errors['wholesale_price'] = "Wholesale price cannot be less than purchase price."
                 if wholesale_price > selling_price:
                     errors['wholesale_price'] = "Wholesale price cannot be higher than retail price."
+        
+        # Validate quantities can accept 6 decimal places
+        if quantity is not None:
+            try:
+                # Convert to Decimal with 6 decimal places
+                quantity = Decimal(str(quantity))
+                cleaned_data['quantity'] = quantity
+            except (ValueError, InvalidOperation):
+                errors['quantity'] = "Invalid quantity value."
+        
+        if reorder_level is not None:
+            try:
+                reorder_level = Decimal(str(reorder_level))
+                cleaned_data['reorder_level'] = reorder_level
+            except (ValueError, InvalidOperation):
+                errors['reorder_level'] = "Invalid reorder level value."
+        
+        if wholesale_min_quantity is not None:
+            try:
+                wholesale_min_quantity = Decimal(str(wholesale_min_quantity))
+                cleaned_data['wholesale_min_quantity'] = wholesale_min_quantity
+            except (ValueError, InvalidOperation):
+                errors['wholesale_min_quantity'] = "Invalid wholesale minimum quantity value."
         
         if errors:
             raise ValidationError(errors)
@@ -438,3 +465,145 @@ class CompanyForm(forms.ModelForm):
             'vat_number': forms.TextInput(attrs={'class': 'form-control'}),
             'logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
+
+
+# Add these forms to your forms.py
+
+from django import forms
+from django.contrib.auth.models import User, Group
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from .models import UserProfile, Role, PermissionGroup
+
+class CustomUserCreationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+    
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'is_active')
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        
+        if commit:
+            user.save()
+        return user
+
+
+class CustomUserEditForm(UserChangeForm):
+    password = None  # Remove password field
+    
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'is_active', 'is_staff')
+
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['role', 'phone', 'address', 'id_number', 'profile_picture', 
+                 'is_active', 'can_override_role', 'custom_permissions']
+        widgets = {
+            'custom_permissions': forms.HiddenInput(),  # Will handle via JS
+        }
+
+
+class RoleForm(forms.ModelForm):
+    class Meta:
+        model = Role
+        fields = '__all__'
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Group fields by category
+        self.fields = forms.models.modelform_factory(Role, fields='__all__')().fields
+
+
+class RoleFilterForm(forms.Form):
+    """Form for filtering roles"""
+    is_active = forms.ChoiceField(
+        choices=[('', 'All'), ('true', 'Active'), ('false', 'Inactive')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Search roles...'
+        })
+    )
+
+
+class UserFilterForm(forms.Form):
+    """Form for filtering users"""
+    role = forms.ModelChoiceField(
+        queryset=Role.objects.all(),
+        required=False,
+        empty_label="All Roles",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    is_active = forms.ChoiceField(
+        choices=[('', 'All'), ('true', 'Active'), ('false', 'Inactive')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Search users...'
+        })
+    )
+
+
+class BulkUserImportForm(forms.Form):
+    """Form for bulk user import"""
+    file = forms.FileField(
+        label='Excel File',
+        help_text='Upload Excel file with columns: username, email, first_name, last_name, role, phone'
+    )
+    send_email = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='Send welcome email to users'
+    )
+    generate_passwords = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='Generate random passwords'
+    )
+
+
+class PasswordResetAdminForm(forms.Form):
+    """Form for admin to reset user password"""
+    user = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        label='Select User',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        label='New Password'
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        label='Confirm Password'
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        new_password = cleaned_data.get('new_password')
+        confirm_password = cleaned_data.get('confirm_password')
+        
+        if new_password != confirm_password:
+            raise forms.ValidationError("Passwords do not match")
+        
+        return cleaned_data

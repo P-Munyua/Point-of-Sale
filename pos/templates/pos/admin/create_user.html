@@ -1,0 +1,822 @@
+{% extends 'pos/admin/base_admin.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Create New User - Admin{% endblock %}
+
+{% block page_title %}Create New User{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'user_list' %}">Users</a></li>
+<li class="breadcrumb-item active">Create New</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Create New User</h1>
+            <p class="text-muted mb-0">Add a new user to the system with specific permissions</p>
+        </div>
+        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            Back to Users
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - User Form -->
+        <div class="col-lg-8">
+            <div class="card shadow-md mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between py-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-wrapper bg-primary bg-opacity-10 text-primary p-2 rounded">
+                            <i class="fas fa-user-plus fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">User Information</h5>
+                            <p class="card-subtitle text-muted mb-0">Fill in the user's details and credentials</p>
+                        </div>
+                    </div>
+                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                        Required Fields *
+                    </span>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="userForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Account Information Section -->
+                        <div class="mb-5">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2 mb-4">
+                                <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px;">1</span>
+                                Account Information
+                            </label>
+                            
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ user_form.username.id_for_label }}" class="form-label fw-semibold">
+                                            Username <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fas fa-user-circle text-primary"></i>
+                                            </span>
+                                            {{ user_form.username }}
+                                        </div>
+                                        {% if user_form.username.errors %}
+                                            <div class="alert alert-danger mt-2 p-2">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                {{ user_form.username.errors }}
+                                            </div>
+                                        {% endif %}
+                                        <div class="form-text mt-2">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Letters, digits and @/./+/-/_ only. Auto-generated from email if left empty.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ user_form.email.id_for_label }}" class="form-label fw-semibold">
+                                            Email Address <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fas fa-envelope text-primary"></i>
+                                            </span>
+                                            {{ user_form.email }}
+                                        </div>
+                                        {% if user_form.email.errors %}
+                                            <div class="alert alert-danger mt-2 p-2">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                {{ user_form.email.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Personal Information Section -->
+                        <div class="mb-5">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2 mb-4">
+                                <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px;">2</span>
+                                Personal Information
+                            </label>
+                            
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ user_form.first_name.id_for_label }}" class="form-label fw-semibold">
+                                            First Name <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fas fa-user text-primary"></i>
+                                            </span>
+                                            {{ user_form.first_name }}
+                                        </div>
+                                        {% if user_form.first_name.errors %}
+                                            <div class="alert alert-danger mt-2 p-2">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                {{ user_form.first_name.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ user_form.last_name.id_for_label }}" class="form-label fw-semibold">
+                                            Last Name <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fas fa-user text-primary"></i>
+                                            </span>
+                                            {{ user_form.last_name }}
+                                        </div>
+                                        {% if user_form.last_name.errors %}
+                                            <div class="alert alert-danger mt-2 p-2">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                {{ user_form.last_name.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Section -->
+                        <div class="mb-5">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2 mb-4">
+                                <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px;">3</span>
+                                Password Security
+                            </label>
+                            
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ user_form.password1.id_for_label }}" class="form-label fw-semibold">
+                                            Password <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fas fa-lock text-primary"></i>
+                                            </span>
+                                            {{ user_form.password1 }}
+                                            <button class="btn btn-outline-secondary border-start-0 toggle-password" type="button">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        {% if user_form.password1.errors %}
+                                            <div class="alert alert-danger mt-2 p-2">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                {{ user_form.password1.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ user_form.password2.id_for_label }}" class="form-label fw-semibold">
+                                            Confirm Password <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fas fa-lock text-primary"></i>
+                                            </span>
+                                            {{ user_form.password2 }}
+                                            <button class="btn btn-outline-secondary border-start-0 toggle-password" type="button">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        {% if user_form.password2.errors %}
+                                            <div class="alert alert-danger mt-2 p-2">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                {{ user_form.password2.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Password Strength Indicator -->
+                            <div class="mt-3" id="passwordStrengthContainer">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="fw-semibold">Password Strength:</small>
+                                    <small id="passwordStrengthText" class="text-danger">Very Weak</small>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div id="passwordStrengthBar" class="progress-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <hr class="my-5">
+
+                        <!-- Profile Information Section -->
+                        <div class="mb-5">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2 mb-4">
+                                <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px;">4</span>
+                                Profile Information
+                            </label>
+                            
+                            <!-- Role Selection -->
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ profile_form.role.id_for_label }}" class="form-label fw-semibold">
+                                            Role Assignment
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fas fa-user-tag text-primary"></i>
+                                            </span>
+                                            <select name="{{ profile_form.role.name }}" 
+                                                    id="{{ profile_form.role.id_for_label }}" 
+                                                    class="form-select select2 border-start-0 ps-0">
+                                                <option value="">Select a role...</option>
+                                                {% for role in roles %}
+                                                <option value="{{ role.id }}" 
+                                                        data-users="{{ role.user_count }}"
+                                                        data-description="{{ role.description }}">
+                                                    {{ role.get_name_display }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-text mt-2">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Assign a role to define user permissions. Required for system access.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ profile_form.phone.id_for_label }}" class="form-label fw-semibold">
+                                            Phone Number
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fas fa-phone text-primary"></i>
+                                            </span>
+                                            {{ profile_form.phone }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Address -->
+                            <div class="row g-4 mb-4">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="{{ profile_form.address.id_for_label }}" class="form-label fw-semibold">
+                                            Address
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0 align-items-start pt-3">
+                                                <i class="fas fa-map-marker-alt text-primary"></i>
+                                            </span>
+                                            {{ profile_form.address }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ID & Profile Picture -->
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ profile_form.id_number.id_for_label }}" class="form-label fw-semibold">
+                                            ID Number
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fas fa-id-card text-primary"></i>
+                                            </span>
+                                            {{ profile_form.id_number }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ profile_form.profile_picture.id_for_label }}" class="form-label fw-semibold">
+                                            Profile Picture
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0">
+                                                <i class="fas fa-image text-primary"></i>
+                                            </span>
+                                            {{ profile_form.profile_picture }}
+                                        </div>
+                                        <div class="form-text mt-2">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Optional. Recommended size: 300x300 pixels
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Settings Section -->
+                        <div class="mb-5">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2 mb-4">
+                                <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px;">5</span>
+                                Account Settings
+                            </label>
+                            
+                            <div class="row g-4">
+                                <div class="col-12">
+                                    <div class="card bg-light border">
+                                        <div class="card-body">
+                                            <!-- Active Status -->
+                                            <div class="form-check form-switch mb-4">
+                                                {{ profile_form.is_active }}
+                                                <label class="form-check-label fw-medium" for="{{ profile_form.is_active.id_for_label }}">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="icon-wrapper bg-success bg-opacity-10 text-success p-2 rounded">
+                                                            <i class="fas fa-toggle-on"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-0">Active Account</h6>
+                                                            <small class="text-muted">
+                                                                User can login and access the system. Uncheck to disable account.
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                            
+                                            <!-- Welcome Email -->
+                                            <div class="form-check form-switch">
+                                                <input type="checkbox" class="form-check-input" id="send_welcome_email" name="send_welcome_email">
+                                                <label class="form-check-label fw-medium" for="send_welcome_email">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="icon-wrapper bg-info bg-opacity-10 text-info p-2 rounded">
+                                                            <i class="fas fa-envelope-open-text"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-0">Send Welcome Email</h6>
+                                                            <small class="text-muted">
+                                                                Send login credentials and welcome message to user's email.
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3 pt-4 border-top">
+                            <button type="submit" class="btn btn-primary px-4 py-3 flex-fill d-flex align-items-center justify-content-center gap-2">
+                                <i class="fas fa-user-plus"></i>
+                                Create User Account
+                            </button>
+                            <button type="reset" class="btn btn-outline-secondary px-4 py-3 d-flex align-items-center gap-2">
+                                <i class="fas fa-redo"></i>
+                                Reset Form
+                            </button>
+                            <a href="{% url 'user_list' %}" class="btn btn-light px-4 py-3 d-flex align-items-center gap-2">
+                                <i class="fas fa-times"></i>
+                                Cancel
+                            </a>
+                        </div>
+                        
+                        <div class="mt-4 text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                All user data is encrypted and securely stored
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Available Roles Card -->
+            <div class="card shadow-md mb-4">
+                <div class="card-header d-flex align-items-center gap-3 py-3">
+                    <div class="icon-wrapper bg-warning bg-opacity-10 text-warning p-2 rounded">
+                        <i class="fas fa-user-tag fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Available Roles</h5>
+                        <p class="card-subtitle text-muted mb-0">Click to view role details and permissions</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if roles %}
+                        <div class="vstack gap-3">
+                            {% for role in roles %}
+                            <div class="role-card border rounded-3 p-3" data-role-id="{{ role.id }}">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="icon-wrapper bg-primary bg-opacity-10 text-primary p-2 rounded">
+                                            <i class="fas fa-shield-alt"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-semibold">{{ role.get_name_display }}</h6>
+                                            <small class="text-muted">{{ role.user_count }} users</small>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            data-bs-toggle="modal" data-bs-target="#roleModal{{ role.id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                
+                                {% if role.description %}
+                                <p class="small text-muted mb-0">{{ role.description|truncatechars:100 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Role Modal -->
+                            <div class="modal fade" id="roleModal{{ role.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title d-flex align-items-center gap-2">
+                                                <i class="fas fa-shield-alt text-primary"></i>
+                                                {{ role.get_name_display }}
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-4">
+                                                <h6 class="fw-semibold mb-2">Description</h6>
+                                                <p class="text-muted">{{ role.description|default:"No description provided." }}</p>
+                                            </div>
+                                            
+                                            <h6 class="fw-semibold mb-3">Role Permissions</h6>
+                                            <div class="row">
+                                                {% get_permission_categories as categories %}
+                                                {% for category_name, fields in categories.items %}
+                                                <div class="col-md-6 mb-4">
+                                                    <div class="permission-category">
+                                                        <h6 class="small fw-semibold text-muted mb-2">{{ category_name }}</h6>
+                                                        <ul class="list-unstyled">
+                                                            {% for field_name, field_label in fields %}
+                                                                {% if role|has_permission:field_name %}
+                                                                <li class="mb-1">
+                                                                    <div class="d-flex align-items-center gap-2">
+                                                                        <i class="fas fa-check-circle text-success"></i>
+                                                                        <span class="small">{{ field_label }}</span>
+                                                                    </div>
+                                                                </li>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                                                <i class="fas fa-check me-1"></i> Close
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <div class="mb-3">
+                                <i class="fas fa-user-tag fa-3x text-light bg-primary bg-opacity-10 p-3 rounded-circle"></i>
+                            </div>
+                            <h6 class="mb-2">No Roles Available</h6>
+                            <p class="text-muted mb-3">Create roles before adding users</p>
+                            <a href="{% url 'create_role' %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i> Create Role
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Password Guidelines Card -->
+            <div class="card shadow-md">
+                <div class="card-header d-flex align-items-center gap-3 py-3">
+                    <div class="icon-wrapper bg-success bg-opacity-10 text-success p-2 rounded">
+                        <i class="fas fa-key fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Password Guidelines</h5>
+                        <p class="card-subtitle text-muted mb-0">Follow these rules for strong passwords</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="vstack gap-2 mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <span class="small">Minimum 8 characters</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <span class="small">At least one uppercase letter</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <span class="small">At least one lowercase letter</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <span class="small">At least one number (0-9)</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <span class="small">At least one special character</span>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info border-info bg-info bg-opacity-10 mb-4">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="fas fa-lightbulb mt-1"></i>
+                            <div>
+                                <small class="fw-semibold d-block">Pro Tip:</small>
+                                <small>Use password generators for creating strong, unique passwords.</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="button" class="btn btn-outline-primary px-4 py-2 d-flex align-items-center gap-2 mx-auto" id="generatePassword">
+                            <i class="fas fa-key"></i>
+                            Generate Strong Password
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize form elements
+    $('select, input[type="text"], input[type="email"], input[type="password"], textarea').addClass('form-control');
+    $('input[type="checkbox"]').addClass('form-check-input');
+    $('#{{ profile_form.is_active.id_for_label }}').addClass('form-check-input');
+    
+    // Auto-generate username from email
+    $('#{{ user_form.email.id_for_label }}').on('blur', function() {
+        var email = $(this).val();
+        if (email && !$('#{{ user_form.username.id_for_label }}').val()) {
+            var username = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+            $('#{{ user_form.username.id_for_label }}').val(username).trigger('input');
+        }
+    });
+
+    // Password strength indicator function
+    function updatePasswordStrength(password) {
+        var strength = 0;
+        var strengthText = '';
+        var strengthClass = '';
+        var barWidth = 0;
+        
+        if (password.length >= 8) strength++;
+        if (password.match(/[a-z]/)) strength++;
+        if (password.match(/[A-Z]/)) strength++;
+        if (password.match(/[0-9]/)) strength++;
+        if (password.match(/[^a-zA-Z0-9]/)) strength++;
+        
+        // Set strength indicators
+        switch(strength) {
+            case 0:
+                strengthText = 'Very Weak';
+                strengthClass = 'danger';
+                barWidth = 0;
+                break;
+            case 1:
+                strengthText = 'Weak';
+                strengthClass = 'danger';
+                barWidth = 20;
+                break;
+            case 2:
+                strengthText = 'Fair';
+                strengthClass = 'warning';
+                barWidth = 40;
+                break;
+            case 3:
+                strengthText = 'Good';
+                strengthClass = 'info';
+                barWidth = 60;
+                break;
+            case 4:
+                strengthText = 'Strong';
+                strengthClass = 'success';
+                barWidth = 80;
+                break;
+            case 5:
+                strengthText = 'Very Strong';
+                strengthClass = 'success';
+                barWidth = 100;
+                break;
+        }
+        
+        // Update UI
+        $('#passwordStrengthText').text(strengthText).removeClass('text-danger text-warning text-info text-success').addClass('text-' + strengthClass);
+        $('#passwordStrengthBar').css('width', barWidth + '%').removeClass('bg-danger bg-warning bg-info bg-success').addClass('bg-' + strengthClass);
+    }
+    
+    // Password strength on keyup
+    $('#{{ user_form.password1.id_for_label }}').on('keyup input', function() {
+        var password = $(this).val();
+        updatePasswordStrength(password);
+    });
+    
+    // Initialize password strength if there's already a value
+    if ($('#{{ user_form.password1.id_for_label }}').val()) {
+        updatePasswordStrength($('#{{ user_form.password1.id_for_label }}').val());
+    }
+    
+    // Toggle password visibility
+    $('.toggle-password').on('click', function() {
+        const input = $(this).closest('.input-group').find('input');
+        const icon = $(this).find('i');
+        
+        if (input.attr('type') === 'password') {
+            input.attr('type', 'text');
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            input.attr('type', 'password');
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+        }
+    });
+    
+    // Generate strong password
+    $('#generatePassword').on('click', function() {
+        const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        const numbers = '0123456789';
+        const special = '!@#$%^&*()_+';
+        
+        // Ensure at least one of each required character
+        let password = '';
+        password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+        password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+        password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+        password += special.charAt(Math.floor(Math.random() * special.length));
+        
+        // Fill remaining with random characters from all sets
+        const allChars = uppercase + lowercase + numbers + special;
+        for (let i = 0; i < 8; i++) {
+            password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+        }
+        
+        // Shuffle the password
+        password = password.split('').sort(() => Math.random() - 0.5).join('');
+        
+        // Set password fields
+        $('#{{ user_form.password1.id_for_label }}').val(password).trigger('keyup');
+        $('#{{ user_form.password2.id_for_label }}').val(password);
+        
+        // Show success message
+        showToast('Strong password generated successfully!', 'success');
+    });
+    
+    // Initialize Select2
+    $('.select2').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'Select a role...',
+        allowClear: true
+    });
+    
+    // Form validation
+    $('#userForm').on('submit', function(e) {
+        const email = $('#{{ user_form.email.id_for_label }}').val();
+        const username = $('#{{ user_form.username.id_for_label }}').val();
+        const password1 = $('#{{ user_form.password1.id_for_label }}').val();
+        const password2 = $('#{{ user_form.password2.id_for_label }}').val();
+        
+        if (!email || !username || !password1 || !password2) {
+            e.preventDefault();
+            showToast('Please fill in all required fields', 'warning');
+            return false;
+        }
+        
+        if (password1 !== password2) {
+            e.preventDefault();
+            showToast('Passwords do not match', 'danger');
+            return false;
+        }
+        
+        return true;
+    });
+    
+    function showToast(message, type = 'info') {
+        const toast = `<div class="toast align-items-center text-bg-${type} border-0 shadow-lg" role="alert">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>`;
+        
+        $('.toast-container').remove();
+        $('body').append(`<div class="toast-container position-fixed bottom-0 end-0 p-3">${toast}</div>`);
+        $('.toast').toast('show');
+    }
+});
+</script>
+
+<style>
+.icon-wrapper {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.role-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 2px solid #e9ecef;
+}
+
+.role-card:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.03);
+    transform: translateY(-2px);
+}
+
+.permission-category ul li {
+    padding: 0.25rem 0;
+}
+
+.form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+    margin-right: 0.5rem;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+#passwordStrengthContainer .progress {
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+#passwordStrengthBar {
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.toast-container {
+    z-index: 9999;
+}
+
+.border-2 {
+    border-width: 2px !important;
+}
+
+.input-group .btn-outline-secondary {
+    border-left: none;
+}
+
+.input-group .form-control:not(:first-child) {
+    border-left: 0;
+}
+
+.input-group .form-control:not(:last-child) {
+    border-right: 0;
+}
+
+@media (max-width: 768px) {
+    .icon-wrapper {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+</style>
+{% endblock %}

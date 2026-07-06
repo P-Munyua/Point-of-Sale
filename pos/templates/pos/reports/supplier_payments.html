@@ -117,7 +117,7 @@
                         Total Payments
                     </div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900">
-                        KSh {{ totals.total_amount|default:0|floatformat:2|intcomma }}
+                        {{ totals.total_amount|default:0|floatformat:4 }}
                     </div>
                 </div>
             </div>
@@ -159,7 +159,7 @@
                         Avg Payment
                     </div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900">
-                        KSh {{ totals.avg_amount|default:0|floatformat:2|intcomma }}
+                        {{ totals.avg_amount|default:0|floatformat:4 }}
                     </div>
                 </div>
             </div>
@@ -216,7 +216,7 @@
                         {% endif %}
                     </span>
                     <span class="text-sm font-bold text-gray-900">
-                        KSh {{ method.total_amount|default:0|floatformat:2|intcomma }}
+                        {{ method.total_amount|default:0|floatformat:4 }}
                     </span>
                 </div>
                 <div class="flex items-center">
@@ -271,7 +271,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                            KSh {{ supplier.total_payments|default:0|floatformat:2|intcomma }}
+                            {{ supplier.total_payments|default:0|floatformat:4 }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
@@ -387,7 +387,7 @@
                         {% endif %}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                        KSh {{ payment.amount|floatformat:2|intcomma }}
+                        {{ payment.amount|floatformat:4 }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {{ payment.user.get_full_name|default:payment.user.username }}
@@ -407,7 +407,7 @@
                         Totals:
                     </td>
                     <td class="px-6 py-3 text-sm font-bold text-gray-900">
-                        KSh {{ totals.total_amount|default:0|floatformat:2|intcomma }}
+                        {{ totals.total_amount|default:0|floatformat:4 }}
                     </td>
                     <td colspan="2" class="px-6 py-3 text-sm text-gray-500">
                         {{ totals.total_count|default:0 }} transactions

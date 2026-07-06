@@ -146,7 +146,7 @@
     <!-- Sales Table -->
     <div class="mt-4 bg-white border border-gray-200 rounded-lg shadow overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-gray-200" id="sales-table">
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sale #</th>
@@ -181,10 +181,14 @@
                                    class="text-blue-600 hover:text-blue-900" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{% url 'print_receipt' sale.id %}" 
-                                   class="text-green-600 hover:text-green-900" title="Print Receipt" target="_blank">
+                                <button onclick="printThermalReceipt({{ sale.id }})" 
+                                        class="text-green-600 hover:text-green-900" title="Print Thermal Receipt">
                                     <i class="fas fa-print"></i>
-                                </a>
+                                </button>
+                                <button onclick="printThermalReceiptDark({{ sale.id }})" 
+                                        class="text-purple-600 hover:text-purple-900" title="Print Dark Thermal Receipt">
+                                    <i class="fas fa-print"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -230,6 +234,61 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Printing Modal/Overlay for thermal printing -->
+<div id="printing-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; text-align: center;">
+        <div style="font-size: 40px; margin-bottom: 20px;">🖨️</div>
+        <h3 style="margin-bottom: 10px;">Printing Receipt</h3>
+        <p style="color: #666;">Please wait while your receipt is being prepared...</p>
+        <div style="margin-top: 20px;">
+            <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Toast notification styles */
+    .toast-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .toast-success {
+        background: #10b981;
+    }
+    
+    .toast-error {
+        background: #ef4444;
+    }
+    
+    .toast-warning {
+        background: #f59e0b;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -250,20 +309,195 @@ document.addEventListener('DOMContentLoaded', function() {
         const weekAgo = date.toISOString().split('T')[0];
         startDateInput.value = weekAgo;
     }
+});
 
-    // Initialize DataTable if needed
-    $('table').DataTable({
-        "paging": false,
-        "searching": true,
-        "info": false,
-        "ordering": true,
-        "dom": '<"top"f>rt<"bottom"lip><"clear">',
-        "language": {
-            "search": "_INPUT_",
-            "searchPlaceholder": "Search sales...",
-            "emptyTable": "No sales found"
+// Show notification function
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `toast-notification toast-${type}`;
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span>${type === 'success' ? '✓' : type === 'error' ? '✗' : '⚠'}</span>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideIn 0.3s ease-out reverse';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
+
+// Hide printing overlay
+function hidePrintingOverlay() {
+    const overlay = document.getElementById('printing-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+// Show printing overlay
+function showPrintingOverlay() {
+    const overlay = document.getElementById('printing-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+}
+
+// Thermal print function for reprinting
+function printThermalReceipt(saleId) {
+    if (!saleId) {
+        showNotification('Sale ID not found. Cannot print.', 'error');
+        return;
+    }
+    
+    showPrintingOverlay();
+    
+    try {
+        // Method 1: Open in new window for thermal printing
+        const printWindow = window.open(`/pos/sale/${saleId}/thermal-print/`, '_blank', 'width=500,height=600');
+        
+        if (!printWindow) {
+            hidePrintingOverlay();
+            showNotification('Please allow popups for this site to print receipts', 'warning');
+            
+            // Fallback: direct navigation
+            if (confirm('Popups are blocked. Do you want to open the receipt in this window?')) {
+                window.location.href = `/pos/sale/${saleId}/thermal-print/`;
+            }
+            return;
         }
-    });
+        
+        // Handle print window load
+        printWindow.onload = function() {
+            setTimeout(function() {
+                try {
+                    printWindow.print();
+                    showNotification('Receipt sent to thermal printer!', 'success');
+                } catch(e) {
+                    console.error('Print error:', e);
+                }
+                
+                setTimeout(() => {
+                    hidePrintingOverlay();
+                }, 2000);
+            }, 1000);
+        };
+        
+        printWindow.onerror = function() {
+            hidePrintingOverlay();
+            showNotification('Failed to load receipt. Please try again.', 'error');
+        };
+        
+    } catch (error) {
+        console.error('Print error:', error);
+        hidePrintingOverlay();
+        showNotification(`Print failed: ${error.message}`, 'error');
+        
+        // Fallback method
+        if (confirm('Auto-print failed. Would you like to view the receipt and print manually?')) {
+            window.open(`/pos/sale/${saleId}/`, '_blank');
+        }
+    }
+}
+
+// Enhanced thermal print with darker output and better quality
+function printThermalReceiptDark(saleId) {
+    if (!saleId) {
+        showNotification('Sale ID not found. Cannot print.', 'error');
+        return;
+    }
+    
+    showPrintingOverlay();
+    
+    // Create iframe method for better control
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    iframe.style.visibility = 'hidden';
+    iframe.src = `/pos/sale/${saleId}/thermal-print/`;
+    
+    document.body.appendChild(iframe);
+    
+    iframe.onload = function() {
+        setTimeout(function() {
+            try {
+                // Add extra dark styles to the iframe content
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const style = iframeDoc.createElement('style');
+                style.textContent = `
+                    @media print {
+                        body {
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                            color-adjust: exact !important;
+                        }
+                        * {
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                            color-adjust: exact !important;
+                            color: #000000 !important;
+                            font-weight: bold !important;
+                        }
+                        .line, .dashed-line {
+                            border-top-width: 2px !important;
+                            border-color: #000000 !important;
+                        }
+                        th, td {
+                            border-color: #000000 !important;
+                        }
+                    }
+                `;
+                iframeDoc.head.appendChild(style);
+                
+                iframe.contentWindow.print();
+                showNotification('Dark thermal receipt sent to printer!', 'success');
+                
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                    hidePrintingOverlay();
+                }, 3000);
+            } catch(e) {
+                console.error('Iframe print error:', e);
+                document.body.removeChild(iframe);
+                hidePrintingOverlay();
+                showNotification('Print failed. Trying alternative method...', 'warning');
+                
+                // Fallback to window method
+                printThermalReceipt(saleId);
+            }
+        }, 1000);
+    };
+    
+    iframe.onerror = function() {
+        document.body.removeChild(iframe);
+        hidePrintingOverlay();
+        showNotification('Failed to load receipt. Please try again.', 'error');
+        printThermalReceipt(saleId);
+    };
+}
+
+// Make functions global for onclick access
+window.printThermalReceipt = printThermalReceipt;
+window.printThermalReceiptDark = printThermalReceiptDark;
+
+// Keyboard shortcut for printing (Ctrl+P on table)
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'p') {
+        const activeRow = document.querySelector('tr.hover\\:bg-gray-50');
+        if (activeRow) {
+            e.preventDefault();
+            const saleId = activeRow.querySelector('td:first-child')?.textContent;
+            if (saleId) {
+                printThermalReceipt(saleId);
+            }
+        }
+    }
 });
 </script>
 {% endblock %}

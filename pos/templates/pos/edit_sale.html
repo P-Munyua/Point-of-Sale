@@ -4,7 +4,7 @@
 {% block title %}Edit Sale #{{ sale.sale_number }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+<div class="max-w-4xl mx-auto bg-white rounded-lg shadow overflow-hidden">
     <!-- Header Section -->
     <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700">
         <div class="flex items-center justify-between">
@@ -14,318 +14,105 @@
                 </div>
                 <div>
                     <h2 class="text-xl font-semibold text-white">Edit Sale #{{ sale.sale_number }}</h2>
-                    <p class="text-blue-100 text-sm">Modify sale details</p>
+                    <p class="text-blue-100 text-sm">Edit this sale in the POS interface</p>
                 </div>
             </div>
             <div class="flex space-x-2">
                 <a href="{% url 'sale_detail' sale.id %}" 
-                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
                     <i class="fas fa-arrow-left mr-2"></i> Back to Sale
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="px-6 py-4">
-        <form id="saleForm" method="post" action="{% url 'edit_sale' sale.id %}">
-            {% csrf_token %}
-            
-            <!-- Customer Selection -->
-            <div class="mb-6">
-                <label for="customer" class="block text-sm font-medium text-gray-700 mb-2">Customer</label>
-                <select id="customer" name="customer" class="w-full p-2 border border-gray-300 rounded-md">
-                    <option value="">Walk-in Customer</option>
-                    {% for customer in customers %}
-                    <option value="{{ customer.id }}" {% if sale.customer.id == customer.id %}selected{% endif %}>
-                        {{ customer.name }} - {{ customer.phone }}
-                    </option>
-                    {% endfor %}
-                </select>
+    <!-- Sale Summary -->
+    <div class="p-6">
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Sale Details</h3>
+                    <p class="mt-1 text-sm text-gray-900">
+                        <strong>Date:</strong> {{ sale.date|date:"d/m/Y H:i" }}<br>
+                        <strong>Customer:</strong> {{ sale.customer.name|default:"Walk-in" }}<br>
+                        <strong>Items:</strong> {{ sale.items.count }}
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Totals</h3>
+                    <p class="mt-1 text-sm text-gray-900">
+                        <strong>Subtotal:</strong> KSh {{ sale.subtotal }}<br>
+                        <strong>Discount:</strong> KSh {{ sale.discount_amount }}<br>
+                        <strong>Total:</strong> KSh {{ sale.total }}
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Payment</h3>
+                    <p class="mt-1 text-sm text-gray-900">
+                        <strong>Method:</strong> {{ sale.get_payment_method_display }}<br>
+                        <strong>Paid:</strong> KSh {{ sale.amount_paid }}<br>
+                        <strong>Balance:</strong> KSh {{ sale.balance }}
+                    </p>
+                </div>
             </div>
+        </div>
 
-            <!-- Sale Items Table -->
-            <div class="mb-6">
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Sale Items</h3>
-                    
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead>
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
-                                <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Qty</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cartItems">
-                            {% for item in sale.items.all %}
-                            <tr class="cart-item" data-id="{{ item.product.id }}">
-                                <td class="px-4 py-2">
-                                    <div>
-                                        <div class="font-medium">{{ item.product.name }}</div>
-                                        {% if item.batch %}
-                                        <div class="text-xs text-gray-500">Batch: {{ item.batch.batch_number }}</div>
-                                        {% endif %}
-                                        <div class="text-xs text-gray-500">Available: {{ item.product.quantity|add:item.quantity }}</div>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-2">
-                                    <input type="number" step="0.01" min="0" 
-                                           name="price_{{ item.product.id }}" 
-                                           value="{{ item.price }}" 
-                                           class="item-price w-24 text-right border rounded p-2" 
-                                           data-id="{{ item.product.id }}">
-                                </td>
-                                <td class="px-4 py-2">
-                                    <input type="number" min="1" 
-                                           max="{{ item.product.quantity|add:item.quantity }}"
-                                           name="quantity_{{ item.product.id }}"
-                                           value="{{ item.quantity }}" 
-                                           class="item-quantity w-20 text-center border rounded p-2" 
-                                           data-id="{{ item.product.id }}">
-                                </td>
-                                <td class="px-4 py-2 text-right">
-                                    <span class="item-total" data-id="{{ item.product.id }}">
-                                        KSh {{ item.total }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    
-                    <div class="mt-4 border-t pt-4">
-                        <div class="flex justify-between mb-2">
-                            <span class="font-medium">Subtotal:</span>
-                            <span id="subtotal" class="font-medium">KSh {{ sale.subtotal }}</span>
-                        </div>
-                        
-                        <div class="flex items-center mb-4 space-x-4">
-                            <div class="flex items-center">
-                                <label class="mr-2 text-sm">Discount Amount:</label>
-                                <input type="number" step="0.01" min="0" id="discountAmount" 
-                                       name="discount_amount" value="{{ sale.discount_amount }}" 
-                                       class="w-24 border rounded p-2" placeholder="Amount">
-                            </div>
-                            <div class="flex items-center">
-                                <label class="mr-2 text-sm">Discount %:</label>
-                                <input type="number" step="0.01" min="0" max="100" id="discountPercent" 
-                                       name="discount_percent" value="{{ sale.discount_percent }}" 
-                                       class="w-20 border rounded p-2" placeholder="%">
-                            </div>
-                        </div>
-                        
-                        <div class="flex justify-between font-bold text-lg mb-2">
-                            <span>Total:</span>
-                            <span id="total">KSh {{ sale.total }}</span>
-                        </div>
-                    </div>
-                </div>
+        <!-- Sale Items -->
+        <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-3">Sale Items</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qty</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for item in sale.items.all %}
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="text-sm font-medium text-gray-900">{{ item.product.name }}</div>
+                                {% if item.batch %}
+                                <div class="text-xs text-gray-500">Batch: {{ item.batch.batch_number }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-right text-sm text-gray-900">
+                                KSh {{ item.price }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-sm text-gray-900">
+                                {{ item.quantity }}
+                            </td>
+                            <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                                KSh {{ item.total }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+        </div>
 
-            <!-- Payment Section -->
-            <div class="bg-gray-50 p-6 rounded-lg shadow mb-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Payment Details</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Payment Method -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-                        <select id="paymentMethod" name="payment_method" class="w-full p-2 border border-gray-300 rounded-md">
-                            <option value="cash" {% if sale.payment_method == 'cash' %}selected{% endif %}>Cash</option>
-                            <option value="mpesa" {% if sale.payment_method == 'mpesa' %}selected{% endif %}>M-Pesa</option>
-                            <option value="card" {% if sale.payment_method == 'card' %}selected{% endif %}>Card</option>
-                            <option value="cheque" {% if sale.payment_method == 'cheque' %}selected{% endif %}>Cheque</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Amount Paid -->
-                    <div>
-                        <label for="amountPaid" class="block text-sm font-medium text-gray-700 mb-2">Amount Paid</label>
-                        <input type="number" step="0.01" min="0" id="amountPaid" name="amount_paid" 
-                               value="{{ sale.amount_paid }}" 
-                               class="w-full p-2 border border-gray-300 rounded-md">
-                    </div>
-                </div>
-                
-                <!-- Payment Details (Dynamic based on method) -->
-                <div id="paymentDetails" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- M-Pesa Details -->
-                    <div id="mpesaDetails" class="{% if sale.payment_method != 'mpesa' %}hidden{% endif %}">
-                        <label for="mpesaCode" class="block text-sm font-medium text-gray-700 mb-2">M-Pesa Code</label>
-                        <input type="text" id="mpesaCode" name="mpesa_code" value="{{ sale.mpesa_code }}" 
-                               class="w-full p-2 border border-gray-300 rounded-md">
-                    </div>
-                    
-                    <!-- Cheque Details -->
-                    <div id="chequeDetails" class="{% if sale.payment_method != 'cheque' %}hidden{% endif %}">
-                        <label for="chequeNumber" class="block text-sm font-medium text-gray-700 mb-2">Cheque Number</label>
-                        <input type="text" id="chequeNumber" name="cheque_number" value="{{ sale.cheque_number }}" 
-                               class="w-full p-2 border border-gray-300 rounded-md">
-                    </div>
-                </div>
-                
-                <!-- Credit Sale Option -->
-                <div class="mt-4 flex items-center">
-                    <input type="checkbox" id="isCredit" name="is_credit" 
-                           {% if sale.is_credit %}checked{% endif %} class="mr-2">
-                    <label for="isCredit" class="text-sm font-medium text-gray-700">This is a credit sale</label>
-                </div>
-                
-                <!-- Balance Display -->
-                <div class="mt-4">
-                    <div class="flex justify-between font-medium">
-                        <span>Balance:</span>
-                        <span id="balance">KSh {{ sale.balance }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notes Section -->
-            <div class="mb-6">
-                <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
-                <textarea id="notes" name="notes" rows="3" 
-                          class="w-full p-2 border border-gray-300 rounded-md">{{ sale.notes }}</textarea>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex justify-end space-x-4 pb-6">
-                <a href="{% url 'sale_detail' sale.id %}" 
-                   class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    Cancel
-                </a>
-                <button type="submit" 
-                        class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700">
-                    Update Sale
-                </button>
-            </div>
-        </form>
+        <!-- Action Buttons -->
+        <div class="flex justify-center space-x-4 pt-6 border-t">
+            <a href="{% url 'sale_detail' sale.id %}" 
+               class="px-6 py-3 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Cancel
+            </a>
+            <a href="{% url 'load_sale_to_pos' sale.id %}" 
+               class="px-6 py-3 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 flex items-center">
+                <i class="fas fa-shopping-cart mr-2"></i>
+                Edit in POS
+            </a>
+        </div>
+        
+        <div class="mt-4 text-sm text-gray-600 text-center">
+            <p><i class="fas fa-info-circle mr-1"></i> 
+            Editing will load this sale into the POS interface where you can modify items, 
+            change quantities, update payment details, and complete the sale as a new transaction.</p>
+        </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Format currency
-        function formatCurrency(amount) {
-            return 'KSh ' + parseFloat(amount).toFixed(2);
-        }
-        
-        // Calculate item total
-        function calculateItemTotal(price, quantity) {
-            return parseFloat(price) * parseFloat(quantity);
-        }
-        
-        // Update all calculations
-        function updateCalculations() {
-            let subtotal = 0;
-            
-            // Calculate subtotal from all items
-            document.querySelectorAll('.cart-item').forEach(row => {
-                const productId = row.dataset.id;
-                const priceInput = row.querySelector(`.item-price[data-id="${productId}"]`);
-                const quantityInput = row.querySelector(`.item-quantity[data-id="${productId}"]`);
-                const totalSpan = row.querySelector(`.item-total[data-id="${productId}"]`);
-                
-                if (priceInput && quantityInput && totalSpan) {
-                    const price = parseFloat(priceInput.value) || 0;
-                    const quantity = parseFloat(quantityInput.value) || 0;
-                    const itemTotal = calculateItemTotal(price, quantity);
-                    
-                    subtotal += itemTotal;
-                    totalSpan.textContent = formatCurrency(itemTotal);
-                }
-            });
-            
-            // Update subtotal
-            document.getElementById('subtotal').textContent = formatCurrency(subtotal);
-            
-            // Get discount values
-            const discountAmount = parseFloat(document.getElementById('discountAmount').value) || 0;
-            const discountPercent = parseFloat(document.getElementById('discountPercent').value) || 0;
-            
-            // Calculate discount if percentage is provided
-            let discount = discountAmount;
-            if (discountPercent > 0) {
-                discount = subtotal * (discountPercent / 100);
-                // Update discount amount field
-                document.getElementById('discountAmount').value = discount.toFixed(2);
-            }
-            
-            // Calculate total
-            const total = subtotal - discount;
-            document.getElementById('total').textContent = formatCurrency(total);
-            
-            // Calculate balance
-            const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
-            const isCredit = document.getElementById('isCredit').checked;
-            
-            let balance = 0;
-            if (isCredit) {
-                balance = total; // For credit sales, balance equals total amount
-            } else {
-                balance = Math.max(0, total - amountPaid);
-            }
-            
-            document.getElementById('balance').textContent = formatCurrency(balance);
-        }
-        
-        // Add event listeners for price and quantity inputs
-        document.querySelectorAll('.item-price, .item-quantity').forEach(input => {
-            input.addEventListener('input', updateCalculations);
-        });
-        
-        // Add event listeners for discount fields
-        document.getElementById('discountAmount').addEventListener('input', function() {
-            // Clear percentage when amount is manually entered
-            document.getElementById('discountPercent').value = '';
-            updateCalculations();
-        });
-        
-        document.getElementById('discountPercent').addEventListener('input', function() {
-            updateCalculations();
-        });
-        
-        // Add event listener for amount paid
-        document.getElementById('amountPaid').addEventListener('input', updateCalculations);
-        
-        // Add event listener for credit checkbox
-        document.getElementById('isCredit').addEventListener('change', updateCalculations);
-        
-        // Payment method change handler
-        document.getElementById('paymentMethod').addEventListener('change', function() {
-            const method = this.value;
-            document.getElementById('mpesaDetails').classList.toggle('hidden', method !== 'mpesa');
-            document.getElementById('chequeDetails').classList.toggle('hidden', method !== 'cheque');
-        });
-        
-        // Form submission handler - validate before submit
-        document.getElementById('saleForm').addEventListener('submit', function(e) {
-            // Validate quantities
-            let hasErrors = false;
-            
-            document.querySelectorAll('.cart-item').forEach(row => {
-                const productId = row.dataset.id;
-                const quantityInput = row.querySelector(`.item-quantity[data-id="${productId}"]`);
-                const maxQuantity = parseInt(quantityInput.max);
-                const quantity = parseInt(quantityInput.value);
-                
-                if (quantity > maxQuantity) {
-                    alert(`Quantity for this product cannot exceed ${maxQuantity}`);
-                    quantityInput.focus();
-                    hasErrors = true;
-                }
-            });
-            
-            if (hasErrors) {
-                e.preventDefault();
-            }
-        });
-        
-        // Initial calculation
-        updateCalculations();
-    });
-</script>
 {% endblock %}

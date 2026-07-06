@@ -1,0 +1,509 @@
+<!-- templates/pos/batch_detail.html -->
+{% extends 'pos/base.html' %}
+{% load static humanize custom_filters%}
+
+{% block title %}Batch Details - {{ batch.batch_number }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header with Actions -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-cubes text-blue-600 mr-2"></i>Batch Details
+            </h1>
+            <p class="text-gray-500">{{ batch.batch_number }}</p>
+        </div>
+        <div class="flex space-x-2">
+            <a href="{% url 'batch_list' %}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Batches
+            </a>
+            <a href="{% url 'edit_batch' batch.id %}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-edit mr-2"></i>Edit Batch
+            </a>
+            {% if can_delete %}
+            <button onclick="confirmDelete()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-trash mr-2"></i>Delete Batch
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Batch Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <!-- Status Card -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="bg-{% if batch.is_active and batch.quantity > 0 %}green{% else %}red{% endif %}-100 rounded-full p-3 mr-4">
+                    <i class="fas fa-{% if batch.is_active and batch.quantity > 0 %}check-circle{% else %}times-circle{% endif %} text-{% if batch.is_active and batch.quantity > 0 %}green{% else %}red{% endif %}-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Status</p>
+                    <p class="text-xl font-bold">
+                        {% if batch.quantity <= 0 %}
+                            <span class="text-gray-600">Out of Stock</span>
+                        {% elif not batch.is_active %}
+                            <span class="text-red-600">Inactive</span>
+                        {% elif batch.expiry_date and batch.expiry_date < today %}
+                            <span class="text-red-600">Expired</span>
+                        {% else %}
+                            <span class="text-green-600">Active</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quantity Card -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="bg-blue-100 rounded-full p-3 mr-4">
+                    <i class="fas fa-weight-hanging text-blue-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Current Stock</p>
+                    <p class="text-xl font-bold">{{ batch.quantity|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Days in Stock Card -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="bg-purple-100 rounded-full p-3 mr-4">
+                    <i class="fas fa-clock text-purple-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Days in Stock</p>
+                    <p class="text-xl font-bold">{{ days_in_stock }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Sold Card -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="bg-indigo-100 rounded-full p-3 mr-4">
+                    <i class="fas fa-shopping-cart text-indigo-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Sold</p>
+                    <p class="text-xl font-bold">{{ total_sold|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Left Column - Batch Information -->
+        <div class="lg:col-span-2">
+            <!-- Batch Information Card -->
+            <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+                <div class="px-6 py-4 bg-gray-50 border-b">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>Batch Information
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500 mb-1">Product Details</h4>
+                            <p class="text-lg font-semibold">{{ batch.product.name }}</p>
+                            <p class="text-sm text-gray-600">SKU: {{ batch.product.barcode|default:"N/A" }}</p>
+                            <p class="text-sm text-gray-600">Category: {{ batch.product.category.name|default:"Uncategorized" }}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500 mb-1">Supplier Information</h4>
+                            {% if purchase_details %}
+                                <p class="text-lg font-semibold">{{ purchase_details.supplier.name }}</p>
+                                <p class="text-sm text-gray-600">Invoice: {{ purchase_details.invoice }}</p>
+                                <p class="text-sm text-gray-600">Purchase Date: {{ purchase_details.date|date:"d/m/Y" }}</p>
+                            {% else %}
+                                <p class="text-gray-500">Not available</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="border-t mt-4 pt-4">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <p class="text-xs text-gray-500">Purchase Price</p>
+                                <p class="text-lg font-semibold text-red-600">KSh {{ batch.purchase_price|floatformat:2 }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Selling Price</p>
+                                <p class="text-lg font-semibold text-green-600">KSh {{ batch.selling_price|floatformat:2 }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Profit Margin</p>
+                                <p class="text-lg font-semibold {% if profit_margin >= 20 %}text-green-600{% elif profit_margin >= 10 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                    {{ profit_margin|floatformat:2 }}%
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Date Received</p>
+                                <p class="text-sm font-semibold">{{ batch.date_received|date:"d/m/Y" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if batch.expiry_date %}
+                    <div class="border-t mt-4 pt-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-gray-500">Expiry Date</p>
+                                <p class="text-lg font-semibold {% if batch.expiry_date < today %}text-red-600{% elif batch.expiry_date <= today|add_days:30 %}text-orange-600{% endif %}">
+                                    {{ batch.expiry_date|date:"d/m/Y" }}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Days Until Expiry</p>
+                                {% with days_left=batch.days_until_expiry %}
+                                <p class="text-lg font-semibold {% if days_left < 0 %}text-red-600{% elif days_left <= 30 %}text-orange-600{% endif %}">
+                                    {% if days_left < 0 %}
+                                        Expired {{ days_left|stringformat:"+d" }} days ago
+                                    {% else %}
+                                        {{ days_left }} days
+                                    {% endif %}
+                                </p>
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Financial Summary Card -->
+            <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+                <div class="px-6 py-4 bg-gray-50 border-b">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        <i class="fas fa-chart-line text-green-600 mr-2"></i>Financial Summary
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Realized Profit (Sold Items) -->
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <p class="text-sm text-blue-600 mb-1">Realized Profit</p>
+                            <p class="text-2xl font-bold text-blue-700">KSh {{ total_profit|floatformat:2|intcomma }}</p>
+                            <p class="text-xs text-blue-600">From {{ total_sold|floatformat:2 }} units sold</p>
+                        </div>
+                        
+                        <!-- Potential Profit (Remaining Stock) -->
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <p class="text-sm text-green-600 mb-1">Potential Profit</p>
+                            <p class="text-2xl font-bold text-green-700">KSh {{ potential_profit|floatformat:2|intcomma }}</p>
+                            <p class="text-xs text-green-600">From {{ batch.quantity|floatformat:2 }} units remaining</p>
+                        </div>
+                        
+                        <!-- Total Expected Profit -->
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <p class="text-sm text-purple-600 mb-1">Total Expected Profit</p>
+                            <p class="text-2xl font-bold text-purple-700">KSh {{ total_profit|add:potential_profit|floatformat:2|intcomma }}</p>
+                            <p class="text-xs text-purple-600">If all stock sold at current price</p>
+                        </div>
+                    </div>
+
+                    <!-- Value Breakdown -->
+                    <div class="mt-4 border-t pt-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-600">Cost Value (Remaining)</p>
+                                <p class="text-lg font-semibold text-red-600">KSh {{ remaining_value|floatformat:2|intcomma }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Potential Revenue</p>
+                                <p class="text-lg font-semibold text-green-600">KSh {{ potential_revenue|floatformat:2|intcomma }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales History -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 bg-gray-50 border-b flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        <i class="fas fa-history text-blue-600 mr-2"></i>Sales History
+                    </h3>
+                    <span class="text-sm text-gray-500">{{ sales|length }} transaction(s)</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Receipt #</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for sale_item in sales %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-3 whitespace-nowrap text-sm">
+                                    {{ sale_item.sale.date|date:"d/m/Y H:i" }}
+                                </td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm">
+                                    <a href="{% url 'sale_detail' sale_item.sale.id %}" class="text-blue-600 hover:text-blue-900">
+                                        {{ sale_item.sale.sale_number }}
+                                    </a>
+                                </td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm">
+                                    {{ sale_item.sale.customer.name|default:"Walk-in" }}
+                                </td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right">
+                                    {{ sale_item.quantity|floatformat:2 }}
+                                </td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right">
+                                    KSh {{ sale_item.price|floatformat:2 }}
+                                </td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right">
+                                    KSh {{ sale_item.total|floatformat:2|intcomma }}
+                                </td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right {% if sale_item.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                    KSh {{ sale_item.profit|floatformat:2|intcomma }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                    <i class="fas fa-shopping-cart fa-3x mb-3 text-gray-400"></i>
+                                    <p>No sales recorded for this batch yet</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Additional Info -->
+        <div class="lg:col-span-1">
+            <!-- Purchase Information Card -->
+            {% if purchase_details %}
+            <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+                <div class="px-6 py-4 bg-gray-50 border-b">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        <i class="fas fa-file-invoice text-purple-600 mr-2"></i>Purchase Details
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-xs text-gray-500">Invoice Number</p>
+                            <p class="text-sm font-semibold">{{ purchase_details.invoice }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Purchase Date</p>
+                            <p class="text-sm font-semibold">{{ purchase_details.date|date:"d/m/Y" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Supplier</p>
+                            <p class="text-sm font-semibold">{{ purchase_details.supplier.name }}</p>
+                            {% if purchase_details.supplier.phone %}
+                            <p class="text-xs text-gray-500">{{ purchase_details.supplier.phone }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Payment Status</p>
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if purchase_details.payment_status == 'Paid' %}bg-green-100 text-green-800
+                                {% elif purchase_details.payment_status == 'Partial' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ purchase_details.payment_status }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <a href="{% url 'view_purchase' batch.purchase.id %}" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-external-link-alt mr-1"></i>View Full Purchase
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Stock Movements Card -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 bg-gray-50 border-b">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        <i class="fas fa-exchange-alt text-orange-600 mr-2"></i>Stock Movements
+                    </h3>
+                </div>
+                <div class="p-4">
+                    {% if stock_movements %}
+                    <div class="space-y-3">
+                        {% for movement in stock_movements|slice:":5" %}
+                        <div class="border-b pb-2 last:border-0">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="px-2 py-1 text-xs rounded-full 
+                                        {% if movement.movement_type == 'in' %}bg-green-100 text-green-800
+                                        {% elif movement.movement_type == 'out' %}bg-red-100 text-red-800
+                                        {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                        {{ movement.get_movement_type_display }}
+                                    </span>
+                                    <p class="text-sm mt-1">{{ movement.quantity|floatformat:2 }} units</p>
+                                </div>
+                                <p class="text-xs text-gray-500">{{ movement.journal.date|date:"d/m/Y" }}</p>
+                            </div>
+                            {% if movement.notes %}
+                            <p class="text-xs text-gray-500 mt-1">{{ movement.notes }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-center text-gray-500 py-4">No stock movements recorded</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Batch Actions Card -->
+            <div class="bg-white rounded-lg shadow overflow-hidden mt-6">
+                <div class="px-6 py-4 bg-gray-50 border-b">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        <i class="fas fa-cog text-gray-600 mr-2"></i>Actions
+                    </h3>
+                </div>
+                <div class="p-4 space-y-2">
+                    <button onclick="printBatchLabel()" class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center">
+                        <i class="fas fa-print text-gray-600 w-6"></i>
+                        <span>Print Batch Label</span>
+                    </button>
+                    <button onclick="adjustStock()" class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center">
+                        <i class="fas fa-sliders-h text-gray-600 w-6"></i>
+                        <span>Adjust Stock</span>
+                    </button>
+                    <button onclick="transferStock()" class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center">
+                        <i class="fas fa-exchange-alt text-gray-600 w-6"></i>
+                        <span>Transfer Stock</span>
+                    </button>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
+        <div class="mb-4">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-center text-gray-900 mb-2">Confirm Deletion</h3>
+            <p class="text-sm text-gray-500 text-center">
+                Are you sure you want to delete batch <strong>{{ batch.batch_number }}</strong>?<br>
+                This action cannot be undone.
+            </p>
+        </div>
+        <div class="flex justify-end space-x-2">
+            <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                Cancel
+            </button>
+            <form method="POST" action="{% url 'delete_batch' batch.id %}" class="inline" id="deleteForm">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                    Delete Batch
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete() {
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+function printBatchLabel() {
+    // Create a printable label
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Batch Label - {{ batch.batch_number }}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    .label { border: 2px solid #000; padding: 20px; max-width: 300px; margin: 0 auto; }
+                    h1 { font-size: 18px; margin: 0 0 10px; }
+                    .info { margin: 5px 0; }
+                    .barcode { font-family: monospace; font-size: 14px; margin-top: 10px; }
+                </style>
+            </head>
+            <body>
+                <div class="label">
+                    <h1>{{ batch.product.name }}</h1>
+                    <div class="info">Batch: {{ batch.batch_number }}</div>
+                    <div class="info">Expiry: {{ batch.expiry_date|date:"d/m/Y"|default:"N/A" }}</div>
+                    <div class="info">Price: KSh {{ batch.selling_price|floatformat:2 }}</div>
+                    <div class="barcode">{{ batch.batch_number }}</div>
+                </div>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function adjustStock() {
+    alert('Stock adjustment feature coming soon!');
+}
+
+function transferStock() {
+    alert('Stock transfer feature coming soon!');
+}
+
+// Handle AJAX form submission for delete
+document.getElementById('deleteForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirect_url;
+        } else {
+            alert('Error: ' + data.message);
+            closeDeleteModal();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the batch');
+        closeDeleteModal();
+    });
+});
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target === modal) {
+        closeDeleteModal();
+    }
+}
+</script>
+{% endblock %}

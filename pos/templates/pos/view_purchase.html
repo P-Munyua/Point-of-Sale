@@ -37,8 +37,8 @@
                 <tr>
                     <th class="border border-gray-300 px-2 py-1 text-left">Product</th>
                     <th class="border border-gray-300 px-2 py-1 text-right">Quantity</th>
-                    <th class="border border-gray-300 px-2 py-1 text-right">Price</th>
-                    <th class="border border-gray-300 px-2 py-1 text-right">Total</th>
+                    <th class="border border-gray-300 px-2 py-1 text-right">Unit Price</th>
+                    <th class="border border-gray-300 px-2 py-1 text-right">Total (Rounded)</th>
                 </tr>
             </thead>
             <tbody>
@@ -46,23 +46,25 @@
                 <tr class="hover:bg-gray-50">
                     <td class="border border-gray-300 px-2 py-1">{{ item.product.name }}</td>
                     <td class="border border-gray-300 px-2 py-1 text-right">{{ item.quantity }}</td>
-                    <td class="border border-gray-300 px-2 py-1 text-right">{{ item.price }}</td>
-                    <td class="border border-gray-300 px-2 py-1 text-right">{{ item.total }}</td>
+                    <td class="border border-gray-300 px-2 py-1 text-right">{{ item.price|floatformat:4 }}</td>
+                    <td class="border border-gray-300 px-2 py-1 text-right font-medium">
+                        {{ item.total|floatformat:0 }}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="3" class="border border-gray-300 px-2 py-1 text-right font-semibold">Subtotal:</td>
-                    <td class="border border-gray-300 px-2 py-1 text-right">{{ purchase.subtotal }}</td>
+                    <td colspan="3" class="border border-gray-300 px-2 py-1 text-right font-semibold">Subtotal (Rounded):</td>
+                    <td class="border border-gray-300 px-2 py-1 text-right font-semibold">
+                        {{ purchase.subtotal|floatformat:0 }}
+                    </td>
                 </tr>
                 <tr>
-                    <td colspan="3" class="border border-gray-300 px-2 py-1 text-right font-semibold">Tax:</td>
-                    <td class="border border-gray-300 px-2 py-1 text-right">{{ purchase.tax }}</td>
-                </tr>
-                <tr>
-                    <td colspan="3" class="border border-gray-300 px-2 py-1 text-right font-semibold">Total:</td>
-                    <td class="border border-gray-300 px-2 py-1 text-right font-bold">{{ purchase.total }}</td>
+                    <td colspan="3" class="border border-gray-300 px-2 py-1 text-right font-semibold">Total (Rounded):</td>
+                    <td class="border border-gray-300 px-2 py-1 text-right font-bold">
+                        {{ purchase.total|floatformat:0 }}
+                    </td>
                 </tr>
             </tfoot>
         </table>

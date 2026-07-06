@@ -1,4 +1,5 @@
 {% extends 'pos/base.html' %}
+{% load static %}
 
 {% block content %}
 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
@@ -25,11 +26,11 @@
             <!-- Date Range -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <input type="date" name="start_date" value="{{ request.GET.start_date }}" class="w-full p-2 border rounded-md">
+                <input type="date" name="start_date" value="{{ start_date }}" class="w-full p-2 border rounded-md">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                <input type="date" name="end_date" value="{{ request.GET.end_date }}" class="w-full p-2 border rounded-md">
+                <input type="date" name="end_date" value="{{ end_date }}" class="w-full p-2 border rounded-md">
             </div>
 
             <!-- Supplier Filter -->
@@ -38,7 +39,7 @@
                 <select name="supplier" class="w-full p-2 border rounded-md">
                     <option value="">All Suppliers</option>
                     {% for supplier in suppliers %}
-                        <option value="{{ supplier.id }}" {% if request.GET.supplier == supplier.id|stringformat:"s" %}selected{% endif %}>
+                        <option value="{{ supplier.id }}" {% if selected_supplier == supplier.id|stringformat:"s" %}selected{% endif %}>
                             {{ supplier.name }}
                         </option>
                     {% endfor %}
@@ -50,20 +51,31 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Transaction Type</label>
                 <select name="is_return" class="w-full p-2 border rounded-md">
                     <option value="">All Transactions</option>
-                    <option value="false" {% if request.GET.is_return == 'false' %}selected{% endif %}>Purchases Only</option>
-                    <option value="true" {% if request.GET.is_return == 'true' %}selected{% endif %}>Returns Only</option>
+                    <option value="false" {% if is_return_filter == 'false' %}selected{% endif %}>Purchases Only</option>
+                    <option value="true" {% if is_return_filter == 'true' %}selected{% endif %}>Returns Only</option>
+                </select>
+            </div>
+
+            <!-- Payment Status Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                <select name="payment_status" class="w-full p-2 border rounded-md">
+                    <option value="">All Statuses</option>
+                    <option value="paid" {% if selected_payment_status == 'paid' %}selected{% endif %}>Paid</option>
+                    <option value="partial" {% if selected_payment_status == 'partial' %}selected{% endif %}>Partial</option>
+                    <option value="unpaid" {% if selected_payment_status == 'unpaid' %}selected{% endif %}>Unpaid</option>
                 </select>
             </div>
 
             <!-- Return Status Filter (shown only when viewing returns) -->
-            {% if request.GET.is_return == 'true' %}
+            {% if is_return_filter == 'true' %}
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Return Status</label>
                 <select name="return_status" class="w-full p-2 border rounded-md">
                     <option value="">All Statuses</option>
-                    <option value="pending" {% if request.GET.return_status == 'pending' %}selected{% endif %}>Pending</option>
-                    <option value="approved" {% if request.GET.return_status == 'approved' %}selected{% endif %}>Approved</option>
-                    <option value="rejected" {% if request.GET.return_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                    <option value="pending" {% if return_status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="approved" {% if return_status == 'approved' %}selected{% endif %}>Approved</option>
+                    <option value="rejected" {% if return_status == 'rejected' %}selected{% endif %}>Rejected</option>
                 </select>
             </div>
             {% endif %}
@@ -80,18 +92,22 @@
     </div>
 
     <!-- Summary Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div class="bg-blue-50 p-4 rounded-lg">
             <h3 class="text-sm font-medium text-blue-800">Total Purchases</h3>
-            <p class="text-2xl font-bold text-blue-600">KSh {{ total_purchases|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-blue-600">{{ total_purchases }}</p>
         </div>
         <div class="bg-red-50 p-4 rounded-lg">
             <h3 class="text-sm font-medium text-red-800">Total Returns</h3>
-            <p class="text-2xl font-bold text-red-600">KSh {{ total_returns|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-red-600">{{ total_returns }}</p>
         </div>
         <div class="bg-green-50 p-4 rounded-lg">
             <h3 class="text-sm font-medium text-green-800">Total Items</h3>
             <p class="text-2xl font-bold text-green-600">{{ total_items }}</p>
+        </div>
+        <div class="bg-yellow-50 p-4 rounded-lg">
+            <h3 class="text-sm font-medium text-yellow-800">Unpaid Balance</h3>
+            <p class="text-2xl font-bold text-yellow-600">{{ unpaid_balance }}</p>
         </div>
         <div class="bg-purple-50 p-4 rounded-lg">
             <h3 class="text-sm font-medium text-purple-800">Total Transactions</h3>
@@ -120,6 +136,12 @@
                         Total
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Paid
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Balance
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                     </th>
                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -141,13 +163,19 @@
                         {{ purchase.date|date:"d/m/Y H:i" }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ purchase.supplier.name }}
+                        {{ purchase.supplier_name }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {{ purchase.item_count }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {% if purchase.is_return %}text-red-600{% else %}text-gray-900{% endif %}">
-                        {% if purchase.is_return %}-{% endif %}KSh {{ purchase.total|floatformat:2 }}
+                        {% if purchase.is_return %}-{% endif %}{{ purchase.total }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ purchase.total_paid }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {% if purchase.raw_balance_due > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                        {{ purchase.balance_due }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         {% if purchase.is_return %}
@@ -155,16 +183,21 @@
                             {% if purchase.return_status == 'approved' %}bg-green-100 text-green-800
                             {% elif purchase.return_status == 'rejected' %}bg-red-100 text-red-800
                             {% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                            {{ purchase.get_return_status_display }}
+                            {{ purchase.return_status|title }}
                         </span>
                         {% else %}
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            {% if purchase.is_paid %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                            {% if purchase.is_paid %}Paid{% else %}Unpaid{% endif %}
+                            {% if purchase.payment_status == 'Paid' %}bg-green-100 text-green-800
+                            {% elif purchase.payment_status == 'Partial' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ purchase.payment_status }}
                         </span>
                         {% endif %}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <a href="{% url 'purchase_invoice' purchase.id %}" class="text-blue-600 hover:text-blue-900">
+    View Invoice
+</a>
                         <a href="{% url 'view_purchase' purchase.id %}" class="text-blue-600 hover:text-blue-900" title="View">
                             <i class="fas fa-eye"></i>
                         </a>
@@ -173,11 +206,10 @@
                             <i class="fas fa-edit"></i>
                         </a>
                         {% endif %}
-                        {% if not purchase.is_return and not purchase.is_paid %}
+                        {% if not purchase.is_return and purchase.raw_balance_due > 0 %}
                         <a href="{% url 'record_payment' purchase.id %}" class="text-green-600 hover:text-green-900" title="Record Payment">
                             <i class="fas fa-money-bill-wave"></i>
                         </a>
-                       
                         {% endif %}
                         {% if purchase.is_return and purchase.return_status == 'pending' %}
                         <a href="{% url 'process_return' purchase.id %}" class="text-purple-600 hover:text-purple-900" title="Process Return">
@@ -185,14 +217,14 @@
                         </a>
                         {% endif %}
                         <button type="button" onclick="confirmDelete('{% url 'delete_purchase' purchase.id %}', '{{ purchase.invoice_number }}')" 
-            class="text-red-600 hover:text-red-900" title="Delete">
-        <i class="fas fa-trash"></i>
-    </button>
+                            class="text-red-600 hover:text-red-900" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">
                         No transactions found matching your filters.
                     </td>
                 </tr>
@@ -209,11 +241,11 @@
         </div>
         <div class="flex space-x-2">
             {% if purchases.has_previous %}
-                <a href="?{% if request.GET.start_date %}start_date={{ request.GET.start_date }}&{% endif %}{% if request.GET.end_date %}end_date={{ request.GET.end_date }}&{% endif %}{% if request.GET.supplier %}supplier={{ request.GET.supplier }}&{% endif %}{% if request.GET.is_return %}is_return={{ request.GET.is_return }}&{% endif %}{% if request.GET.return_status %}return_status={{ request.GET.return_status }}&{% endif %}page=1" 
+                <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if selected_supplier %}supplier={{ selected_supplier }}&{% endif %}{% if is_return_filter %}is_return={{ is_return_filter }}&{% endif %}{% if return_status %}return_status={{ return_status }}&{% endif %}{% if selected_payment_status %}payment_status={{ selected_payment_status }}&{% endif %}page=1" 
                    class="px-3 py-1 border rounded-md hover:bg-gray-100">
                     &laquo; First
                 </a>
-                <a href="?{% if request.GET.start_date %}start_date={{ request.GET.start_date }}&{% endif %}{% if request.GET.end_date %}end_date={{ request.GET.end_date }}&{% endif %}{% if request.GET.supplier %}supplier={{ request.GET.supplier }}&{% endif %}{% if request.GET.is_return %}is_return={{ request.GET.is_return }}&{% endif %}{% if request.GET.return_status %}return_status={{ request.GET.return_status }}&{% endif %}page={{ purchases.previous_page_number }}" 
+                <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if selected_supplier %}supplier={{ selected_supplier }}&{% endif %}{% if is_return_filter %}is_return={{ is_return_filter }}&{% endif %}{% if return_status %}return_status={{ return_status }}&{% endif %}{% if selected_payment_status %}payment_status={{ selected_payment_status }}&{% endif %}page={{ purchases.previous_page_number }}" 
                    class="px-3 py-1 border rounded-md hover:bg-gray-100">
                     Previous
                 </a>
@@ -223,7 +255,7 @@
                 {% if purchases.number == num %}
                     <span class="px-3 py-1 border rounded-md bg-blue-500 text-white">{{ num }}</span>
                 {% elif num > purchases.number|add:'-3' and num < purchases.number|add:'3' %}
-                    <a href="?{% if request.GET.start_date %}start_date={{ request.GET.start_date }}&{% endif %}{% if request.GET.end_date %}end_date={{ request.GET.end_date }}&{% endif %}{% if request.GET.supplier %}supplier={{ request.GET.supplier }}&{% endif %}{% if request.GET.is_return %}is_return={{ request.GET.is_return }}&{% endif %}{% if request.GET.return_status %}return_status={{ request.GET.return_status }}&{% endif %}page={{ num }}" 
+                    <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if selected_supplier %}supplier={{ selected_supplier }}&{% endif %}{% if is_return_filter %}is_return={{ is_return_filter }}&{% endif %}{% if return_status %}return_status={{ return_status }}&{% endif %}{% if selected_payment_status %}payment_status={{ selected_payment_status }}&{% endif %}page={{ num }}" 
                        class="px-3 py-1 border rounded-md hover:bg-gray-100">
                         {{ num }}
                     </a>
@@ -231,11 +263,11 @@
             {% endfor %}
 
             {% if purchases.has_next %}
-                <a href="?{% if request.GET.start_date %}start_date={{ request.GET.start_date }}&{% endif %}{% if request.GET.end_date %}end_date={{ request.GET.end_date }}&{% endif %}{% if request.GET.supplier %}supplier={{ request.GET.supplier }}&{% endif %}{% if request.GET.is_return %}is_return={{ request.GET.is_return }}&{% endif %}{% if request.GET.return_status %}return_status={{ request.GET.return_status }}&{% endif %}page={{ purchases.next_page_number }}" 
+                <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if selected_supplier %}supplier={{ selected_supplier }}&{% endif %}{% if is_return_filter %}is_return={{ is_return_filter }}&{% endif %}{% if return_status %}return_status={{ return_status }}&{% endif %}{% if selected_payment_status %}payment_status={{ selected_payment_status }}&{% endif %}page={{ purchases.next_page_number }}" 
                    class="px-3 py-1 border rounded-md hover:bg-gray-100">
                     Next
                 </a>
-                <a href="?{% if request.GET.start_date %}start_date={{ request.GET.start_date }}&{% endif %}{% if request.GET.end_date %}end_date={{ request.GET.end_date }}&{% endif %}{% if request.GET.supplier %}supplier={{ request.GET.supplier }}&{% endif %}{% if request.GET.is_return %}is_return={{ request.GET.is_return }}&{% endif %}{% if request.GET.return_status %}return_status={{ request.GET.return_status }}&{% endif %}page={{ purchases.paginator.num_pages }}" 
+                <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if selected_supplier %}supplier={{ selected_supplier }}&{% endif %}{% if is_return_filter %}is_return={{ is_return_filter }}&{% endif %}{% if return_status %}return_status={{ return_status }}&{% endif %}{% if selected_payment_status %}payment_status={{ selected_payment_status }}&{% endif %}page={{ purchases.paginator.num_pages }}" 
                    class="px-3 py-1 border rounded-md hover:bg-gray-100">
                     Last &raquo;
                 </a>
@@ -246,46 +278,19 @@
 
     <!-- Export Button -->
     <div class="mt-4">
-        <a href="?export=csv{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.supplier %}&supplier={{ request.GET.supplier }}{% endif %}{% if request.GET.is_return %}&is_return={{ request.GET.is_return }}{% endif %}{% if request.GET.return_status %}&return_status={{ request.GET.return_status }}{% endif %}" 
+        <a href="?export=csv{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if selected_supplier %}&supplier={{ selected_supplier }}{% endif %}{% if is_return_filter %}&is_return={{ is_return_filter }}{% endif %}{% if return_status %}&return_status={{ return_status }}{% endif %}{% if selected_payment_status %}&payment_status={{ selected_payment_status }}{% endif %}" 
            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
             <i class="fas fa-file-export mr-2"></i> Export to CSV
         </a>
     </div>
 </div>
 
-<!-- Add this JavaScript at the bottom of purchase_list.html, before closing the content block -->
+<!-- Delete confirmation script -->
 <script>
-// Get CSRF token from meta tag or form input
-function getCSRFToken() {
-    // Try to get from meta tag first
-    const metaToken = document.querySelector('meta[name="csrf-token"]');
-    if (metaToken) {
-        return metaToken.getAttribute('content');
-    }
-    
-    // Try to get from form input
-    const inputToken = document.querySelector('[name=csrfmiddlewaretoken]');
-    if (inputToken) {
-        return inputToken.value;
-    }
-    
-    // If still not found, try to get from cookies (Django default)
-    const cookieValue = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
-    
-    return cookieValue || '';
-}
-
 function confirmDelete(url, invoiceNumber) {
     if (confirm(`Are you sure you want to delete purchase #${invoiceNumber}?\n\nThis action cannot be undone.`)) {
-        const csrfToken = getCSRFToken();
-        
-        if (!csrfToken) {
-            alert('Security token missing. Please refresh the page and try again.');
-            return;
-        }
+        // Use the existing CSRF token from the hidden input
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
         fetch(url, {
             method: 'POST',
@@ -296,27 +301,18 @@ function confirmDelete(url, invoiceNumber) {
             },
             body: JSON.stringify({})
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Show success message
                 alert(data.message || 'Purchase deleted successfully!');
-                // Reload the page after a short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
+                window.location.reload();
             } else {
                 alert('Error: ' + (data.message || 'Unknown error occurred'));
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while deleting the purchase. Please check the console for details.');
+            alert('An error occurred while deleting the purchase.');
         });
     }
 }

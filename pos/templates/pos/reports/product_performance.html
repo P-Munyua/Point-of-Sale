@@ -1,0 +1,1066 @@
+{% extends 'pos/reports/base_report.html' %}
+{% load static humanize %}
+
+{% block title %}Product Performance Analysis{% endblock %}
+
+{% block content %}
+{% with report_title="Product Performance Analysis" report_icon="fa-chart-line" report_color="indigo" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+{% block filters %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Analysis Filters</h3>
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Product Search -->
+                <div class="md:col-span-2">
+                    <label for="product_search" class="block text-sm font-medium text-gray-700">Search Product</label>
+                    <div class="mt-1 relative">
+                        <input type="text" 
+                               name="product_search" 
+                               id="product_search"
+                               value="{{ product_search|default:'' }}"
+                               placeholder="Search by product name, SKU, or barcode..."
+                               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                               list="productSuggestions"
+                               autocomplete="off">
+                        <div id="productSearchResults" class="hidden absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto"></div>
+                    </div>
+                    {% if selected_product %}
+                    <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-sm font-medium text-green-800">Selected: {{ selected_product.name }}</span>
+                                {% if selected_product.sku %}
+                                <span class="ml-2 text-xs text-green-600">SKU: {{ selected_product.sku }}</span>
+                                {% endif %}
+                            </div>
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'product_id' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" 
+                               class="text-xs text-green-600 hover:text-green-800">
+                                Clear
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="range" class="block text-sm font-medium text-gray-700">Date Range</label>
+                    <select name="range" id="range" 
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        {% for value, label in date_ranges %}
+                            <option value="{{ value }}" {% if selected_range == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+                    <select name="category" id="category" 
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" 
+                                    {% if selected_category|stringformat:"s" == category.id|stringformat:"s" %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="start_date_input" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" name="start_date" id="start_date_input" 
+                           value="{{ start_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <div>
+                    <label for="end_date_input" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" name="end_date" id="end_date_input" 
+                           value="{{ end_date }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <div>
+                    <label for="sale_type" class="block text-sm font-medium text-gray-700">Sale Type</label>
+                    <select name="sale_type" id="sale_type" 
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">All Types</option>
+                        {% for value, label in sale_types %}
+                            <option value="{{ value }}" {% if selected_sale_type == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="sort" class="block text-sm font-medium text-gray-700">Sort By</label>
+                    <select name="sort" id="sort" 
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        {% for value, label in sort_options %}
+                            <option value="{{ value }}" {% if selected_sort == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="flex items-end space-x-2 md:col-span-2">
+                    <button type="submit" 
+                            class="flex-1 bg-indigo-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <i class="fas fa-filter mr-2"></i> Apply Filters
+                    </button>
+                    <a href="?" 
+                       class="flex-1 bg-gray-100 border border-gray-300 rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        <i class="fas fa-redo mr-2"></i> Reset
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Hidden input for product ID -->
+            <input type="hidden" name="product_id" id="selected_product_id" value="{{ selected_product.id|default:'' }}">
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- Product Quick Stats (Only shown when a specific product is selected) -->
+{% if selected_product %}
+<div class="bg-white shadow rounded-lg mb-6 border-l-4 border-indigo-500">
+    <div class="px-6 py-4">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center mb-2">
+                    <div class="h-12 w-12 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-box text-indigo-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">{{ selected_product.name }}</h3>
+                        <div class="flex items-center space-x-4 text-sm text-gray-500">
+                            {% if selected_product.sku %}
+                            <span><i class="fas fa-barcode mr-1"></i> {{ selected_product.sku }}</span>
+                            {% endif %}
+                            {% if selected_product.category %}
+                            <span><i class="fas fa-tag mr-1"></i> {{ selected_product.category.name }}</span>
+                            {% endif %}
+                            <span><i class="fas fa-money-bill-wave mr-1"></i> KSh {{ selected_product.selling_price|floatformat:2|intcomma }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Product Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                        <div class="text-sm text-gray-500">Current Stock</div>
+                        <div class="text-xl font-semibold text-gray-900 mt-1">
+                            {{ selected_product.current_stock|floatformat:0|intcomma }}
+                        </div>
+                        {% if selected_product.current_stock <= selected_product.reorder_level %}
+                        <div class="text-xs text-red-600 mt-1">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> Below reorder level
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <div class="text-sm text-blue-600">Weekly Sales</div>
+                        <div class="text-xl font-semibold text-blue-700 mt-1">
+                            {{ weekly_sales_data.total_quantity|floatformat:0|intcomma|default:"0" }}
+                        </div>
+                        <div class="text-xs text-blue-600 mt-1">
+                            KSh {{ weekly_sales_data.total_revenue|floatformat:2|intcomma|default:"0" }}
+                        </div>
+                    </div>
+                    
+                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                        <div class="text-sm text-green-600">Monthly Sales</div>
+                        <div class="text-xl font-semibold text-green-700 mt-1">
+                            {{ monthly_sales_data.total_quantity|floatformat:0|intcomma|default:"0" }}
+                        </div>
+                        <div class="text-xs text-green-600 mt-1">
+                            KSh {{ monthly_sales_data.total_revenue|floatformat:2|intcomma|default:"0" }}
+                        </div>
+                    </div>
+                    
+                    <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                        <div class="text-sm text-yellow-600">YTD Sales</div>
+                        <div class="text-xl font-semibold text-yellow-700 mt-1">
+                            {{ ytd_sales_data.total_quantity|floatformat:0|intcomma|default:"0" }}
+                        </div>
+                        <div class="text-xs text-yellow-600 mt-1">
+                            KSh {{ ytd_sales_data.total_revenue|floatformat:2|intcomma|default:"0" }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weekly Sales Chart for Selected Product -->
+                {% if weekly_sales_chart %}
+                <div class="mt-6">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Weekly Sales Trend</h4>
+                    <div class="h-48">
+                        <canvas id="weeklySalesChart"></canvas>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="ml-6 flex flex-col space-y-2">
+                <a href="{% url 'product_detail' selected_product.id %}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-eye mr-2"></i> View Details
+                </a>
+                <a href="{% url 'edit_product' selected_product.id %}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-edit mr-2"></i> Edit Product
+                </a>
+                <button type="button" onclick="window.print()" 
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    <i class="fas fa-print mr-2"></i> Print Report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Summary Stats -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-indigo-500">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <i class="fas fa-boxes text-indigo-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Products Sold
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        {{ total_products|default:0 }}
+                    </div>
+                    <div class="mt-1 text-xs text-gray-500">
+                        {{ start_date }} to {{ end_date }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-green-500">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-shopping-cart text-green-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Quantity
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        {{ total_quantity|default:0|floatformat:0|intcomma }}
+                    </div>
+                    <div class="mt-1 text-xs text-gray-500">
+                        Units sold
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-blue-500">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-money-bill-wave text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Revenue
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ total_revenue|default:0|floatformat:2|intcomma }}
+                    </div>
+                    <div class="mt-1 text-xs text-gray-500">
+                        KSh {{ avg_revenue_per_product|floatformat:2|intcomma }} avg per product
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-yellow-500">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                        <i class="fas fa-chart-line text-yellow-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Profit
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ total_profit|default:0|floatformat:2|intcomma }}
+                    </div>
+                    <div class="mt-1 text-xs text-gray-500">
+                        {{ avg_margin|floatformat:1 }}% average margin
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not selected_product %}
+<!-- Charts Section (Hide when specific product is selected) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <!-- Quantity Chart -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Top 10 by Quantity</h3>
+            <p class="mt-1 text-sm text-gray-500">Best selling products by units</p>
+        </div>
+        <div class="p-4">
+            <div class="h-64">
+                <canvas id="quantityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue Chart -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Top 10 by Revenue</h3>
+            <p class="mt-1 text-sm text-gray-500">Highest revenue generating products</p>
+        </div>
+        <div class="p-4">
+            <div class="h-64">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profit Chart -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Top 10 by Profit</h3>
+            <p class="mt-1 text-sm text-gray-500">Most profitable products</p>
+        </div>
+        <div class="p-4">
+            <div class="h-64">
+                <canvas id="profitChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Main Analysis Table -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:px-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900">
+                    {% if selected_product %}
+                    Sales Analysis for {{ selected_product.name }}
+                    {% else %}
+                    Product Performance Details
+                    {% endif %}
+                </h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    {% if selected_product %}
+                    Detailed sales analysis for this product
+                    {% else %}
+                    Detailed analysis of all products 
+                    {% if selected_category %}in {{ selected_category_name }} category{% endif %}
+                    {% endif %}
+                </p>
+            </div>
+            <div class="flex space-x-2">
+                <button type="button" onclick="window.print()" 
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-print mr-2"></i> Print
+                </button>
+                <a href="?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}export=csv" 
+                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-file-csv mr-2"></i> Export CSV
+                </a>
+                <a href="?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}export=excel" 
+                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-file-excel mr-2"></i> Export Excel
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Current Stock
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Quantity Sold
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Revenue
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Profit
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Profit Margin
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Avg Price
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Sales Count
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for item in report_data %}
+                <tr class="hover:bg-gray-50 {% if selected_product and item.product.id == selected_product.id %}bg-blue-50{% endif %}">
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-gray-900">
+                            <a href="?product_id={{ item.product.id }}&{{ request.GET.urlencode }}" 
+                               class="text-indigo-600 hover:text-indigo-900 hover:underline">
+                                {{ item.product.name }}
+                            </a>
+                        </div>
+                        {% if item.product.barcode %}
+                        <div class="text-sm text-gray-500">{{ item.product.barcode }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                            {{ item.category|default:"Uncategorized" }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                        {{ item.current_stock|floatformat:0|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-center">
+                        {{ item.total_quantity|floatformat:0|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                        KSh {{ item.total_revenue|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-medium {% if item.total_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                            KSh {{ item.total_profit|floatformat:2|intcomma }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                <div class="h-2 rounded-full 
+                                    {% if item.profit_margin >= 30 %}bg-green-500
+                                    {% elif item.profit_margin >= 20 %}bg-blue-500
+                                    {% elif item.profit_margin >= 15 %}bg-yellow-500
+                                    {% elif item.profit_margin >= 0 %}bg-gray-400
+                                    {% else %}bg-red-500{% endif %}" 
+                                    style="width: {{ item.profit_margin|floatformat:0|default:0 }}%">
+                                </div>
+                            </div>
+                            <span class="text-xs font-medium text-gray-700">
+                                {{ item.profit_margin|floatformat:1 }}%
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        KSh {{ item.avg_price|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                        {{ item.sale_count }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        {% if item.current_stock <= item.product.reorder_level %}
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> Reorder
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check-circle mr-1"></i> OK
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="px-6 py-12 text-center">
+                        <div class="text-gray-400">
+                            <i class="fas fa-chart-pie fa-4x mb-4"></i>
+                            <p class="mt-2 text-lg font-medium text-gray-900">No Sales Data Found</p>
+                            <p class="text-gray-500">Try adjusting your filters or date range</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            
+            {% if report_data %}
+            <tfoot class="bg-gray-50">
+                <tr>
+                    <td colspan="3" class="px-6 py-3 text-sm font-medium text-gray-900">
+                        TOTALS
+                    </td>
+                    <td class="px-6 py-3 text-sm font-semibold text-gray-900 text-center">
+                        {{ total_quantity|floatformat:0|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-semibold text-gray-900">
+                        KSh {{ total_revenue|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-semibold {% if total_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                        KSh {{ total_profit|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-semibold text-gray-900">
+                        {{ avg_margin|floatformat:1 }}%
+                    </td>
+                    <td colspan="3"></td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+    
+    {% if report_data %}
+    <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                Showing {{ report_data|length }} products
+                {% if selected_product %} - Focus on: <span class="font-medium">{{ selected_product.name }}</span>{% endif %}
+                {% if selected_category %}in <span class="font-medium">{{ selected_category_name }}</span> category{% endif %}
+            </div>
+            <div class="text-sm text-gray-500">
+                Period: {{ start_date }} to {{ end_date }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Product Analysis Details (Show when specific product is selected) -->
+{% if selected_product and product_sales_data %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg font-medium text-gray-900">Detailed Sales Analysis for {{ selected_product.name }}</h3>
+        <p class="mt-1 text-sm text-gray-500">Daily sales breakdown and trends</p>
+    </div>
+    
+    <div class="px-6 py-4 border-t border-gray-200">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-3">Daily Sales Pattern</h4>
+                <div class="space-y-2">
+                    {% for day_data in product_sales_data.daily %}
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">{{ day_data.day|date:"M d, Y" }}</span>
+                        <div class="flex items-center space-x-4">
+                            <span class="text-sm font-medium text-gray-900">{{ day_data.quantity }}</span>
+                            <span class="text-sm text-green-600">KSh {{ day_data.revenue|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-3">Weekly Performance</h4>
+                <div class="space-y-3">
+                    {% for week_data in product_sales_data.weekly %}
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <div class="text-xs text-gray-500">Week {{ week_data.week }}</div>
+                        <div class="mt-1 flex items-center justify-between">
+                            <div>
+                                <span class="text-sm font-medium text-gray-900">{{ week_data.quantity }} units</span>
+                                <div class="text-xs text-gray-500">KSh {{ week_data.revenue|floatformat:0 }}</div>
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded-full {% if week_data.growth >= 0 %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {% if week_data.growth >= 0 %}+{% endif %}{{ week_data.growth|floatformat:1 }}%
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-3">Sales Insights</h4>
+                <div class="space-y-3">
+                    <div class="p-3 bg-blue-50 rounded-lg">
+                        <div class="text-xs text-blue-600">Best Selling Day</div>
+                        <div class="mt-1 text-sm font-medium text-blue-800">{{ product_sales_data.best_day.day|date:"M d" }}</div>
+                        <div class="text-xs text-blue-600">{{ product_sales_data.best_day.quantity }} units sold</div>
+                    </div>
+                    
+                    <div class="p-3 bg-green-50 rounded-lg">
+                        <div class="text-xs text-green-600">Average Daily Sales</div>
+                        <div class="mt-1 text-sm font-medium text-green-800">{{ product_sales_data.avg_daily|floatformat:1 }} units/day</div>
+                        <div class="text-xs text-green-600">KSh {{ product_sales_data.avg_daily_revenue|floatformat:0 }}/day</div>
+                    </div>
+                    
+                    <div class="p-3 bg-yellow-50 rounded-lg">
+                        <div class="text-xs text-yellow-600">Stock Analysis</div>
+                        <div class="mt-1 text-sm font-medium text-yellow-800">{{ selected_product.current_stock }} units</div>
+                        <div class="text-xs text-yellow-600">
+                            {% if selected_product.current_stock > 0 %}
+                            {{ product_sales_data.days_of_stock|floatformat:1 }} days of stock left
+                            {% else %}
+                            Out of stock
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle custom date range inputs
+    const rangeSelect = document.getElementById('range');
+    const startDateInput = document.getElementById('start_date_input');
+    const endDateInput = document.getElementById('end_date_input');
+    
+    function toggleCustomDates() {
+        if (rangeSelect.value === 'custom') {
+            startDateInput.disabled = false;
+            endDateInput.disabled = false;
+        } else {
+            startDateInput.disabled = true;
+            endDateInput.disabled = true;
+        }
+    }
+    
+    rangeSelect.addEventListener('change', toggleCustomDates);
+    toggleCustomDates(); // Initial call
+    
+    // Set default dates if not set
+    if (!startDateInput.value) {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+    }
+    
+    if (!endDateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        endDateInput.value = today;
+    }
+    
+    // Product Search with Auto-complete
+    const productSearch = document.getElementById('product_search');
+    const productIdInput = document.getElementById('selected_product_id');
+    const searchResults = document.getElementById('productSearchResults');
+    let searchTimeout = null;
+    
+    productSearch.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            const query = productSearch.value.trim();
+            if (query.length >= 2) {
+                fetchProductSuggestions(query);
+            } else {
+                searchResults.classList.add('hidden');
+            }
+        }, 300);
+    });
+    
+    productSearch.addEventListener('blur', function() {
+        setTimeout(() => {
+            searchResults.classList.add('hidden');
+        }, 200);
+    });
+    
+    function fetchProductSuggestions(query) {
+        fetch(`/ajax/search-products/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    displayProductSuggestions(data);
+                } else {
+                    searchResults.classList.add('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching product suggestions:', error);
+                searchResults.classList.add('hidden');
+            });
+    }
+    
+    function displayProductSuggestions(products) {
+        searchResults.innerHTML = '';
+        products.forEach(product => {
+            const item = document.createElement('div');
+            item.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100';
+            item.innerHTML = `
+                <div class="font-medium text-gray-900">${product.name}</div>
+                <div class="text-xs text-gray-500">
+                    ${product.sku ? 'SKU: ' + product.sku : ''}
+                    ${product.category ? ' | Category: ' + product.category : ''}
+                </div>
+            `;
+            item.addEventListener('click', function() {
+                productSearch.value = product.name;
+                productIdInput.value = product.id;
+                searchResults.classList.add('hidden');
+                // Submit form
+                document.querySelector('form').submit();
+            });
+            searchResults.appendChild(item);
+        });
+        searchResults.classList.remove('hidden');
+    }
+    
+    // Charts configuration
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        if (value >= 1000) {
+                            return (value / 1000).toFixed(0) + 'k';
+                        }
+                        return value;
+                    }
+                }
+            }
+        }
+    };
+    
+    // Quantity Chart (only if not showing specific product)
+    {% if not selected_product and chart_data_quantity %}
+    const quantityData = JSON.parse('{{ chart_data_quantity|escapejs }}');
+    const quantityCtx = document.getElementById('quantityChart').getContext('2d');
+    new Chart(quantityCtx, {
+        type: 'bar',
+        data: {
+            labels: quantityData.map(item => item.product.substring(0, 30) + (item.product.length > 30 ? '...' : '')),
+            datasets: [{
+                data: quantityData.map(item => item.quantity),
+                backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                borderColor: 'rgba(79, 70, 229, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            ...chartOptions,
+            scales: {
+                y: {
+                    ...chartOptions.scales.y,
+                    title: {
+                        display: true,
+                        text: 'Quantity Sold'
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+    
+    // Revenue Chart (only if not showing specific product)
+    {% if not selected_product and chart_data_revenue %}
+    const revenueData = JSON.parse('{{ chart_data_revenue|escapejs }}');
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'bar',
+        data: {
+            labels: revenueData.map(item => item.product.substring(0, 30) + (item.product.length > 30 ? '...' : '')),
+            datasets: [{
+                data: revenueData.map(item => item.revenue),
+                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                borderColor: 'rgba(16, 185, 129, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            ...chartOptions,
+            scales: {
+                y: {
+                    ...chartOptions.scales.y,
+                    title: {
+                        display: true,
+                        text: 'Revenue (KES)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return 'KSh ' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+    
+    // Profit Chart (only if not showing specific product)
+    {% if not selected_product and chart_data_profit %}
+    const profitData = JSON.parse('{{ chart_data_profit|escapejs }}');
+    const profitCtx = document.getElementById('profitChart').getContext('2d');
+    new Chart(profitCtx, {
+        type: 'bar',
+        data: {
+            labels: profitData.map(item => item.product.substring(0, 30) + (item.product.length > 30 ? '...' : '')),
+            datasets: [{
+                data: profitData.map(item => item.profit),
+                backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                borderColor: 'rgba(245, 158, 11, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            ...chartOptions,
+            scales: {
+                y: {
+                    ...chartOptions.scales.y,
+                    title: {
+                        display: true,
+                        text: 'Profit (KES)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return 'KSh ' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+    
+    // Weekly Sales Chart for Selected Product
+    {% if selected_product and weekly_sales_chart %}
+    const weeklySalesCtx = document.getElementById('weeklySalesChart').getContext('2d');
+    const weeklySalesData = JSON.parse('{{ weekly_sales_chart|escapejs }}');
+    
+    new Chart(weeklySalesCtx, {
+        type: 'line',
+        data: {
+            labels: weeklySalesData.labels,
+            datasets: [{
+                label: 'Quantity Sold',
+                data: weeklySalesData.quantities,
+                borderColor: 'rgba(79, 70, 229, 1)',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }, {
+                label: 'Revenue (KES)',
+                data: weeklySalesData.revenues,
+                borderColor: 'rgba(16, 185, 129, 1)',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Quantity'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Revenue (KES)'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return 'KSh ' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+    
+    // Print optimization
+    window.addEventListener('beforeprint', () => {
+        document.body.classList.add('printing');
+    });
+    
+    window.addEventListener('afterprint', () => {
+        document.body.classList.remove('printing');
+    });
+    
+    // Export functionality
+    document.querySelectorAll('[data-export]').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const format = this.dataset.export;
+            const url = new URL(window.location.href);
+            url.searchParams.set('export', format);
+            window.location.href = url.toString();
+        });
+    });
+});
+</script>
+
+<style>
+/* Custom styles for charts */
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+
+/* Product search results */
+#productSearchResults {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+#productSearchResults div {
+    transition: background-color 0.2s;
+}
+
+#productSearchResults div:hover {
+    background-color: #f3f4f6;
+}
+
+/* Highlight selected product */
+.bg-blue-50 {
+    background-color: #eff6ff;
+}
+
+/* Print styles */
+@media print {
+    .bg-white {
+        background-color: white !important;
+    }
+    
+    .shadow, .rounded-lg {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+    
+    button, a:not([href^="#"]), .flex.justify-between > div:last-child {
+        display: none !important;
+    }
+    
+    table {
+        font-size: 10px !important;
+    }
+    
+    .border-l-4 {
+        border-left-width: 2px !important;
+    }
+    
+    canvas {
+        page-break-inside: avoid;
+    }
+    
+    .h-64 {
+        height: 200px !important;
+    }
+    
+    /* Hide search inputs when printing */
+    input, select {
+        display: none !important;
+    }
+}
+
+/* Hover effects */
+.hover\:bg-gray-50:hover {
+    transition: background-color 0.2s ease;
+}
+
+/* Chart tooltip customization */
+.chartjs-tooltip {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    border-radius: 4px !important;
+    padding: 8px !important;
+    color: white !important;
+    font-size: 12px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .grid-cols-1.md\:grid-cols-4 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .grid-cols-1.lg\:grid-cols-3,
+    .grid-cols-1.lg\:grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .px-6 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    .text-2xl {
+        font-size: 1.25rem !important;
+    }
+    
+    /* Mobile search adjustments */
+    #product_search {
+        font-size: 14px;
+    }
+}
+</style>
+{% endblock %}

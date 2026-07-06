@@ -19,14 +19,23 @@
                 </div>
             </div>
             <div class="flex space-x-2">
-                <a href="{% url 'edit_sale' sale.id %}" 
-                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-edit mr-2"></i> Edit Sale
-                </a>
-                <button onclick="window.print()" 
+                <a href="{% url 'load_sale_to_pos' sale.id %}" 
+       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+        Edit in POS
+    </a>
+                
+                <!-- THERMAL PRINT BUTTON -->
+                <button id="print-thermal-btn" 
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-print mr-2"></i> Print Receipt
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    Print Receipt
                 </button>
+                
                 <a href="{% url 'sales_report' %}" 
                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <i class="fas fa-arrow-left mr-2"></i> Back to Sales
@@ -273,10 +282,10 @@
         <div class="mt-8 pt-6 border-t border-gray-200">
             <div class="flex justify-between">
                 <div class="flex space-x-3">
-                    <a href="{% url 'generate_receipt' sale.id %}" 
-                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        <i class="fas fa-file-invoice mr-2"></i> Generate Receipt
-                    </a>
+                    <button id="browser-print-btn" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <i class="fas fa-print mr-2"></i> Browser Print
+                    </button>
                     {% if sale.is_credit and sale.balance > 0 %}
                     <a href="{% url 'process_credit_payment' sale.id %}" 
                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
@@ -285,10 +294,6 @@
                     {% endif %}
                 </div>
                 <div class="flex space-x-3">
-                    <button onclick="window.print()" 
-                            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <i class="fas fa-print mr-2"></i> Print
-                    </button>
                     <a href="{% url 'edit_sale' sale.id %}" 
                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         <i class="fas fa-edit mr-2"></i> Edit Sale
@@ -299,139 +304,437 @@
     </div>
 </div>
 
-<!-- Print Receipt Modal (Hidden) -->
-<div id="receiptModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Print Receipt</h3>
-            <div id="receiptContent" class="mb-4">
-                <!-- Receipt content will be loaded here -->
+<!-- Receipt Print Modal -->
+<div id="receipt-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Print Receipt Options</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="receipt-content">
+                <div class="text-center py-4">
+                    <svg class="w-16 h-16 mx-auto text-blue-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    <h4 class="text-lg font-semibold text-gray-900">Print Receipt</h4>
+                    <p class="text-gray-600 mt-2">Select a printing option for Sale #{{ sale.sale_number }}</p>
+                </div>
             </div>
-            <div class="flex justify-end space-x-3">
-                <button onclick="closeReceiptModal()" 
-                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
-                    Close
-                </button>
-                <button onclick="printReceipt()" 
-                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                    <i class="fas fa-print mr-2"></i> Print
-                </button>
-            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="print-browser-receipt" class="btn btn-outline">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                Browser Print
+            </button>
+            <button id="print-direct-thermal" class="btn btn-primary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Thermal Printer
+            </button>
+            <button id="close-receipt-modal" class="btn btn-outline">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Cancel
+            </button>
         </div>
     </div>
 </div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" style="display: none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <p class="text-gray-700">Processing receipt...</p>
+    </div>
+</div>
+
+<!-- Success message -->
+<div id="success-message" style="display: none;" class="fixed top-4 right-4 px-4 py-3 rounded-md shadow-lg text-white bg-green-500 z-50">
+    <div class="flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span id="success-text">Receipt printed successfully!</span>
+    </div>
+</div>
+
+<!-- Error message -->
+<div id="error-message" style="display: none;" class="fixed top-4 right-4 px-4 py-3 rounded-md shadow-lg text-white bg-red-500 z-50">
+    <div class="flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span id="error-text">Print failed!</span>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // View receipt
-    function viewReceipt() {
-        fetch(`/api/sales/{{ sale.id }}/receipt/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('receiptContent').innerHTML = data.receipt_html;
-                    document.getElementById('receiptModal').classList.remove('hidden');
-                } else {
-                    alert('Error loading receipt: ' + data.message);
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM elements
+    const printThermalBtn = document.getElementById('print-thermal-btn');
+    const browserPrintBtn = document.getElementById('browser-print-btn');
+    const receiptModal = document.getElementById('receipt-modal');
+    const closeModalBtns = document.querySelectorAll('.close-modal, #close-receipt-modal');
+    const printBrowserReceiptBtn = document.getElementById('print-browser-receipt');
+    const printDirectThermalBtn = document.getElementById('print-direct-thermal');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const successMessage = document.getElementById('success-message');
+    const successText = document.getElementById('success-text');
+    const errorMessage = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
+
+    // Sale ID from Django template
+    const saleId = {{ sale.id }};
+    
+    // CSRF token helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
-            })
-            .catch(error => {
-                alert('Error: ' + error.message);
+            }
+        }
+        return cookieValue;
+    }
+
+    // Show receipt modal when print button is clicked
+    printThermalBtn.addEventListener('click', function() {
+        receiptModal.style.display = 'flex';
+    });
+
+    // Also show modal when browser print button is clicked
+    browserPrintBtn.addEventListener('click', function() {
+        receiptModal.style.display = 'flex';
+    });
+
+    // Close modal buttons
+    closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            receiptModal.style.display = 'none';
+        });
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+        if (e.target === receiptModal) {
+            receiptModal.style.display = 'none';
+        }
+    });
+
+    // Browser print receipt
+    printBrowserReceiptBtn.addEventListener('click', function() {
+        const printContent = generateReceiptHTML();
+        const originalContent = document.body.innerHTML;
+        
+        document.body.innerHTML = printContent;
+        window.print();
+        document.body.innerHTML = originalContent;
+        
+        // Show success message
+        showMessage('Receipt printed in browser!', 'success');
+        receiptModal.style.display = 'none';
+        
+        // Reload to restore functionality
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    });
+
+    // Direct thermal print
+    printDirectThermalBtn.addEventListener('click', async function() {
+        const originalHtml = this.innerHTML;
+        this.innerHTML = `
+            <svg class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            Printing...
+        `;
+        this.disabled = true;
+        loadingOverlay.style.display = 'flex';
+        
+        try {
+            const response = await fetch(`/pos/sale/${saleId}/print-direct/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                }
             });
-    }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showMessage('✓ Receipt sent to thermal printer!', 'success');
+                
+                // Close modal after success
+                setTimeout(() => {
+                    receiptModal.style.display = 'none';
+                    loadingOverlay.style.display = 'none';
+                }, 1500);
+            } else {
+                throw new Error(data.message || 'Printing failed');
+            }
+            
+        } catch (error) {
+            console.error('Print error:', error);
+            showMessage(`✗ Print failed: ${error.message}`, 'error');
+        } finally {
+            this.innerHTML = originalHtml;
+            this.disabled = false;
+            loadingOverlay.style.display = 'none';
+        }
+    });
 
-    // Close receipt modal
-    function closeReceiptModal() {
-        document.getElementById('receiptModal').classList.add('hidden');
-    }
-
-    // Print receipt
-    function printReceipt() {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
+    // Generate receipt HTML for browser printing
+    function generateReceiptHTML() {
+        const company = {% if company %}{
+            name: '{{ company.name|default:"Succeed Cereal Hub" }}',
+            address: '{{ company.address|default:"Wataalam, Ruiry" }}',
+            phone: '{{ company.phone|default:"+254 74545769" }}',
+            vat: '{{ company.vat_number|default:"" }}'
+        }{% else %}{
+            name: 'Succeed Cereal Hub',
+            address: 'Wataalam, Ruiry',
+            phone: '+254 74545769',
+            vat: ''
+        }{% endif %};
+        
+        return `
+            <!DOCTYPE html>
             <html>
             <head>
-                <title>Receipt #{{ sale.sale_number }}</title>
+                <title>Receipt - Sale #{{ sale.sale_number }}</title>
                 <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    .receipt { width: 300px; margin: 0 auto; }
-                    .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
-                    .company-name { font-size: 18px; font-weight: bold; }
-                    .sale-info { margin-bottom: 15px; }
-                    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-                    .items-table th, .items-table td { padding: 5px; border-bottom: 1px solid #ddd; }
-                    .total-section { border-top: 2px solid #000; padding-top: 10px; margin-top: 15px; }
-                    .thank-you { text-align: center; margin-top: 20px; font-style: italic; }
+                    @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+                    
+                    body { 
+                        font-family: 'Courier Prime', 'Courier New', monospace; 
+                        font-size: 12px; 
+                        padding: 20px;
+                        background: white;
+                        color: black;
+                        line-height: 1.4;
+                    }
+                    
+                    .receipt { 
+                        width: 80mm; 
+                        margin: 0 auto;
+                        max-width: 80mm;
+                    }
+                    
+                    .header { 
+                        text-align: center; 
+                        margin-bottom: 15px;
+                        border-bottom: 1px dashed #000;
+                        padding-bottom: 10px;
+                    }
+                    
+                    .company-name { 
+                        font-size: 16px; 
+                        font-weight: bold;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                    }
+                    
+                    .company-address {
+                        font-size: 11px;
+                        margin: 5px 0;
+                    }
+                    
+                    .sale-info {
+                        margin: 15px 0;
+                        padding: 10px 0;
+                        border-top: 1px dashed #000;
+                        border-bottom: 1px dashed #000;
+                    }
+                    
+                    .sale-info div {
+                        margin: 3px 0;
+                        display: flex;
+                        justify-content: space-between;
+                    }
+                    
+                    .items-table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin: 15px 0;
+                        font-size: 11px;
+                    }
+                    
+                    .items-table th { 
+                        text-align: left;
+                        padding: 5px 0;
+                        border-bottom: 1px dashed #000;
+                    }
+                    
+                    .items-table td { 
+                        padding: 4px 0;
+                        border-bottom: 1px solid #eee;
+                    }
+                    
+                    .items-table .text-right {
+                        text-align: right;
+                    }
+                    
+                    .total-section {
+                        margin-top: 15px;
+                        padding-top: 10px;
+                        border-top: 2px solid #000;
+                    }
+                    
+                    .total-row {
+                        display: flex;
+                        justify-content: space-between;
+                        margin: 5px 0;
+                        font-size: 12px;
+                    }
+                    
+                    .total-row.total {
+                        font-weight: bold;
+                        font-size: 14px;
+                        margin-top: 8px;
+                        padding-top: 8px;
+                        border-top: 1px dashed #000;
+                    }
+                    
+                    .payment-method {
+                        margin: 15px 0;
+                        padding: 10px 0;
+                        border-top: 1px dashed #000;
+                        border-bottom: 1px dashed #000;
+                    }
+                    
+                    .thank-you {
+                        text-align: center;
+                        margin-top: 20px;
+                        font-style: italic;
+                        font-size: 11px;
+                    }
+                    
+                    .separator {
+                        text-align: center;
+                        margin: 10px 0;
+                        font-size: 10px;
+                        color: #666;
+                    }
+                    
                     @media print {
-                        body { margin: 0; padding: 10px; }
-                        .no-print { display: none; }
+                        body { 
+                            margin: 0 !important; 
+                            padding: 10px !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        
+                        .no-print { 
+                            display: none !important; 
+                        }
+                        
+                        .receipt {
+                            width: 80mm !important;
+                            max-width: 80mm !important;
+                        }
+                    }
+                    
+                    @page {
+                        size: 80mm auto;
+                        margin: 0;
                     }
                 </style>
             </head>
-            <body>
+            <body onload="window.print(); setTimeout(() => window.close(), 1000);">
                 <div class="receipt">
                     <div class="header">
-                        <div class="company-name">{{ company.name }}</div>
-                        <div>{{ company.address }}</div>
-                        <div>{{ company.phone }}</div>
-                        <div>VAT: {{ company.vat_number|default:"N/A" }}</div>
+                        <div class="company-name">${company.name}</div>
+                        <div class="company-address">${company.address}</div>
+                        <div class="company-address">Tel: ${company.phone}</div>
+                        ${company.vat ? `<div class="company-address">VAT: ${company.vat}</div>` : ''}
                     </div>
                     
+                    <div class="separator">--------------------------------</div>
+                    
                     <div class="sale-info">
-                        <div><strong>Receipt #:</strong> {{ sale.sale_number }}</div>
-                        <div><strong>Date:</strong> {{ sale.date|date:"d/m/Y H:i" }}</div>
-                        <div><strong>Customer:</strong> {{ sale.customer.name|default:"Walk-in" }}</div>
-                        <div><strong>Cashier:</strong> {{ sale.user.get_full_name|default:sale.user.username }}</div>
+                        <div>
+                            <span><strong>Receipt #:</strong></span>
+                            <span>{{ sale.sale_number }}</span>
+                        </div>
+                        <div>
+                            <span><strong>Date:</strong></span>
+                            <span>{{ sale.date|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div>
+                            <span><strong>Customer:</strong></span>
+                            <span>{{ sale.customer.name|default:"Walk-in Customer" }}</span>
+                        </div>
+                        <div>
+                            <span><strong>Cashier:</strong></span>
+                            <span>{{ sale.user.get_full_name|default:sale.user.username }}</span>
+                        </div>
                     </div>
+                    
+                    <div class="separator">--------------------------------</div>
                     
                     <table class="items-table">
                         <thead>
                             <tr>
                                 <th>Item</th>
-                                <th>Qty</th>
-                                <th>Price</th>
-                                <th>Total</th>
+                                <th class="text-right">Qty</th>
+                                <th class="text-right">Price</th>
+                                <th class="text-right">Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in sale.items.all %}
                             <tr>
-                                <td>{{ item.product.name }}</td>
-                                <td>{{ item.quantity }}</td>
-                                <td>{{ item.price }}</td>
-                                <td>{{ item.total }}</td>
+                                <td>${truncateText('{{ item.product.name }}', 20)}</td>
+                                <td class="text-right">{{ item.quantity }}</td>
+                                <td class="text-right">{{ item.price }}</td>
+                                <td class="text-right">{{ item.total }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                     
+                    <div class="separator">--------------------------------</div>
+                    
                     <div class="total-section">
-                        <div style="display: flex; justify-content: space-between;">
+                        <div class="total-row">
                             <span>Subtotal:</span>
                             <span>KSh {{ sale.subtotal }}</span>
                         </div>
                         {% if sale.discount_amount > 0 %}
-                        <div style="display: flex; justify-content: space-between; color: red;">
+                        <div class="total-row" style="color: red;">
                             <span>Discount:</span>
                             <span>-KSh {{ sale.discount_amount }}</span>
                         </div>
                         {% endif %}
-                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1em;">
-                            <span>Total:</span>
+                        <div class="total-row total">
+                            <span>TOTAL:</span>
                             <span>KSh {{ sale.total }}</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between;">
+                        <div class="total-row">
                             <span>Amount Paid:</span>
                             <span>KSh {{ sale.amount_paid }}</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between;">
+                        <div class="total-row">
                             <span>Change:</span>
                             <span>KSh {{ sale.change|default:0 }}</span>
                         </div>
                         {% if sale.balance > 0 %}
-                        <div style="display: flex; justify-content: space-between; color: red;">
-                            <span>Balance:</span>
+                        <div class="total-row" style="color: red; font-weight: bold;">
+                            <span>Balance Due:</span>
                             <span>KSh {{ sale.balance }}</span>
                         </div>
                         {% endif %}
@@ -439,59 +742,218 @@
                     
                     <div class="payment-method">
                         <div><strong>Payment Method:</strong> {{ sale.get_payment_method_display }}</div>
-                        {% if sale.mpesa_code %}<div><strong>M-Pesa Code:</strong> {{ sale.mpesa_code }}</div>{% endif %}
+                        {% if sale.mpesa_code %}
+                        <div><strong>M-Pesa Code:</strong> {{ sale.mpesa_code }}</div>
+                        {% endif %}
+                        {% if sale.cheque_number %}
+                        <div><strong>Cheque #:</strong> {{ sale.cheque_number }}</div>
+                        {% endif %}
                     </div>
                     
                     <div class="thank-you">
-                        <p>Thank you for your business!</p>
-                        <p>Visit us again</p>
+                        <div>Thank you for your business!</div>
+                        <div>Please come again</div>
+                    </div>
+                    
+                    <div class="separator">--------------------------------</div>
+                    
+                    <div style="text-align: center; font-size: 10px; color: #666; margin-top: 15px;">
+                        Printed on: ${new Date().toLocaleString()}
                     </div>
                 </div>
                 
+                <div class="no-print" style="text-align: center; margin-top: 30px; padding: 20px;">
+                    <button onclick="window.print()" 
+                            style="padding: 12px 24px; background: #4f46e5; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">
+                        <i class="fas fa-print" style="margin-right: 8px;"></i> Print Receipt
+                    </button>
+                    <button onclick="window.close()" 
+                            style="padding: 12px 24px; background: #6b7280; color: white; border: none; border-radius: 6px; margin-left: 10px; cursor: pointer; font-size: 14px;">
+                        <i class="fas fa-times" style="margin-right: 8px;"></i> Close
+                    </button>
+                </div>
+                
                 <script>
-                    window.onload = function() {
-                        window.print();
-                        setTimeout(function() {
-                            window.close();
-                        }, 1000);
+                    // Helper function to truncate text
+                    function truncateText(text, maxLength) {
+                        if (text.length <= maxLength) return text;
+                        return text.substring(0, maxLength - 3) + '...';
                     }
+                    
+                    // Auto print after load
+                    window.addEventListener('load', function() {
+                        setTimeout(function() {
+                            window.print();
+                        }, 500);
+                    });
                 <\/script>
             </body>
             </html>
-        `);
-        printWindow.document.close();
+        `;
     }
 
-    // Copy sale number to clipboard
-    function copySaleNumber() {
-        const saleNumber = '{{ sale.sale_number }}';
-        navigator.clipboard.writeText(saleNumber).then(() => {
-            alert('Sale number copied to clipboard: ' + saleNumber);
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-        });
-    }
-
-    // Share sale (if applicable)
-    function shareSale() {
-        if (navigator.share) {
-            navigator.share({
-                title: 'Sale #{{ sale.sale_number }}',
-                text: 'Sale details for #{{ sale.sale_number }}',
-                url: window.location.href,
-            })
-            .then(() => console.log('Shared successfully'))
-            .catch(error => console.log('Error sharing:', error));
+    // Show message function
+    function showMessage(message, type) {
+        if (type === 'success') {
+            successText.textContent = message;
+            successMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
         } else {
-            alert('Web Share API not supported in your browser');
+            errorText.textContent = message;
+            errorMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
         }
     }
-
-    // Download as PDF
-    function downloadAsPDF() {
-        alert('PDF download functionality would be implemented here');
-        // You would typically use a library like jsPDF or make an API call
-        // to generate and download a PDF
-    }
+    
+    // Add modal CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .modal-header {
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+        
+        .close-modal:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            border-top: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid transparent;
+            min-width: 120px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border-color: #d1d5db;
+            color: #374151;
+        }
+        
+        .btn-outline:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        /* Loading spinner */
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
 </script>
 {% endblock %}

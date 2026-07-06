@@ -1,0 +1,194 @@
+<!-- templates/pos/purchase_invoice.html -->
+{% extends 'pos/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Purchase Invoice - {{ purchase.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header with Actions -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-file-invoice text-green-600 mr-2"></i>Purchase Invoice
+        </h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'purchase_list' %}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Purchases
+            </a>
+            <a href="{% url 'print_purchase_invoice' purchase.id %}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-print mr-2"></i>Print Invoice
+            </a>
+            <a href="{% url 'edit_purchase' purchase.id %}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-edit mr-2"></i>Edit
+            </a>
+        </div>
+    </div>
+
+    <!-- Invoice Container -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <!-- Invoice Header -->
+        <div class="px-8 py-6 bg-gradient-to-r from-green-50 to-blue-50 border-b">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">PURCHASE INVOICE</h2>
+                    <p class="text-gray-600">Invoice #: <span class="font-semibold">{{ purchase.invoice_number }}</span></p>
+                    <p class="text-gray-600">Date: <span class="font-semibold">{{ purchase.date|date:"d/m/Y H:i" }}</span></p>
+                    <p class="text-gray-600">Status: 
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if purchase.is_paid %}bg-green-100 text-green-800
+                            {% elif purchase.balance_due > 0 %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {% if purchase.is_paid %}Paid
+                            {% elif purchase.balance_due > 0 %}Partial Payment
+                            {% else %}Unpaid{% endif %}
+                        </span>
+                    </p>
+                </div>
+                <div class="text-right">
+                    {% if company and company.logo %}
+                    <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="h-16 mb-2 ml-auto">
+                    {% endif %}
+                    <h3 class="text-xl font-bold text-gray-800">{{ company.name|default:"Your Company Name" }}</h3>
+                    <p class="text-sm text-gray-600">{{ company.address|default:"Company Address" }}</p>
+                    <p class="text-sm text-gray-600">Tel: {{ company.phone|default:"Phone Number" }}</p>
+                    <p class="text-sm text-gray-600">Email: {{ company.email|default:"Email Address" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supplier Info -->
+        <div class="px-8 py-6 border-b">
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Supplier Information</h4>
+                    <p class="text-lg font-semibold">{{ purchase.supplier.name }}</p>
+                    {% if purchase.supplier.contact_person %}
+                    <p class="text-gray-600">Contact: {{ purchase.supplier.contact_person }}</p>
+                    {% endif %}
+                    {% if purchase.supplier.phone %}
+                    <p class="text-gray-600">Phone: {{ purchase.supplier.phone }}</p>
+                    {% endif %}
+                    {% if purchase.supplier.email %}
+                    <p class="text-gray-600">Email: {{ purchase.supplier.email }}</p>
+                    {% endif %}
+                    {% if purchase.supplier.address %}
+                    <p class="text-gray-600">Address: {{ purchase.supplier.address }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Invoice Details</h4>
+                    <p class="text-gray-600">Invoice Number: <span class="font-semibold">{{ purchase.invoice_number }}</span></p>
+                    <p class="text-gray-600">Purchase Date: <span class="font-semibold">{{ purchase.date|date:"d/m/Y" }}</span></p>
+                    <p class="text-gray-600">Payment Method: <span class="font-semibold">{{ purchase.payment_method|default:"Not specified"|title }}</span></p>
+                    <p class="text-gray-600">Processed By: <span class="font-semibold">{{ purchase.user.get_full_name|default:purchase.user.username }}</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="px-8 py-6">
+            <h4 class="text-lg font-semibold mb-4">Purchase Items</h4>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 border">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch #</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for item in items %}
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm">{{ forloop.counter }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="font-medium">{{ item.product.name }}</div>
+                                {% if item.product.barcode %}
+                                <div class="text-xs text-gray-500">SKU: {{ item.product.barcode }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                {% if item.batch %}
+                                <div>{{ item.batch.batch_number }}</div>
+                                {% if item.batch.expiry_date %}
+                                <div class="text-xs text-gray-500">Exp: {{ item.batch.expiry_date|date:"d/m/Y" }}</div>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-gray-400">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-right">{{ item.quantity|floatformat:2 }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-right">KSh {{ item.price|floatformat:2 }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium">KSh {{ item.total|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="bg-gray-50">
+                        <tr>
+                            <td colspan="5" class="px-4 py-3 text-right font-semibold">Subtotal:</td>
+                            <td class="px-4 py-3 text-right font-semibold">KSh {{ purchase.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        {% if purchase.discount > 0 %}
+                        <tr>
+                            <td colspan="5" class="px-4 py-3 text-right font-semibold">Discount:</td>
+                            <td class="px-4 py-3 text-right font-semibold text-red-600">- KSh {{ purchase.discount|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if purchase.tax > 0 %}
+                        <tr>
+                            <td colspan="5" class="px-4 py-3 text-right font-semibold">Tax:</td>
+                            <td class="px-4 py-3 text-right font-semibold">KSh {{ purchase.tax|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td colspan="5" class="px-4 py-3 text-right font-bold text-lg">TOTAL:</td>
+                            <td class="px-4 py-3 text-right font-bold text-lg text-blue-600">KSh {{ purchase.total|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="px-8 py-6 bg-gray-50 border-t">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Payment Summary -->
+                <div>
+                    <h5 class="font-semibold mb-2">Payment Summary</h5>
+                    <div class="space-y-1">
+                        <p class="text-sm">Total Amount: <span class="font-semibold">KSh {{ purchase.total|floatformat:2 }}</span></p>
+                        <p class="text-sm">Amount Paid: <span class="font-semibold text-green-600">KSh {{ purchase.total_paid|floatformat:2 }}</span></p>
+                        <p class="text-sm">Balance Due: <span class="font-semibold {% if purchase.balance_due > 0 %}text-red-600{% endif %}">KSh {{ purchase.balance_due|floatformat:2 }}</span></p>
+                    </div>
+                </div>
+
+                <!-- Batch Summary -->
+                <div>
+                    <h5 class="font-semibold mb-2">Batch Summary</h5>
+                    <div class="space-y-1">
+                        <p class="text-sm">Total Batches: <span class="font-semibold">{{ items.count }}</span></p>
+                        <p class="text-sm">Total Items: <span class="font-semibold">{{ total_items }}</span></p>
+                        <p class="text-sm">Total Quantity: <span class="font-semibold">{{ total_quantity|floatformat:2 }}</span></p>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <h5 class="font-semibold mb-2">Notes</h5>
+                    <p class="text-sm text-gray-600">{{ purchase.notes|default:"No notes provided." }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-8 py-4 bg-gray-100 text-center text-sm text-gray-600 border-t">
+            <p>This is a computer generated invoice. No signature required.</p>
+            <p>Generated on {{ today|date:"d/m/Y H:i:s" }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,2294 @@
+Not Found: /favicon.ico
+WARNING:django.request:Not Found: /favicon.ico
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /get-product-batches/651/
+WARNING:django.request:Not Found: /get-product-batches/651/
+Not Found: /get-product-batches/459/
+WARNING:django.request:Not Found: /get-product-batches/459/
+Not Found: /get-product-batches/231/
+WARNING:django.request:Not Found: /get-product-batches/231/
+Not Found: /get-product-batches/207/
+WARNING:django.request:Not Found: /get-product-batches/207/
+Internal Server Error: /pos/suppliers/17/
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\views.py", line 3072, in supplier_detail
+    returns = Return.objects.filter(supplier=supplier).order_by('-date')
+              ^^^^^^
+NameError: name 'Return' is not defined
+ERROR:django.request:Internal Server Error: /pos/suppliers/17/
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\views.py", line 3072, in supplier_detail
+    returns = Return.objects.filter(supplier=supplier).order_by('-date')
+              ^^^^^^
+NameError: name 'Return' is not defined
+Not Found: /get-product-batches/200/
+WARNING:django.request:Not Found: /get-product-batches/200/
+Not Found: /get-product-batches/200/
+WARNING:django.request:Not Found: /get-product-batches/200/
+Not Found: /get-product-batches/558/
+WARNING:django.request:Not Found: /get-product-batches/558/
+Not Found: /get-product-batches/150/
+WARNING:django.request:Not Found: /get-product-batches/150/
+Not Found: /get-product-batches/197/
+WARNING:django.request:Not Found: /get-product-batches/197/
+Not Found: /get-product-batches/270/
+WARNING:django.request:Not Found: /get-product-batches/270/
+Not Found: /get-product-batches/556/
+WARNING:django.request:Not Found: /get-product-batches/556/
+Not Found: /get-product-batches/655/
+WARNING:django.request:Not Found: /get-product-batches/655/
+Not Found: /get-product-batches/164/
+WARNING:django.request:Not Found: /get-product-batches/164/
+Not Found: /get-product-batches/13/
+WARNING:django.request:Not Found: /get-product-batches/13/
+Not Found: /get-product-batches/12/
+WARNING:django.request:Not Found: /get-product-batches/12/
+Not Found: /get-product-batches/100/
+WARNING:django.request:Not Found: /get-product-batches/100/
+Not Found: /get-product-batches/503/
+WARNING:django.request:Not Found: /get-product-batches/503/
+Not Found: /get-product-batches/58/
+WARNING:django.request:Not Found: /get-product-batches/58/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/558/
+WARNING:django.request:Not Found: /get-product-batches/558/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/305/
+WARNING:django.request:Not Found: /get-product-batches/305/
+Not Found: /get-product-batches/429/
+WARNING:django.request:Not Found: /get-product-batches/429/
+Not Found: /get-product-batches/164/
+WARNING:django.request:Not Found: /get-product-batches/164/
+Not Found: /get-product-batches/149/
+WARNING:django.request:Not Found: /get-product-batches/149/
+Not Found: /get-product-batches/472/
+WARNING:django.request:Not Found: /get-product-batches/472/
+Not Found: /get-product-batches/558/
+WARNING:django.request:Not Found: /get-product-batches/558/
+Not Found: /get-product-batches/548/
+WARNING:django.request:Not Found: /get-product-batches/548/
+Not Found: /get-product-batches/92/
+WARNING:django.request:Not Found: /get-product-batches/92/
+Not Found: /get-product-batches/655/
+WARNING:django.request:Not Found: /get-product-batches/655/
+Not Found: /get-product-batches/613/
+WARNING:django.request:Not Found: /get-product-batches/613/
+Not Found: /get-product-batches/181/
+WARNING:django.request:Not Found: /get-product-batches/181/
+Not Found: /get-product-batches/206/
+WARNING:django.request:Not Found: /get-product-batches/206/
+Not Found: /get-product-batches/220/
+WARNING:django.request:Not Found: /get-product-batches/220/
+Not Found: /get-product-batches/266/
+WARNING:django.request:Not Found: /get-product-batches/266/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/9/
+WARNING:django.request:Not Found: /get-product-batches/9/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/9/
+WARNING:django.request:Not Found: /get-product-batches/9/
+Not Found: /favicon.ico
+WARNING:django.request:Not Found: /favicon.ico
+Not Found: /get-product-batches/84/
+WARNING:django.request:Not Found: /get-product-batches/84/
+Not Found: /get-product-batches/55/
+WARNING:django.request:Not Found: /get-product-batches/55/
+Not Found: /get-product-batches/419/
+WARNING:django.request:Not Found: /get-product-batches/419/
+Not Found: /get-product-batches/209/
+WARNING:django.request:Not Found: /get-product-batches/209/
+Not Found: /get-product-batches/631/
+WARNING:django.request:Not Found: /get-product-batches/631/
+Not Found: /pos/receipt/22/print/
+WARNING:django.request:Not Found: /pos/receipt/22/print/
+Not Found: /get-product-batches/628/
+WARNING:django.request:Not Found: /get-product-batches/628/
+Not Found: /get-product-batches/613/
+WARNING:django.request:Not Found: /get-product-batches/613/
+Not Found: /get-product-batches/330/
+WARNING:django.request:Not Found: /get-product-batches/330/
+Not Found: /get-product-batches/222/
+WARNING:django.request:Not Found: /get-product-batches/222/
+Not Found: /get-product-batches/361/
+WARNING:django.request:Not Found: /get-product-batches/361/
+Not Found: /get-product-batches/146/
+WARNING:django.request:Not Found: /get-product-batches/146/
+Not Found: /get-product-batches/45/
+WARNING:django.request:Not Found: /get-product-batches/45/
+Not Found: /get-product-batches/692/
+WARNING:django.request:Not Found: /get-product-batches/692/
+Not Found: /get-product-batches/123/
+WARNING:django.request:Not Found: /get-product-batches/123/
+Not Found: /get-product-batches/387/
+WARNING:django.request:Not Found: /get-product-batches/387/
+Not Found: /get-product-batches/188/
+WARNING:django.request:Not Found: /get-product-batches/188/
+Not Found: /get-product-batches/220/
+WARNING:django.request:Not Found: /get-product-batches/220/
+Not Found: /favicon.ico
+WARNING:django.request:Not Found: /favicon.ico
+Not Found: /favicon.ico
+WARNING:django.request:Not Found: /favicon.ico
+Internal Server Error: /pos/products/702/
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 891, in _resolve_lookup
+    current = current[bit]
+              ~~~~~~~^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\context.py", line 88, in __getitem__
+    raise KeyError(key)
+KeyError: 'sale'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 897, in _resolve_lookup
+    if isinstance(current, BaseContext) and getattr(
+                                            ~~~~~~~^
+        type(current), bit
+        ^^^^^^^^^^^^^^^^^^
+    ):
+    ^
+AttributeError: type object 'RequestContext' has no attribute 'sale'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 907, in _resolve_lookup
+    current = current[int(bit)]
+                      ~~~^^^^^
+ValueError: invalid literal for int() with base 10: 'sale'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\views.py", line 1044, in product_detail
+    return render(request, 'pos/product_detail.html', {'product': product, 'batches': batches})
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 1075, in render
+    output = self.filter_expression.resolve(context)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 743, in resolve
+    arg_vals.append(arg.resolve(context))
+                    ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 854, in resolve
+    value = self._resolve_lookup(context)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 914, in _resolve_lookup
+    raise VariableDoesNotExist(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+    )  # missing attribute
+    ^
+django.template.base.VariableDoesNotExist: Failed lookup for key [sale] in [{'True': True, 'False': False, 'None': None}, {}, {}, {'product': <Product: FESTIVE  WHITE 600GMS - KES 100.00>, 'batches': <QuerySet []>}]
+ERROR:django.request:Internal Server Error: /pos/products/702/
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 891, in _resolve_lookup
+    current = current[bit]
+              ~~~~~~~^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\context.py", line 88, in __getitem__
+    raise KeyError(key)
+KeyError: 'sale'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 897, in _resolve_lookup
+    if isinstance(current, BaseContext) and getattr(
+                                            ~~~~~~~^
+        type(current), bit
+        ^^^^^^^^^^^^^^^^^^
+    ):
+    ^
+AttributeError: type object 'RequestContext' has no attribute 'sale'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 907, in _resolve_lookup
+    current = current[int(bit)]
+                      ~~~^^^^^
+ValueError: invalid literal for int() with base 10: 'sale'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\views.py", line 1044, in product_detail
+    return render(request, 'pos/product_detail.html', {'product': product, 'batches': batches})
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 1075, in render
+    output = self.filter_expression.resolve(context)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 743, in resolve
+    arg_vals.append(arg.resolve(context))
+                    ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 854, in resolve
+    value = self._resolve_lookup(context)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\template\base.py", line 914, in _resolve_lookup
+    raise VariableDoesNotExist(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+    )  # missing attribute
+    ^
+django.template.base.VariableDoesNotExist: Failed lookup for key [sale] in [{'True': True, 'False': False, 'None': None}, {}, {}, {'product': <Product: FESTIVE  WHITE 600GMS - KES 100.00>, 'batches': <QuerySet []>}]
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/changelists.css
+WARNING:django.request:Not Found: /static/admin/css/changelists.css
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/forms.css
+WARNING:django.request:Not Found: /static/admin/css/forms.css
+Not Found: /static/admin/js/vendor/jquery/jquery.js
+WARNING:django.request:Not Found: /static/admin/js/vendor/jquery/jquery.js
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/js/jquery.init.js
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/js/jquery.init.js
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/js/admin/RelatedObjectLookups.js
+WARNING:django.request:Not Found: /static/admin/js/admin/RelatedObjectLookups.js
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/js/core.js
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/js/core.js
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 3
+Not Found: /static/admin/js/actions.js
+WARNING:django.request:Not Found: /static/admin/js/actions.js
+Not Found: /static/admin/js/vendor/xregexp/xregexp.js
+WARNING:django.request:Not Found: /static/admin/js/vendor/xregexp/xregexp.js
+WARNING:waitress.queue:Task queue depth is 3
+Not Found: /static/admin/js/prepopulate.js
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/js/prepopulate.js
+Not Found: /static/admin/js/urlify.js
+WARNING:django.request:Not Found: /static/admin/js/urlify.js
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/img/icon-yes.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-yes.svg
+Not Found: /static/admin/img/search.svg
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/img/search.svg
+WARNING:waitress.queue:Task queue depth is 3
+Not Found: /static/admin/css/forms.css
+WARNING:django.request:Not Found: /static/admin/css/forms.css
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/changelists.css
+WARNING:django.request:Not Found: /static/admin/css/changelists.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/js/filters.js
+WARNING:django.request:Not Found: /static/admin/js/filters.js
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/img/icon-yes.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-yes.svg
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/changelists.css
+WARNING:django.request:Not Found: /static/admin/css/changelists.css
+Not Found: /static/admin/css/forms.css
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/css/forms.css
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/responsive.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/js/jquery.init.js
+WARNING:django.request:Not Found: /static/admin/js/jquery.init.js
+Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/js/vendor/jquery/jquery.js
+WARNING:django.request:Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/js/vendor/jquery/jquery.js
+Not Found: /static/admin/js/admin/RelatedObjectLookups.js
+WARNING:django.request:Not Found: /static/admin/js/admin/RelatedObjectLookups.js
+Not Found: /static/admin/js/core.js
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:django.request:Not Found: /static/admin/js/core.js
+Not Found: /static/admin/js/actions.js
+WARNING:django.request:Not Found: /static/admin/js/actions.js
+Not Found: /static/admin/js/urlify.js
+WARNING:django.request:Not Found: /static/admin/js/urlify.js
+Not Found: /static/admin/js/prepopulate.js
+WARNING:django.request:Not Found: /static/admin/js/prepopulate.js
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/forms.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:django.request:Not Found: /static/admin/css/forms.css
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/changelists.css
+WARNING:django.request:Not Found: /static/admin/css/changelists.css
+Not Found: /static/admin/js/vendor/xregexp/xregexp.js
+WARNING:django.request:Not Found: /static/admin/js/vendor/xregexp/xregexp.js
+Not Found: /static/admin/img/search.svg
+WARNING:django.request:Not Found: /static/admin/img/search.svg
+Not Found: /static/admin/img/icon-yes.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-yes.svg
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/js/filters.js
+WARNING:django.request:Not Found: /static/admin/js/filters.js
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/img/icon-yes.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-yes.svg
+Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/css/base.css
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/css/changelists.css
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/css/forms.css
+WARNING:django.request:Not Found: /static/admin/css/changelists.css
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/css/forms.css
+Not Found: /static/admin/js/core.js
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:django.request:Not Found: /static/admin/js/core.js
+WARNING:waitress.queue:Task queue depth is 3
+Not Found: /static/admin/js/admin/RelatedObjectLookups.js
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/js/vendor/jquery/jquery.js
+WARNING:django.request:Not Found: /static/admin/js/admin/RelatedObjectLookups.js
+Not Found: /static/admin/js/jquery.init.js
+WARNING:django.request:Not Found: /static/admin/js/vendor/jquery/jquery.js
+WARNING:django.request:Not Found: /static/admin/js/jquery.init.js
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/js/prepopulate.js
+WARNING:django.request:Not Found: /static/admin/js/prepopulate.js
+Not Found: /static/admin/js/urlify.js
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/js/actions.js
+WARNING:django.request:Not Found: /static/admin/js/urlify.js
+WARNING:django.request:Not Found: /static/admin/js/actions.js
+Not Found: /static/admin/js/vendor/xregexp/xregexp.js
+WARNING:django.request:Not Found: /static/admin/js/vendor/xregexp/xregexp.js
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/img/search.svg
+WARNING:django.request:Not Found: /static/admin/img/search.svg
+Not Found: /static/admin/img/icon-yes.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-yes.svg
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/js/filters.js
+WARNING:django.request:Not Found: /static/admin/js/filters.js
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/img/icon-yes.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-yes.svg
+Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/forms.css
+WARNING:django.request:Not Found: /static/admin/css/forms.css
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/dark_mode.css
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/js/jquery.init.js
+WARNING:django.request:Not Found: /static/admin/js/jquery.init.js
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/js/vendor/jquery/jquery.js
+WARNING:django.request:Not Found: /static/admin/js/vendor/jquery/jquery.js
+Not Found: /static/admin/js/core.js
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/js/core.js
+Not Found: /static/admin/js/admin/RelatedObjectLookups.js
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:django.request:Not Found: /static/admin/js/admin/RelatedObjectLookups.js
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/js/actions.js
+WARNING:django.request:Not Found: /static/admin/js/actions.js
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/forms.css
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:django.request:Not Found: /static/admin/css/forms.css
+Not Found: /static/admin/js/urlify.js
+WARNING:django.request:Not Found: /static/admin/js/urlify.js
+Not Found: /static/admin/js/vendor/xregexp/xregexp.js
+WARNING:django.request:Not Found: /static/admin/js/vendor/xregexp/xregexp.js
+Not Found: /static/admin/js/prepopulate.js
+WARNING:django.request:Not Found: /static/admin/js/prepopulate.js
+Not Found: /static/admin/js/prepopulate_init.js
+WARNING:django.request:Not Found: /static/admin/js/prepopulate_init.js
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/img/icon-changelink.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-changelink.svg
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/img/icon-deletelink.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-deletelink.svg
+Not Found: /static/admin/img/icon-addlink.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-addlink.svg
+Not Found: /static/admin/img/icon-viewlink.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-viewlink.svg
+Not Found: /static/admin/js/change_form.js
+WARNING:django.request:Not Found: /static/admin/js/change_form.js
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/forms.css
+WARNING:django.request:Not Found: /static/admin/css/forms.css
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/changelists.css
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/changelists.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/js/vendor/jquery/jquery.js
+WARNING:django.request:Not Found: /static/admin/js/vendor/jquery/jquery.js
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/js/jquery.init.js
+WARNING:django.request:Not Found: /static/admin/js/jquery.init.js
+Not Found: /static/admin/js/core.js
+WARNING:django.request:Not Found: /static/admin/js/core.js
+Not Found: /static/admin/css/forms.css
+WARNING:django.request:Not Found: /static/admin/css/forms.css
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 3
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/js/admin/RelatedObjectLookups.js
+WARNING:django.request:Not Found: /static/admin/js/admin/RelatedObjectLookups.js
+Not Found: /static/admin/js/actions.js
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/js/actions.js
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/js/urlify.js
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:django.request:Not Found: /static/admin/js/urlify.js
+Not Found: /static/admin/js/prepopulate.js
+WARNING:django.request:Not Found: /static/admin/js/prepopulate.js
+Not Found: /static/admin/js/vendor/xregexp/xregexp.js
+WARNING:django.request:Not Found: /static/admin/js/vendor/xregexp/xregexp.js
+Not Found: /static/admin/img/icon-yes.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-yes.svg
+Not Found: /static/admin/img/search.svg
+WARNING:django.request:Not Found: /static/admin/img/search.svg
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/js/filters.js
+WARNING:django.request:Not Found: /static/admin/js/filters.js
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/img/icon-yes.svg
+WARNING:django.request:Not Found: /static/admin/img/icon-yes.svg
+Not Found: /get-product-batches/702/
+WARNING:django.request:Not Found: /get-product-batches/702/
+Not Found: /get-product-batches/207/
+WARNING:django.request:Not Found: /get-product-batches/207/
+Not Found: /get-product-batches/505/
+WARNING:django.request:Not Found: /get-product-batches/505/
+Not Found: /get-product-batches/146/
+WARNING:django.request:Not Found: /get-product-batches/146/
+Not Found: /get-product-batches/386/
+WARNING:django.request:Not Found: /get-product-batches/386/
+Not Found: /get-product-batches/164/
+WARNING:django.request:Not Found: /get-product-batches/164/
+Not Found: /get-product-batches/2/
+WARNING:django.request:Not Found: /get-product-batches/2/
+Not Found: /get-product-batches/2/
+WARNING:django.request:Not Found: /get-product-batches/2/
+Not Found: /get-product-batches/3/
+WARNING:django.request:Not Found: /get-product-batches/3/
+Not Found: /get-product-batches/3/
+WARNING:django.request:Not Found: /get-product-batches/3/
+Not Found: /get-product-batches/7/
+WARNING:django.request:Not Found: /get-product-batches/7/
+Not Found: /get-product-batches/11/
+WARNING:django.request:Not Found: /get-product-batches/11/
+Not Found: /favicon.ico
+WARNING:django.request:Not Found: /favicon.ico
+Not Found: /get-product-batches/277/
+WARNING:django.request:Not Found: /get-product-batches/277/
+Not Found: /get-product-batches/277/
+WARNING:django.request:Not Found: /get-product-batches/277/
+Not Found: /get-product-batches/277/
+WARNING:django.request:Not Found: /get-product-batches/277/
+Not Found: /favicon.ico
+WARNING:django.request:Not Found: /favicon.ico
+Not Found: /get-product-batches/12/
+WARNING:django.request:Not Found: /get-product-batches/12/
+Not Found: /get-product-batches/11/
+WARNING:django.request:Not Found: /get-product-batches/11/
+Not Found: /get-product-batches/556/
+WARNING:django.request:Not Found: /get-product-batches/556/
+Not Found: /get-product-batches/14/
+WARNING:django.request:Not Found: /get-product-batches/14/
+Not Found: /get-product-batches/16/
+WARNING:django.request:Not Found: /get-product-batches/16/
+Not Found: /favicon.ico
+WARNING:django.request:Not Found: /favicon.ico
+Not Found: /get-product-batches/692/
+WARNING:django.request:Not Found: /get-product-batches/692/
+Not Found: /get-product-batches/14/
+WARNING:django.request:Not Found: /get-product-batches/14/
+Not Found: /get-product-batches/472/
+WARNING:django.request:Not Found: /get-product-batches/472/
+Not Found: /get-product-batches/653/
+WARNING:django.request:Not Found: /get-product-batches/653/
+Not Found: /get-product-batches/612/
+WARNING:django.request:Not Found: /get-product-batches/612/
+Not Found: /get-product-batches/256/
+WARNING:django.request:Not Found: /get-product-batches/256/
+Not Found: /get-product-batches/598/
+WARNING:django.request:Not Found: /get-product-batches/598/
+Not Found: /get-product-batches/55/
+WARNING:django.request:Not Found: /get-product-batches/55/
+Not Found: /get-product-batches/688/
+WARNING:django.request:Not Found: /get-product-batches/688/
+Not Found: /get-product-batches/313/
+WARNING:django.request:Not Found: /get-product-batches/313/
+Not Found: /get-product-batches/219/
+WARNING:django.request:Not Found: /get-product-batches/219/
+Not Found: /get-product-batches/220/
+WARNING:django.request:Not Found: /get-product-batches/220/
+Not Found: /favicon.ico
+WARNING:django.request:Not Found: /favicon.ico
+Not Found: /
+WARNING:django.request:Not Found: /
+Not Found: /favicon.ico
+WARNING:django.request:Not Found: /favicon.ico
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/login.css
+WARNING:django.request:Not Found: /static/admin/css/login.css
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/responsive.css
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/dark_mode.css
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/css/base.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/css/base.css
+WARNING:django.request:Not Found: /static/admin/css/base.css
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+Not Found: /static/admin/css/dark_mode.css
+WARNING:django.request:Not Found: /static/admin/css/dark_mode.css
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/js/theme.js
+WARNING:django.request:Not Found: /static/admin/js/theme.js
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /static/admin/js/nav_sidebar.js
+WARNING:django.request:Not Found: /static/admin/js/nav_sidebar.js
+Not Found: /static/admin/css/nav_sidebar.css
+WARNING:django.request:Not Found: /static/admin/css/nav_sidebar.css
+Not Found: /static/admin/css/dashboard.css
+WARNING:django.request:Not Found: /static/admin/css/dashboard.css
+Not Found: /static/admin/css/responsive.css
+WARNING:django.request:Not Found: /static/admin/css/responsive.css
+Not Found: /favicon.ico
+WARNING:django.request:Not Found: /favicon.ico
+Not Found: /get-product-batches/1313/
+WARNING:django.request:Not Found: /get-product-batches/1313/
+Not Found: /get-product-batches/1313/
+WARNING:django.request:Not Found: /get-product-batches/1313/
+Not Found: /get-product-batches/1313/
+WARNING:django.request:Not Found: /get-product-batches/1313/
+Not Found: /get-product-batches/1269/
+WARNING:django.request:Not Found: /get-product-batches/1269/
+Not Found: /get-product-batches/1097/
+WARNING:django.request:Not Found: /get-product-batches/1097/
+Not Found: /get-product-batches/1313/
+WARNING:django.request:Not Found: /get-product-batches/1313/
+Not Found: /get-product-batches/1147/
+WARNING:django.request:Not Found: /get-product-batches/1147/
+Not Found: /get-product-batches/1313/
+WARNING:django.request:Not Found: /get-product-batches/1313/
+Not Found: /get-product-batches/1097/
+WARNING:django.request:Not Found: /get-product-batches/1097/
+Not Found: /get-product-batches/1147/
+WARNING:django.request:Not Found: /get-product-batches/1147/
+Not Found: /get-product-batches/969/
+WARNING:django.request:Not Found: /get-product-batches/969/
+Not Found: /get-product-batches/1039/
+WARNING:django.request:Not Found: /get-product-batches/1039/
+Not Found: /get-product-batches/705/
+WARNING:django.request:Not Found: /get-product-batches/705/
+Not Found: /pos/receipt/39/print/
+WARNING:django.request:Not Found: /pos/receipt/39/print/
+Not Found: /get-product-batches/710/
+WARNING:django.request:Not Found: /get-product-batches/710/
+Not Found: /get-product-batches/1219/
+WARNING:django.request:Not Found: /get-product-batches/1219/
+Not Found: /get-product-batches/771/
+WARNING:django.request:Not Found: /get-product-batches/771/
+Not Found: /get-product-batches/1096/
+WARNING:django.request:Not Found: /get-product-batches/1096/
+Not Found: /get-product-batches/1219/
+WARNING:django.request:Not Found: /get-product-batches/1219/
+Not Found: /get-product-batches/771/
+WARNING:django.request:Not Found: /get-product-batches/771/
+Not Found: /get-product-batches/1096/
+WARNING:django.request:Not Found: /get-product-batches/1096/
+Not Found: /get-product-batches/965/
+WARNING:django.request:Not Found: /get-product-batches/965/
+GET parameters: {}
+Initial products count: 719
+Final products count: 719
+GET parameters: {}
+Initial products count: 719
+Final products count: 719
+Not Found: /get-product-batches/710/
+WARNING:django.request:Not Found: /get-product-batches/710/
+Not Found: /get-product-batches/712/
+WARNING:django.request:Not Found: /get-product-batches/712/
+Not Found: /get-product-batches/710/
+WARNING:django.request:Not Found: /get-product-batches/710/
+ERROR:waitress:Exception while serving /pos/pos/
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 181, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+                                               ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 313, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\waitress\channel.py", line 430, in service
+    task.service()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\waitress\task.py", line 167, in service
+    self.execute()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\waitress\task.py", line 435, in execute
+    app_iter = self.channel.server.application(environ, start_response)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\waitress\proxy_headers.py", line 64, in translate_proxy_headers
+    return app(environ, start_response)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\wsgi.py", line 124, in __call__
+    response = self.get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 140, in get_response
+    response = self._middleware_chain(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+ERROR:waitress:Exception while serving /pos/pos/
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 181, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+                                               ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 313, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+                           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\waitress\channel.py", line 430, in service
+    task.service()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\waitress\task.py", line 167, in service
+    self.execute()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\waitress\task.py", line 435, in execute
+    app_iter = self.channel.server.application(environ, start_response)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\waitress\proxy_headers.py", line 64, in translate_proxy_headers
+    return app(environ, start_response)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\wsgi.py", line 124, in __call__
+    response = self.get_response(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 140, in get_response
+    response = self._middleware_chain(request)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 57, in inner
+    response = response_for_exception(request, exc)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 141, in response_for_exception
+    response = handle_uncaught_exception(
+        request, get_resolver(get_urlconf()), sys.exc_info()
+    )
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 182, in handle_uncaught_exception
+    return debug.technical_500_response(request, *exc_info)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 69, in technical_500_response
+    html = reporter.get_traceback_html()
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 428, in get_traceback_html
+    c = Context(self.get_traceback_data(), use_l10n=False)
+                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 411, in get_traceback_data
+    c["raising_view_name"] = get_caller(self.request)
+                             ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\views\debug.py", line 102, in get_caller
+    resolver_match = resolve(request.path)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\base.py", line 25, in resolve
+    return get_resolver(urlconf).resolve(path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 666, in resolve
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 718, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\resolvers.py", line 711, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\minimart_pos\urls.py", line 22, in <module>
+    path('pos/',include("pos.urls")),
+                ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+  File "C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\admin\CODE\Point-of-Sale\pos\urls.py", line 154, in <module>
+    path('get-product-batches/<int:product_id>/', views.get_product_batches, name='get_product_batches'),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pos.views' has no attribute 'get_product_batches'. Did you mean: 'get_product_details'?
+Not Found: /get-product-batches/712/
+WARNING:django.request:Not Found: /get-product-batches/712/
+Not Found: /get-product-batches/706/
+WARNING:django.request:Not Found: /get-product-batches/706/
+Not Found: /get-product-batches/712/
+WARNING:django.request:Not Found: /get-product-batches/712/
+Not Found: /get-product-batches/712/
+WARNING:django.request:Not Found: /get-product-batches/712/
+WARNING:django.request:Not Found: /favicon.ico
+WARNING:django.request:Not Found: /get-product-batches/2873/
+============================================================
+Minimart POS Server Starting...
+Django Version: 5.2.4
+Waitress Server: http://localhost:8010
+Admin Interface: http://localhost:8010/admin/
+POS Interface: http://localhost:8010/pos/
+============================================================
+WARNING:django.request:Not Found: /get-product-batches/2873/
+============================================================
+Minimart POS Server Starting...
+Django Version: 5.2.4
+Waitress Server: http://localhost:8010
+Admin Interface: http://localhost:8010/admin/
+POS Interface: http://localhost:8010/pos/
+============================================================
+WARNING:django.request:Not Found: /get-product-batches/2873/
+============================================================
+Minimart POS Server Starting...
+Django Version: 5.2.4
+Waitress Server: http://localhost:8010
+Admin Interface: http://localhost:8010/admin/
+POS Interface: http://localhost:8010/pos/
+============================================================

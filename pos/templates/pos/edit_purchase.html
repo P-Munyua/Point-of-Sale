@@ -43,6 +43,20 @@
         </a>
     </div>
 
+    <!-- Batch Management Info -->
+    <div class="mx-6 mt-4 bg-blue-50 border-l-4 border-blue-400 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                    <strong>Batch Management Active:</strong> Each item will create/update its own batch. Changes will affect inventory and batch tracking.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <form method="post" id="purchase-form" class="px-6 py-4">
         {% csrf_token %}
         
@@ -63,15 +77,27 @@
             </div>
         </div>
 
+        <!-- Batch Warning for Existing Batches -->
+        <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md hidden" id="batch-warning">
+            <div class="flex items-start">
+                <i class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-2"></i>
+                <div>
+                    <h4 class="text-sm font-medium text-yellow-800">Batch Usage Warning</h4>
+                    <p class="text-xs text-yellow-700 mt-1" id="batch-warning-message"></p>
+                </div>
+            </div>
+        </div>
+
         <div class="mb-6">
-            <h3 class="text-lg font-medium text-gray-700 mb-3">Purchase Items</h3>
+            <h3 class="text-lg font-medium text-gray-700 mb-3">Purchase Items (Each item creates a batch)</h3>
             <div class="mb-3">
                 <div class="relative">
                     <input type="text" id="product-search" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
-                           placeholder="Search products by name or barcode..." autocomplete="off"
+                           placeholder="Search products by name or barcode to add items..." autocomplete="off"
                            data-search-url="{% url 'search_products' %}">
                     <div id="product-results" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 hidden max-h-60 overflow-auto"></div>
                 </div>
+                <p class="text-xs text-gray-500 mt-1">Search for products to add to purchase. Each item will create its own batch.</p>
             </div>
             
             <div class="overflow-x-auto">
@@ -79,45 +105,95 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity (5 decimals)</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Information</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="items-container" class="bg-white divide-y divide-gray-200">
                         {% for item in purchase.items.all %}
-                        <tr class="item-row" data-index="{{ forloop.counter0 }}" data-product-id="{{ item.product.id }}">
+                        <tr class="item-row" data-item-id="{{ forloop.counter0 }}" data-original-item-id="{{ item.id }}">
                             <td class="px-4 py-3 whitespace-nowrap">
+                                <input type="hidden" name="items[{{ forloop.counter0 }}][item_id]" value="{{ item.id }}">
                                 <input type="hidden" name="items[{{ forloop.counter0 }}][product_id]" value="{{ item.product.id }}">
                                 <div class="font-medium">{{ item.product.name }}</div>
-                                <div class="text-xs text-gray-500">SKU: {{ item.product.sku }}</div>
+                                <div class="text-xs text-gray-500">ID: {{ item.product.id }}</div>
+                                {% if item.batch and item.batch.saleitem_set.exists %}
+                                <div class="text-xs text-yellow-600 mt-1">
+                                    <i class="fas fa-exclamation-triangle"></i> Has sales - batch preserved
+                                </div>
+                                {% endif %}
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <input type="number" class="item-quantity w-full px-2 py-1 border rounded" 
-                                       name="items[{{ forloop.counter0 }}][quantity]" value="{{ item.quantity }}" min="1" data-index="{{ forloop.counter0 }}">
+                                       name="items[{{ forloop.counter0 }}][quantity]" value="{{ item.quantity|floatformat:5 }}" 
+                                       min="0.00001" step="0.00001" data-item-id="{{ forloop.counter0 }}">
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">
-                                <input type="number" class="item-price w-full px-2 py-1 border rounded" 
-                                       name="items[{{ forloop.counter0 }}][price]" value="{{ item.price|floatformat:2 }}" min="0.01" step="0.01" data-index="{{ forloop.counter0 }}">
-                                <div class="text-xs text-gray-500 mt-1">Cost: KSh {{ item.price|floatformat:2 }}</div>
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                <span class="item-total">KSh {{ item.total|floatformat:2 }}</span>
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="text" class="item-batch w-full px-2 py-1 border rounded" 
-                                           name="items[{{ forloop.counter0 }}][batch_number]" placeholder="Batch #" value="{% if item.batch %}{{ item.batch.batch_number }}{% endif %}" data-index="{{ forloop.counter0 }}">
-                                    <input type="date" class="item-expiry w-full px-2 py-1 border rounded" 
-                                           name="items[{{ forloop.counter0 }}][expiry_date]" value="{% if item.batch and item.batch.expiry_date %}{{ item.batch.expiry_date|date:'Y-m-d' }}{% endif %}" data-index="{{ forloop.counter0 }}">
+                                <div class="flex flex-col space-y-1">
+                                    <input type="number" class="item-price w-full px-2 py-1 border rounded" 
+                                           name="items[{{ forloop.counter0 }}][price]" value="{{ item.price|floatformat:4 }}" 
+                                           min="0.0001" step="0.0001" 
+                                           data-item-id="{{ forloop.counter0 }}">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs text-gray-500">Default: {{ item.product.purchase_price|floatformat:4 }}</span>
+                                        <button type="button" class="reset-price text-xs text-blue-600 hover:text-blue-800" 
+                                                data-item-id="{{ forloop.counter0 }}" style="display: {% if item.price != item.product.purchase_price %}inline{% else %}none{% endif %}">
+                                            Reset
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">
-                                <button type="button" class="remove-item text-red-600 hover:text-red-800" data-index="{{ forloop.counter0 }}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <div class="text-sm">
+                                    <div class="text-gray-900 font-medium">KSh {{ item.total|floatformat:0 }}</div>
+                                    <div class="text-xs text-gray-500">Exact: KSh {{ item.total|floatformat:4 }}</div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="grid grid-cols-1 gap-2">
+                                    <div>
+                                        <label class="text-xs text-gray-500">Batch #</label>
+                                        <input type="text" class="item-batch w-full px-2 py-1 border rounded text-sm" 
+                                               name="items[{{ forloop.counter0 }}][batch_number]" placeholder="Batch number" 
+                                               value="{% if item.batch %}{{ item.batch.batch_number }}{% endif %}" 
+                                               data-item-id="{{ forloop.counter0 }}">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500">Expiry Date</label>
+                                        <input type="date" class="item-expiry w-full px-2 py-1 border rounded text-sm" 
+                                               name="items[{{ forloop.counter0 }}][expiry_date]" 
+                                               value="{% if item.batch and item.batch.expiry_date %}{{ item.batch.expiry_date|date:'Y-m-d' }}{% endif %}" 
+                                               data-item-id="{{ forloop.counter0 }}">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500">Selling Price</label>
+                                        <input type="number" class="item-selling-price w-full px-2 py-1 border rounded text-sm" 
+                                               name="items[{{ forloop.counter0 }}][selling_price]" 
+                                               value="{% if item.batch and item.batch.selling_price %}{{ item.batch.selling_price|floatformat:2 }}{% else %}{{ item.product.selling_price|floatformat:2 }}{% endif %}" 
+                                               min="0.01" step="0.01" 
+                                               data-item-id="{{ forloop.counter0 }}" 
+                                               placeholder="Selling price">
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="flex space-x-2">
+                                    <button type="button" class="clone-item text-blue-600 hover:text-blue-800" data-item-id="{{ forloop.counter0 }}" title="Clone item">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    {% if not item.batch or not item.batch.saleitem_set.exists %}
+                                    <button type="button" class="remove-item text-red-600 hover:text-red-800" data-item-id="{{ forloop.counter0 }}" title="Remove item">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% else %}
+                                    <span class="text-gray-400 cursor-not-allowed" title="Cannot remove - has sales">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -126,8 +202,8 @@
             </div>
             
             <div class="mt-3 flex justify-between items-center">
-                <button type="button" id="add-item" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-plus mr-1"></i> Add Item
+                <button type="button" id="add-manual-item" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-plus mr-1"></i> Add Manual Item
                 </button>
                 <span id="item-count" class="text-sm text-gray-500">{{ purchase.items.count }} items</span>
             </div>
@@ -155,257 +231,686 @@
     </form>
 </div>
 
+<!-- Price Entry Modal -->
+<div id="price-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-2" id="modal-product-name">Enter Price & Quantity</h3>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Unit Price (4 decimals)</label>
+                <input type="number" id="custom-price-input" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                       value="0.0000"
+                       min="0.0001" step="0.0001">
+                <p class="text-xs text-gray-500 mt-1" id="modal-default-price">Default: 0.0000</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Quantity (5 decimals)</label>
+                <input type="number" id="custom-quantity-input" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                       value="1.00000" min="0.00001" step="0.00001">
+                <p class="text-xs text-gray-500 mt-1">Enter quantity with up to 5 decimal places</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price (optional)</label>
+                <input type="number" id="custom-selling-price-input" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                       value="0.00" min="0.01" step="0.01">
+                <p class="text-xs text-gray-500 mt-1">Leave empty to use product's default selling price</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number</label>
+                <input type="text" id="modal-batch-input" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                       placeholder="Enter batch number">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                <input type="date" id="modal-expiry-input" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+        <div class="flex justify-end space-x-2">
+            <button type="button" id="cancel-price" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button type="button" id="confirm-price" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add Item</button>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // JavaScript for handling dynamic item management
-    let itemCount = {{ purchase.items.count }};
+    // DOM elements
+    const productSearch = document.getElementById('product-search');
+    const productResults = document.getElementById('product-results');
     const itemsContainer = document.getElementById('items-container');
-    const itemCountDisplay = document.getElementById('item-count');
+    const itemCount = document.getElementById('item-count');
     const subtotalDisplay = document.getElementById('subtotal-display');
     const totalDisplay = document.getElementById('total-display');
-    const searchInput = document.getElementById('product-search');
-    const resultsContainer = document.getElementById('product-results');
-    const searchUrl = searchInput.getAttribute('data-search-url');
-
+    const addManualItemBtn = document.getElementById('add-manual-item');
+    const priceModal = document.getElementById('price-modal');
+    const modalProductName = document.getElementById('modal-product-name');
+    const modalDefaultPrice = document.getElementById('modal-default-price');
+    const customPriceInput = document.getElementById('custom-price-input');
+    const customQuantityInput = document.getElementById('custom-quantity-input');
+    const customSellingPriceInput = document.getElementById('custom-selling-price-input');
+    const modalBatchInput = document.getElementById('modal-batch-input');
+    const modalExpiryInput = document.getElementById('modal-expiry-input');
+    const confirmPriceBtn = document.getElementById('confirm-price');
+    const cancelPriceBtn = document.getElementById('cancel-price');
+    const saveAsPendingBtn = document.getElementById('save-as-pending');
+    
+    let productSearchTimeout;
+    let items = [];
+    let currentProduct = null;
+    let nextItemId = {{ purchase.items.count }};
+    const searchUrl = productSearch.getAttribute('data-search-url');
+    
+    // Initialize items from existing purchase
+    function initializeItems() {
+        items = [];
+        document.querySelectorAll('.item-row').forEach(row => {
+            const itemId = row.dataset.itemId;
+            const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+            const price = parseFloat(row.querySelector('.item-price').value) || 0;
+            const sellingPrice = parseFloat(row.querySelector('.item-selling-price').value) || 0;
+            const productId = row.querySelector('input[name*="product_id"]').value;
+            const productName = row.querySelector('.font-medium').textContent;
+            const originalItemId = row.dataset.originalItemId;
+            
+            items.push({
+                id: itemId,
+                original_id: originalItemId,
+                product_id: productId,
+                product_name: productName,
+                quantity: quantity,
+                price: price,
+                selling_price: sellingPrice,
+                custom_price: false,
+                raw_total: quantity * price,
+                batch_number: row.querySelector('.item-batch').value || '',
+                expiry_date: row.querySelector('.item-expiry').value || ''
+            });
+        });
+        calculateTotals();
+    }
+    
+    // Generate new item ID
+    function generateItemId() {
+        return 'new_' + (nextItemId++);
+    }
+    
     // Calculate totals
     function calculateTotals() {
         let subtotal = 0;
-        document.querySelectorAll('.item-row').forEach(row => {
-            const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
-            const price = parseFloat(row.querySelector('.item-price').value) || 0;
-            const total = quantity * price;
-            row.querySelector('.item-total').textContent = `KSh ${total.toFixed(2)}`;
-            subtotal += total;
+        items.forEach(item => {
+            item.raw_total = item.quantity * item.price;
+            subtotal += item.raw_total;
         });
         
-        subtotalDisplay.textContent = `KSh ${subtotal.toFixed(2)}`;
-        totalDisplay.textContent = `KSh ${subtotal.toFixed(2)}`;
-        itemCountDisplay.textContent = `${document.querySelectorAll('.item-row').length} items`;
+        subtotalDisplay.textContent = 'KSh ' + subtotal.toFixed(2);
+        totalDisplay.textContent = 'KSh ' + subtotal.toFixed(2);
+        itemCount.textContent = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
     }
     
-    // Add event listeners for quantity and price changes
-    function attachInputListeners() {
-        document.querySelectorAll('.item-quantity, .item-price').forEach(input => {
-            // Remove any existing listeners to avoid duplicates
-            input.replaceWith(input.cloneNode(true));
+    // Check for batch warnings
+    function checkBatchWarnings() {
+        const warningDiv = document.getElementById('batch-warning');
+        const warningMessage = document.getElementById('batch-warning-message');
+        let hasWarnings = false;
+        let warnings = [];
+        
+        items.forEach(item => {
+            if (item.original_id) {
+                // This is an existing item, check if its batch has sales
+                const row = document.querySelector(`.item-row[data-original-item-id="${item.original_id}"]`);
+                if (row && row.querySelector('.text-yellow-600')) {
+                    hasWarnings = true;
+                    warnings.push(`Item "${item.product_name}" has existing sales - batch will be preserved`);
+                }
+            }
         });
         
-        // Reattach listeners
-        document.querySelectorAll('.item-quantity, .item-price').forEach(input => {
-            input.addEventListener('input', calculateTotals);
-        });
+        if (hasWarnings) {
+            warningDiv.classList.remove('hidden');
+            warningMessage.textContent = warnings.join('. ');
+        } else {
+            warningDiv.classList.add('hidden');
+        }
     }
-    
-    // Remove item functionality
-    function attachRemoveListeners() {
-        document.querySelectorAll('.remove-item').forEach(button => {
-            // Remove any existing listeners to avoid duplicates
-            button.replaceWith(button.cloneNode(true));
-        });
-        
-        // Reattach listeners
-        document.querySelectorAll('.remove-item').forEach(button => {
-            button.addEventListener('click', function() {
-                const index = this.getAttribute('data-index');
-                document.querySelector(`.item-row[data-index="${index}"]`).remove();
-                calculateTotals();
-            });
-        });
-    }
-    
-    // Initialize listeners
-    attachInputListeners();
-    attachRemoveListeners();
     
     // Product search functionality
-    let searchTimeout = null;
-    
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
+    productSearch.addEventListener('input', function() {
+        clearTimeout(productSearchTimeout);
         const query = this.value.trim();
 
         if (query.length < 2) {
-            resultsContainer.innerHTML = '';
-            resultsContainer.classList.add('hidden');
+            productResults.innerHTML = '';
+            productResults.classList.add('hidden');
             return;
         }
 
-        searchTimeout = setTimeout(() => {
-            fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
+        productSearchTimeout = setTimeout(() => {
+            fetch(`${searchUrl}?q=${encodeURIComponent(query)}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    productResults.innerHTML = '';
+                    
                     if (data.length > 0) {
-                        resultsContainer.innerHTML = data.map(p => `
-                            <div class="p-2 hover:bg-gray-100 cursor-pointer product-result"
-                                 data-id="${p.id}" data-name="${p.name}" 
-                                 data-price="${p.price}" data-sku="${p.sku}">
-                                <div class="font-medium">${p.name}</div>
-                                <div class="text-xs text-gray-500">SKU: ${p.sku} | Price: KSh ${p.price}</div>
-                            </div>
-                        `).join('');
-                        resultsContainer.classList.remove('hidden');
+                        data.forEach(product => {
+                            const div = document.createElement('div');
+                            div.className = 'p-2 hover:bg-gray-100 cursor-pointer product-search-item border-b border-gray-200';
+                            div.innerHTML = `
+                                <div class="font-medium">${product.name}</div>
+                                <div class="text-sm text-gray-600">Default Cost: KSh ${parseFloat(product.purchase_price || 0).toFixed(4)}</div>
+                                <div class="text-sm text-gray-600">Selling: KSh ${parseFloat(product.selling_price || 0).toFixed(2)}</div>
+                                <div class="text-xs text-gray-500">Current Stock: ${parseFloat(product.current_stock || 0).toFixed(2)}</div>
+                                <input type="hidden" class="product-data" value='${JSON.stringify(product)}'>
+                            `;
+                            div.addEventListener('click', function() {
+                                try {
+                                    const productData = JSON.parse(this.querySelector('.product-data').value);
+                                    currentProduct = productData;
+                                    showPriceModal(productData);
+                                } catch (error) {
+                                    console.error('Error parsing product data:', error);
+                                }
+                            });
+                            productResults.appendChild(div);
+                        });
+                        productResults.classList.remove('hidden');
                     } else {
-                        resultsContainer.innerHTML = '<div class="p-2 text-gray-500">No products found</div>';
-                        resultsContainer.classList.remove('hidden');
+                        const noResults = document.createElement('div');
+                        noResults.className = 'p-4 text-center text-gray-500';
+                        noResults.textContent = 'No products found';
+                        productResults.appendChild(noResults);
+                        productResults.classList.remove('hidden');
                     }
                 })
                 .catch(error => {
                     console.error('Error searching products:', error);
-                    resultsContainer.innerHTML = '<div class="p-2 text-red-500">Error searching products</div>';
-                    resultsContainer.classList.remove('hidden');
+                    productResults.innerHTML = '<div class="p-4 text-center text-red-500">Error searching products</div>';
+                    productResults.classList.remove('hidden');
                 });
-        }, 300); // debounce 300ms
-    });
-
-    // Handle product selection from search results
-    resultsContainer.addEventListener('click', function(e) {
-        const item = e.target.closest('.product-result');
-        if (item) {
-            const productId = item.dataset.id;
-            const productName = item.dataset.name;
-            const price = parseFloat(item.dataset.price).toFixed(2);
-            const sku = item.dataset.sku;
-
-            // Check if product already exists in the list
-            const existingRow = document.querySelector(`.item-row[data-product-id="${productId}"]`);
-            if (existingRow) {
-                // Increase quantity if product already exists
-                const quantityInput = existingRow.querySelector('.item-quantity');
-                quantityInput.value = parseInt(quantityInput.value) + 1;
-                calculateTotals();
-                
-                // Reset search
-                resultsContainer.innerHTML = '';
-                resultsContainer.classList.add('hidden');
-                searchInput.value = '';
-                return;
-            }
-
-            // Add new row to table
-            const newIndex = document.querySelectorAll('.item-row').length;
-            const rowHtml = `
-                <tr class="item-row" data-index="${newIndex}" data-product-id="${productId}">
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        <input type="hidden" name="items[${newIndex}][product_id]" value="${productId}">
-                        <div class="font-medium">${productName}</div>
-                        <div class="text-xs text-gray-500">SKU: ${sku}</div>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        <input type="number" class="item-quantity w-full px-2 py-1 border rounded" 
-                               name="items[${newIndex}][quantity]" value="1" min="1" data-index="${newIndex}">
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        <input type="number" class="item-price w-full px-2 py-1 border rounded" 
-                               name="items[${newIndex}][price]" value="${price}" min="0.01" step="0.01" data-index="${newIndex}">
-                        <div class="text-xs text-gray-500 mt-1">Cost: KSh ${price}</div>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        <span class="item-total">KSh ${price}</span>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="text" class="item-batch w-full px-2 py-1 border rounded" 
-                                   name="items[${newIndex}][batch_number]" placeholder="Batch #" data-index="${newIndex}">
-                            <input type="date" class="item-expiry w-full px-2 py-1 border rounded" 
-                                   name="items[${newIndex}][expiry_date]" data-index="${newIndex}">
-                        </div>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        <button type="button" class="remove-item text-red-600 hover:text-red-800" data-index="${newIndex}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-
-            itemsContainer.insertAdjacentHTML('beforeend', rowHtml);
-
-            // Reattach listeners for all inputs
-            attachInputListeners();
-            attachRemoveListeners();
-
-            // Update totals
-            calculateTotals();
-
-            // Reset search box
-            resultsContainer.innerHTML = '';
-            resultsContainer.classList.add('hidden');
-            searchInput.value = '';
-        }
+        }, 300);
     });
 
     // Hide search results when clicking outside
     document.addEventListener('click', function(e) {
-        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
-            resultsContainer.classList.add('hidden');
+        if (!productSearch.contains(e.target) && !productResults.contains(e.target)) {
+            productResults.classList.add('hidden');
         }
     });
 
-    // Manual add item button
-    document.getElementById('add-item').addEventListener('click', function() {
-        // Create an empty row for manual entry
-        const newIndex = document.querySelectorAll('.item-row').length;
+    function showPriceModal(product) {
+        modalProductName.textContent = `Enter Details for ${product.name}`;
+        modalDefaultPrice.textContent = `Default: KSh ${parseFloat(product.purchase_price || 0).toFixed(4)}`;
+        customPriceInput.value = parseFloat(product.purchase_price || 0).toFixed(4);
+        customQuantityInput.value = '1.00000';
+        customSellingPriceInput.value = parseFloat(product.selling_price || 0).toFixed(2);
+        modalBatchInput.value = '';
+        modalExpiryInput.value = '';
+        priceModal.classList.remove('hidden');
+    }
+
+    function hidePriceModal() {
+        priceModal.classList.add('hidden');
+        currentProduct = null;
+        productSearch.value = '';
+        productResults.classList.add('hidden');
+    }
+
+    // Price modal event listeners
+    confirmPriceBtn.addEventListener('click', function() {
+        if (!currentProduct) return;
+        
+        const price = parseFloat(customPriceInput.value) || parseFloat(currentProduct.purchase_price || 0);
+        const quantity = parseFloat(customQuantityInput.value) || 1.00000;
+        const sellingPrice = parseFloat(customSellingPriceInput.value) || parseFloat(currentProduct.selling_price || 0);
+        const batchNumber = modalBatchInput.value.trim();
+        const expiryDate = modalExpiryInput.value;
+        
+        addProductToPurchase(currentProduct, price, quantity, sellingPrice, batchNumber, expiryDate);
+        hidePriceModal();
+    });
+
+    cancelPriceBtn.addEventListener('click', hidePriceModal);
+
+    function addProductToPurchase(product, price, quantity, sellingPrice, batchNumber, expiryDate) {
+        const newItemId = generateItemId();
+        const newIndex = items.length;
+        
+        // Create new row
         const newRow = document.createElement('tr');
         newRow.className = 'item-row';
-        newRow.dataset.index = newIndex;
-        
+        newRow.dataset.itemId = newItemId;
         newRow.innerHTML = `
             <td class="px-4 py-3 whitespace-nowrap">
-                <input type="hidden" name="items[${newIndex}][product_id]" value="">
-                <div class="font-medium">Manual Entry</div>
-                <div class="text-xs text-gray-500">SKU: N/A</div>
+                <input type="hidden" name="items[${newIndex}][item_id]" value="${newItemId}">
+                <input type="hidden" name="items[${newIndex}][product_id]" value="${product.id}">
+                <div class="font-medium">${product.name}</div>
+                <div class="text-xs text-gray-500">ID: ${product.id}</div>
             </td>
             <td class="px-4 py-3 whitespace-nowrap">
                 <input type="number" class="item-quantity w-full px-2 py-1 border rounded" 
-                       name="items[${newIndex}][quantity]" value="1" min="1" data-index="${newIndex}">
+                       name="items[${newIndex}][quantity]" value="${quantity.toFixed(5)}" min="0.00001" step="0.00001" data-item-id="${newItemId}">
             </td>
             <td class="px-4 py-3 whitespace-nowrap">
-                <input type="number" class="item-price w-full px-2 py-1 border rounded" 
-                       name="items[${newIndex}][price]" value="0.00" min="0.01" step="0.01" data-index="${newIndex}">
-                <div class="text-xs text-gray-500 mt-1">Cost: KSh 0.00</div>
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-                <span class="item-total">KSh 0.00</span>
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-                <div class="grid grid-cols-2 gap-2">
-                    <input type="text" class="item-batch w-full px-2 py-1 border rounded" 
-                           name="items[${newIndex}][batch_number]" placeholder="Batch #" data-index="${newIndex}">
-                    <input type="date" class="item-expiry w-full px-2 py-1 border rounded" 
-                           name="items[${newIndex}][expiry_date]" data-index="${newIndex}">
+                <div class="flex flex-col space-y-1">
+                    <input type="number" class="item-price w-full px-2 py-1 border rounded" 
+                           name="items[${newIndex}][price]" value="${price.toFixed(4)}" 
+                           min="0.0001" step="0.0001" 
+                           data-item-id="${newItemId}">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-gray-500">Default: ${parseFloat(product.purchase_price || 0).toFixed(4)}</span>
+                        <button type="button" class="reset-price text-xs text-blue-600 hover:text-blue-800" 
+                                data-item-id="${newItemId}" style="display: ${price != parseFloat(product.purchase_price || 0) ? 'inline' : 'none'}">
+                            Reset
+                        </button>
+                    </div>
                 </div>
             </td>
             <td class="px-4 py-3 whitespace-nowrap">
-                <button type="button" class="remove-item text-red-600 hover:text-red-800" data-index="${newIndex}">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <div class="text-sm">
+                    <div class="text-gray-900 font-medium">KSh ${(quantity * price).toFixed(0)}</div>
+                    <div class="text-xs text-gray-500">Exact: KSh ${(quantity * price).toFixed(4)}</div>
+                </div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="grid grid-cols-1 gap-2">
+                    <div>
+                        <label class="text-xs text-gray-500">Batch #</label>
+                        <input type="text" class="item-batch w-full px-2 py-1 border rounded text-sm" 
+                               name="items[${newIndex}][batch_number]" placeholder="Batch number" 
+                               value="${batchNumber}" 
+                               data-item-id="${newItemId}">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Expiry Date</label>
+                        <input type="date" class="item-expiry w-full px-2 py-1 border rounded text-sm" 
+                               name="items[${newIndex}][expiry_date]" 
+                               value="${expiryDate}" 
+                               data-item-id="${newItemId}">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Selling Price</label>
+                        <input type="number" class="item-selling-price w-full px-2 py-1 border rounded text-sm" 
+                               name="items[${newIndex}][selling_price]" 
+                               value="${sellingPrice.toFixed(2)}" 
+                               min="0.01" step="0.01" 
+                               data-item-id="${newItemId}" 
+                               placeholder="Selling price">
+                    </div>
+                </div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex space-x-2">
+                    <button type="button" class="clone-item text-blue-600 hover:text-blue-800" data-item-id="${newItemId}" title="Clone item">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button type="button" class="remove-item text-red-600 hover:text-red-800" data-item-id="${newItemId}" title="Remove item">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </td>
         `;
         
         itemsContainer.appendChild(newRow);
         
-        // Reattach listeners for all inputs
-        attachInputListeners();
-        attachRemoveListeners();
+        // Add to items array
+        items.push({
+            id: newItemId,
+            product_id: product.id,
+            product_name: product.name,
+            quantity: quantity,
+            price: price,
+            selling_price: sellingPrice,
+            custom_price: price != parseFloat(product.purchase_price || 0),
+            raw_total: quantity * price,
+            batch_number: batchNumber,
+            expiry_date: expiryDate
+        });
         
+        // Attach event listeners to new row
+        attachEventListenersToRow(newRow);
         calculateTotals();
-    });
+    }
     
-    // Save as pending button functionality
-    document.getElementById('save-as-pending').addEventListener('click', function() {
-        const form = document.getElementById('purchase-form');
-        // You might want to add a hidden field to indicate pending status
-        const statusField = document.createElement('input');
-        statusField.type = 'hidden';
-        statusField.name = 'status';
-        statusField.value = 'pending';
-        form.appendChild(statusField);
+    function attachEventListenersToRow(row) {
+        const itemId = row.dataset.itemId;
         
-        form.submit();
+        // Quantity change
+        const quantityInput = row.querySelector('.item-quantity');
+        if (quantityInput) {
+            quantityInput.addEventListener('input', function() {
+                const item = items.find(item => item.id === itemId);
+                if (item) {
+                    item.quantity = parseFloat(this.value) || 1.00000;
+                    calculateTotals();
+                }
+            });
+        }
+        
+        // Price change
+        const priceInput = row.querySelector('.item-price');
+        if (priceInput) {
+            priceInput.addEventListener('input', function() {
+                const item = items.find(item => item.id === itemId);
+                if (item) {
+                    item.price = parseFloat(this.value) || 0;
+                    item.custom_price = true;
+                    calculateTotals();
+                    
+                    // Show reset button
+                    const resetBtn = row.querySelector('.reset-price');
+                    if (resetBtn) {
+                        resetBtn.style.display = 'inline';
+                    }
+                }
+            });
+        }
+        
+        // Selling price change
+        const sellingPriceInput = row.querySelector('.item-selling-price');
+        if (sellingPriceInput) {
+            sellingPriceInput.addEventListener('input', function() {
+                const item = items.find(item => item.id === itemId);
+                if (item) {
+                    item.selling_price = parseFloat(this.value) || 0;
+                }
+            });
+        }
+        
+        // Batch number change
+        const batchInput = row.querySelector('.item-batch');
+        if (batchInput) {
+            batchInput.addEventListener('input', function() {
+                const item = items.find(item => item.id === itemId);
+                if (item) {
+                    item.batch_number = this.value;
+                }
+            });
+        }
+        
+        // Expiry date change
+        const expiryInput = row.querySelector('.item-expiry');
+        if (expiryInput) {
+            expiryInput.addEventListener('change', function() {
+                const item = items.find(item => item.id === itemId);
+                if (item) {
+                    item.expiry_date = this.value;
+                }
+            });
+        }
+        
+        // Clone button
+        const cloneBtn = row.querySelector('.clone-item');
+        if (cloneBtn) {
+            cloneBtn.addEventListener('click', function() {
+                const originalItem = items.find(item => item.id === itemId);
+                if (originalItem) {
+                    const newItemId = generateItemId();
+                    const newIndex = items.length;
+                    
+                    // Clone the row
+                    const newRow = row.cloneNode(true);
+                    newRow.dataset.itemId = newItemId;
+                    delete newRow.dataset.originalItemId;
+                    
+                    // Update inputs in cloned row
+                    newRow.querySelectorAll('input').forEach(input => {
+                        const name = input.name;
+                        if (name && name.includes('[')) {
+                            input.name = name.replace(/items\[\d+\]/, `items[${newIndex}]`);
+                        }
+                        if (input.classList.contains('item-quantity') || input.classList.contains('item-price') || 
+                            input.classList.contains('item-selling-price') || input.classList.contains('item-batch') || 
+                            input.classList.contains('item-expiry')) {
+                            input.dataset.itemId = newItemId;
+                            if (input.classList.contains('item-quantity')) {
+                                input.value = '1.00000';
+                            }
+                        }
+                    });
+                    
+                    // Update buttons in cloned row
+                    newRow.querySelectorAll('button').forEach(button => {
+                        if (button.classList.contains('clone-item') || button.classList.contains('remove-item') || button.classList.contains('reset-price')) {
+                            button.dataset.itemId = newItemId;
+                        }
+                    });
+                    
+                    itemsContainer.appendChild(newRow);
+                    
+                    // Add cloned item to data
+                    const clonedItem = {
+                        ...originalItem,
+                        id: newItemId,
+                        quantity: 1.00000,
+                        raw_total: originalItem.price
+                    };
+                    items.push(clonedItem);
+                    
+                    attachEventListenersToRow(newRow);
+                    calculateTotals();
+                    checkBatchWarnings();
+                }
+            });
+        }
+        
+        // Remove button
+        const removeBtn = row.querySelector('.remove-item');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                const row = this.closest('.item-row');
+                if (row) {
+                    // Check if this item has a lock (has sales)
+                    if (row.querySelector('.fa-lock')) {
+                        alert('This item cannot be removed because it has existing sales.');
+                        return;
+                    }
+                    
+                    if (confirm('Are you sure you want to remove this item?')) {
+                        row.remove();
+                        items = items.filter(item => item.id !== itemId);
+                        calculateTotals();
+                        checkBatchWarnings();
+                    }
+                }
+            });
+        }
+        
+        // Reset price button
+        const resetBtn = row.querySelector('.reset-price');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                const item = items.find(item => item.id === itemId);
+                if (item && item.product_id) {
+                    // In a real app, fetch the original product price from server
+                    // For now, we'll just hide the reset button
+                    this.style.display = 'none';
+                    item.custom_price = false;
+                }
+            });
+        }
+    }
+    
+    // Initialize event listeners for existing rows
+    document.querySelectorAll('.item-row').forEach(row => {
+        attachEventListenersToRow(row);
     });
     
-    // Initialize totals
-    calculateTotals();
+    // Initialize items and totals
+    initializeItems();
+    checkBatchWarnings();
+    
+    // Add manual item
+    addManualItemBtn.addEventListener('click', function() {
+        const newItemId = generateItemId();
+        const newIndex = items.length;
+        
+        const newRow = document.createElement('tr');
+        newRow.className = 'item-row';
+        newRow.dataset.itemId = newItemId;
+        newRow.innerHTML = `
+            <td class="px-4 py-3 whitespace-nowrap">
+                <input type="hidden" name="items[${newIndex}][item_id]" value="${newItemId}">
+                <input type="hidden" name="items[${newIndex}][product_id]" value="">
+                <div class="font-medium">Manual Entry</div>
+                <div class="text-xs text-orange-600">Manual Entry</div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <input type="number" class="item-quantity w-full px-2 py-1 border rounded" 
+                       name="items[${newIndex}][quantity]" value="1.00000" min="0.00001" step="0.00001" data-item-id="${newItemId}">
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex flex-col space-y-1">
+                    <input type="number" class="item-price w-full px-2 py-1 border rounded" 
+                           name="items[${newIndex}][price]" value="0.0000" 
+                           min="0.0001" step="0.0001" 
+                           data-item-id="${newItemId}">
+                </div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="text-sm">
+                    <div class="text-gray-900 font-medium">KSh 0</div>
+                    <div class="text-xs text-gray-500">Exact: 0.0000</div>
+                </div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="grid grid-cols-1 gap-2">
+                    <div>
+                        <label class="text-xs text-gray-500">Batch #</label>
+                        <input type="text" class="item-batch w-full px-2 py-1 border rounded text-sm" 
+                               name="items[${newIndex}][batch_number]" placeholder="Batch number" 
+                               data-item-id="${newItemId}">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Expiry Date</label>
+                        <input type="date" class="item-expiry w-full px-2 py-1 border rounded text-sm" 
+                               name="items[${newIndex}][expiry_date]" 
+                               data-item-id="${newItemId}">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Selling Price</label>
+                        <input type="number" class="item-selling-price w-full px-2 py-1 border rounded text-sm" 
+                               name="items[${newIndex}][selling_price]" 
+                               value="0.00" min="0.01" step="0.01" 
+                               data-item-id="${newItemId}" 
+                               placeholder="Selling price">
+                    </div>
+                </div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex space-x-2">
+                    <button type="button" class="clone-item text-blue-600 hover:text-blue-800" data-item-id="${newItemId}" title="Clone item">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button type="button" class="remove-item text-red-600 hover:text-red-800" data-item-id="${newItemId}" title="Remove item">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        
+        itemsContainer.appendChild(newRow);
+        
+        // Add to items array
+        items.push({
+            id: newItemId,
+            product_id: '',
+            product_name: 'Manual Entry',
+            quantity: 1.00000,
+            price: 0.0000,
+            selling_price: 0.00,
+            custom_price: true,
+            raw_total: 0.0000,
+            batch_number: '',
+            expiry_date: ''
+        });
+        
+        attachEventListenersToRow(newRow);
+        calculateTotals();
+        checkBatchWarnings();
+    });
+
+    // Save as pending functionality
+    saveAsPendingBtn.addEventListener('click', async function() {
+        if (items.length === 0) {
+            alert('Please add at least one item to the purchase');
+            return;
+        }
+        
+        const supplierSelect = document.getElementById('supplier-select');
+        if (!supplierSelect.value) {
+            alert('Please select a supplier');
+            return;
+        }
+
+        // Disable button to prevent multiple clicks
+        saveAsPendingBtn.disabled = true;
+        saveAsPendingBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Saving...';
+
+        try {
+            // Calculate subtotal
+            const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+            
+            // Prepare the request data - include all batch information
+            const requestData = {
+                supplier: supplierSelect.value,
+                invoice_number: document.getElementById('invoice-number').value,
+                items: items.map(item => ({
+                    item_id: item.id.toString(),
+                    product_id: item.product_id ? item.product_id.toString() : '',
+                    product_name: item.product_name,
+                    quantity: item.quantity.toString(),
+                    price: item.price.toString(),
+                    selling_price: item.selling_price ? item.selling_price.toString() : '0',
+                    batch_number: item.batch_number || '',
+                    expiry_date: item.expiry_date || ''
+                })),
+                subtotal: subtotal.toString(),
+                total: subtotal.toString(),
+                notes: '',
+                batch_managed: true,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            };
+
+            const saveUrl = "{% url 'save_purchase_as_pending' %}";
+            
+            const response = await fetch(saveUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                window.location.href = data.redirect_url || "{% url 'pending_purchases' %}";
+            } else {
+                throw new Error(data.message || 'Failed to save as pending');
+            }
+        } catch (error) {
+            console.error('Save as pending error:', error);
+            alert('Error saving pending purchase: ' + error.message);
+        } finally {
+            saveAsPendingBtn.disabled = false;
+            saveAsPendingBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save as Pending';
+        }
+    });
 });
 </script>
 {% endif %}

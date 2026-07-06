@@ -1,0 +1,371 @@
+<!-- templates/pos/print_purchase_invoice.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Invoice - {{ purchase.invoice_number }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #fff;
+            padding: 20px;
+        }
+        
+        .invoice-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .invoice-header {
+            background: linear-gradient(135deg, #f0f9f0 0%, #e6f0fa 100%);
+            padding: 30px;
+            border-bottom: 2px solid #4CAF50;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .company-info {
+            text-align: right;
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .info-section {
+            padding: 20px 30px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .supplier-info h3, .invoice-details h3 {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .supplier-info p, .invoice-details p {
+            margin-bottom: 5px;
+        }
+        
+        .items-section {
+            padding: 20px 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th {
+            background: #4CAF50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+        
+        tfoot {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        
+        tfoot td {
+            padding: 12px;
+        }
+        
+        .summary-section {
+            padding: 20px 30px;
+            background: #f9f9f9;
+            border-top: 1px solid #ddd;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .summary-box h4 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .footer {
+            padding: 15px 30px;
+            background: #333;
+            color: white;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-partial {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-unpaid {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+            }
+            
+            .invoice-container {
+                border: none;
+                box-shadow: none;
+            }
+            
+            .no-print {
+                display: none;
+            }
+            
+            th {
+                background: #4CAF50 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .status-paid, .status-partial, .status-unpaid {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .font-bold {
+            font-weight: bold;
+        }
+        
+        .text-green {
+            color: #28a745;
+        }
+        
+        .text-red {
+            color: #dc3545;
+        }
+        
+        .text-blue {
+            color: #007bff;
+        }
+        
+        .mb-2 {
+            margin-bottom: 10px;
+        }
+        
+        .mt-2 {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Invoice Header -->
+        <div class="invoice-header">
+            <div class="header-content">
+                <div>
+                    <h1 class="invoice-title">PURCHASE INVOICE</h1>
+                    <p style="font-size: 18px; color: #666;">#{{ purchase.invoice_number }}</p>
+                </div>
+                <div class="company-info">
+                    <div class="company-name">{{ company.name|default:"Your Company Name" }}</div>
+                    <p>{{ company.address|default:"Company Address" }}</p>
+                    <p>Tel: {{ company.phone|default:"Phone Number" }}</p>
+                    <p>Email: {{ company.email|default:"Email Address" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="supplier-info">
+                <h3>Supplier Information</h3>
+                <p><strong>{{ purchase.supplier.name }}</strong></p>
+                {% if purchase.supplier.contact_person %}
+                <p>Contact: {{ purchase.supplier.contact_person }}</p>
+                {% endif %}
+                {% if purchase.supplier.phone %}
+                <p>Phone: {{ purchase.supplier.phone }}</p>
+                {% endif %}
+                {% if purchase.supplier.email %}
+                <p>Email: {{ purchase.supplier.email }}</p>
+                {% endif %}
+                {% if purchase.supplier.address %}
+                <p>Address: {{ purchase.supplier.address }}</p>
+                {% endif %}
+            </div>
+            <div class="invoice-details">
+                <h3>Invoice Details</h3>
+                <p><strong>Invoice #:</strong> {{ purchase.invoice_number }}</p>
+                <p><strong>Date:</strong> {{ purchase.date|date:"d/m/Y H:i" }}</p>
+                <p><strong>Payment Method:</strong> {{ purchase.payment_method|default:"Not specified"|title }}</p>
+                <p><strong>Status:</strong> 
+                    <span class="status-badge 
+                        {% if purchase.is_paid %}status-paid
+                        {% elif purchase.balance_due > 0 %}status-partial
+                        {% else %}status-unpaid{% endif %}">
+                        {% if purchase.is_paid %}Paid
+                        {% elif purchase.balance_due > 0 %}Partial Payment
+                        {% else %}Unpaid{% endif %}
+                    </span>
+                </p>
+                <p><strong>Processed By:</strong> {{ purchase.user.get_full_name|default:purchase.user.username }}</p>
+            </div>
+        </div>
+
+        <!-- Items Section -->
+        <div class="items-section">
+            <h3 style="margin-bottom: 15px;">Purchase Items</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Product</th>
+                        <th>Batch #</th>
+                        <th>Expiry Date</th>
+                        <th class="text-right">Quantity</th>
+                        <th class="text-right">Unit Price</th>
+                        <th class="text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <strong>{{ item.product.name }}</strong>
+                            {% if item.product.barcode %}
+                            <br><small>SKU: {{ item.product.barcode }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.batch.batch_number|default:"N/A" }}</td>
+                        <td>{{ item.batch.expiry_date|date:"d/m/Y"|default:"N/A" }}</td>
+                        <td class="text-right">{{ item.quantity|floatformat:2 }}</td>
+                        <td class="text-right">KSh {{ item.price|floatformat:2 }}</td>
+                        <td class="text-right">KSh {{ item.total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="6" class="text-right">Subtotal:</td>
+                        <td class="text-right">KSh {{ purchase.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    {% if purchase.discount > 0 %}
+                    <tr>
+                        <td colspan="6" class="text-right">Discount:</td>
+                        <td class="text-right text-red">- KSh {{ purchase.discount|floatformat:2 }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if purchase.tax > 0 %}
+                    <tr>
+                        <td colspan="6" class="text-right">Tax:</td>
+                        <td class="text-right">KSh {{ purchase.tax|floatformat:2 }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td colspan="6" class="text-right"><strong>TOTAL:</strong></td>
+                        <td class="text-right"><strong class="text-blue">KSh {{ purchase.total|floatformat:2 }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="summary-section">
+            <div class="summary-box">
+                <h4>Payment Summary</h4>
+                <p><strong>Total Amount:</strong> KSh {{ purchase.total|floatformat:2 }}</p>
+                <p><strong>Amount Paid:</strong> <span class="text-green">KSh {{ purchase.total_paid|floatformat:2 }}</span></p>
+                <p><strong>Balance Due:</strong> <span class="{% if purchase.balance_due > 0 %}text-red{% endif %}">KSh {{ purchase.balance_due|floatformat:2 }}</span></p>
+            </div>
+            
+            <div class="summary-box">
+                <h4>Batch Summary</h4>
+                <p><strong>Total Batches:</strong> {{ items.count }}</p>
+                <p><strong>Total Items:</strong> {{ purchase.item_count }}</p>
+                <p><strong>Total Quantity:</strong> {{ items.aggregate.total_quantity|default:0|floatformat:2 }}</p>
+            </div>
+            
+            <div class="summary-box">
+                <h4>Notes</h4>
+                <p>{{ purchase.notes|default:"No notes provided." }}</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>This is a computer generated invoice. No signature required.</p>
+            <p class="mt-2">Generated on {{ today|date:"d/m/Y H:i:s" }}</p>
+            <p class="mt-2 no-print" style="font-size: 10px; color: #ccc;">© {{ company.name|default:"Your Company" }} - All rights reserved</p>
+        </div>
+    </div>
+
+    <!-- Print Button (hidden when printing) -->
+    <div class="no-print" style="text-align: center; margin-top: 20px;">
+        <button onclick="window.print()" style="background: #4CAF50; color: white; border: none; padding: 12px 30px; font-size: 16px; border-radius: 5px; cursor: pointer;">
+            <i class="fas fa-print"></i> Print Invoice
+        </button>
+        <button onclick="window.close()" style="background: #6c757d; color: white; border: none; padding: 12px 30px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+            Close
+        </button>
+    </div>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!-- templates/pos/supplier_payment_summary.html -->
+{% extends 'pos/base.html' %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow p-6">
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold">Supplier Payments & Balances</h2>
+        <p class="text-gray-600">Track all supplier payments and outstanding balances</p>
+    </div>
+    
+    <!-- Supplier Balances Summary -->
+    <div class="mb-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Supplier Balances</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Purchases</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Paid</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for balance in supplier_balances %}
+                    <tr>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ balance.supplier.name }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            KSh {{ balance.total_purchases|floatformat:2 }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            KSh {{ balance.total_payments|floatformat:2 }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium {% if balance.balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                            KSh {{ balance.balance|floatformat:2 }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if balance.payment_status == 'Paid' %}bg-green-100 text-green-800
+                                {% elif balance.payment_status == 'Partial' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ balance.payment_status }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <a href="{% url 'supplier_payment_summary' balance.supplier.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
+                                View Details
+                            </a>
+                            {% if balance.balance > 0 %}
+                            <a href="{% url 'supplier_detail' balance.supplier.id %}" class="text-green-600 hover:text-green-900">
+                                Make Payment
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-4 py-3 text-center text-gray-500">
+                            No supplier data available.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Payment History (if supplier selected) -->
+    {% if supplier %}
+    <div class="mt-8">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">
+            Payment History for {{ supplier.name }}
+        </h3>
+        
+        {% if payments.exists %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recorded By</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for payment in payments %}
+                    <tr>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ payment.date|date:"d/m/Y" }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {% if payment.purchase %}
+                            <a href="{% url 'view_purchase' payment.purchase.id %}" class="text-blue-600 hover:text-blue-900">
+                                {{ payment.purchase.invoice_number }}
+                            </a>
+                            {% else %}
+                            <span class="text-gray-400">Balance Payment</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            KSh {{ payment.amount|floatformat:2 }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ payment.get_payment_method_display }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if payment.is_partial %}bg-yellow-100 text-yellow-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                {% if payment.is_partial %}Partial{% else %}Full{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {{ payment.user.get_full_name|default:payment.user.username }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500 italic">No payments recorded for this supplier.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

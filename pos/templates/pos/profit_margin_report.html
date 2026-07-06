@@ -1,10 +1,10 @@
 {% extends 'pos/reports/base_report.html' %}
 {% load static humanize custom_filters %}
 
-{% block title %}Profit Margin Report{% endblock %}
+{% block title %}Profit Margin Report - Batch Based{% endblock %}
 
 {% block content %}
-{% with report_title="Profit Margin Report" report_icon="fa-chart-line" report_color="indigo" %}
+{% with report_title="Profit Margin Report (Batch Based)" report_icon="fa-chart-line" report_color="indigo" %}
 {{ block.super }}
 {% endwith %}
 {% endblock %}
@@ -18,7 +18,7 @@
         </div>
         
         <form method="get" id="filterForm">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <!-- Start Date -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
@@ -35,12 +35,26 @@
                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 
+                <!-- Category Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select name="category" id="category" 
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
                 <!-- Apply Button -->
                 <div class="flex items-end">
                     <div class="flex space-x-2 w-full">
                         <button type="submit" 
                                 class="flex-1 bg-indigo-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            <i class="fas fa-filter mr-2"></i> Apply Filter
+                            <i class="fas fa-filter mr-2"></i> Apply
                         </button>
                         <a href="{% url 'profit_margin_report' %}" 
                            class="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -55,6 +69,20 @@
             <input type="hidden" name="export" value="{{ request.GET.export }}">
             {% endif %}
         </form>
+        
+        <!-- Batch Info Note -->
+        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-blue-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        <strong>Profit calculated using actual batch purchase prices</strong> - This report shows accurate profit margins based on the actual cost of each product at the time of purchase, not average costs.
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -110,7 +138,7 @@
         </div>
     </div>
 
-    <!-- Total Cost -->
+    <!-- Total Cost (Batch Based) -->
     <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-5">
             <div class="flex items-center">
@@ -121,7 +149,7 @@
                 </div>
                 <div class="ml-4">
                     <div class="text-sm font-medium text-gray-500 truncate">
-                        Total Cost
+                        Total Cost (Batch Actual)
                     </div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900">
                         KSh {{ total_cost|floatformat:2|intcomma }}
@@ -166,11 +194,27 @@
                         Average Margin
                     </div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900">
-                        {{ avg_margin|floatformat:2 }}%
+                        {{ overall_margin|floatformat:2 }}%
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Additional Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div class="text-sm text-gray-600">Total Products Sold</div>
+        <div class="text-2xl font-bold">{{ total_products }}</div>
+    </div>
+    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div class="text-sm text-gray-600">Average Profit Per Product</div>
+        <div class="text-2xl font-bold">KSh {{ avg_profit_per_product|floatformat:2|intcomma }}</div>
+    </div>
+    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div class="text-sm text-gray-600">Profit Per Unit (Avg)</div>
+        <div class="text-2xl font-bold">KSh {{ avg_profit_per_unit|floatformat:2|intcomma }}</div>
     </div>
 </div>
 
@@ -180,15 +224,24 @@
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-lg font-medium text-gray-900">
-                    <i class="fas fa-chart-line text-indigo-600 mr-2"></i>Profit Margin by Product
+                    <i class="fas fa-chart-line text-indigo-600 mr-2"></i>Profit Margin by Product (Batch Based)
                 </h3>
-                <p class="mt-1 text-sm text-gray-500">Detailed profit margin analysis for each product</p>
+                <p class="mt-1 text-sm text-gray-500">
+                    Detailed profit margin analysis using actual batch purchase prices
+                    <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                        <i class="fas fa-check-circle mr-1"></i>Most Accurate
+                    </span>
+                </p>
             </div>
-            <div>
+            <div class="flex space-x-2">
                 <button type="button" onclick="exportToCSV()" 
                         class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                     <i class="fas fa-download mr-2"></i> Export CSV
                 </button>
+                <a href="{% url 'batch_profit_report' %}?start_date={{ start_date }}&end_date={{ end_date }}" 
+                   class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-cubes mr-2"></i> View Batch Details
+                </a>
             </div>
         </div>
     </div>
@@ -201,19 +254,25 @@
                         Product
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Quantity Sold
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Cost
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Cost (Batch)
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Revenue
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Profit
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Margin %
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Batches Used
                     </th>
                 </tr>
             </thead>
@@ -221,11 +280,15 @@
                 {% for item in profit_data %}
                 <tr class="{% if item.profit_margin > 30 %}bg-green-50 hover:bg-green-100{% elif item.profit_margin > 10 %}bg-yellow-50 hover:bg-yellow-100{% else %}bg-red-50 hover:bg-red-100{% endif %} transition duration-150 ease-in-out">
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-bold text-gray-900">{{ item.product_name }}</div>
+                        <div class="text-sm font-bold text-gray-900">{{ item.product.name }}</div>
+                        <div class="text-xs text-gray-500">{{ item.product.barcode|default:"No barcode" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ item.category }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {{ item.quantity_sold }}
+                            {{ item.quantity_sold|floatformat:2 }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
@@ -259,10 +322,15 @@
                             {% endif %}
                         </div>
                     </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {{ item.batches_used }} batch{{ item.batches_used|pluralize }}
+                        </span>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="px-6 py-12 text-center">
+                    <td colspan="8" class="px-6 py-12 text-center">
                         <div class="text-gray-400">
                             <i class="fas fa-exclamation-circle fa-4x mb-4"></i>
                             <p class="mt-2 text-lg font-medium text-gray-900">No data available</p>
@@ -276,11 +344,11 @@
             {% if profit_data %}
             <tfoot class="bg-gray-50">
                 <tr>
-                    <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                    <td colspan="2" class="px-6 py-3 text-sm font-medium text-gray-900">
                         Totals
                     </td>
                     <td class="px-6 py-3 text-sm font-medium text-gray-900 text-center">
-                        {{ total_quantity }}
+                        {{ total_quantity|floatformat:2 }}
                     </td>
                     <td class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
                         KSh {{ total_cost|floatformat:2|intcomma }}
@@ -293,9 +361,9 @@
                             KSh {{ total_profit|floatformat:2|intcomma }}
                         </span>
                     </td>
-                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-center">
+                    <td colspan="2" class="px-6 py-3 text-sm font-medium text-gray-900 text-center">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                            {{ avg_margin|floatformat:2 }}%
+                            {{ overall_margin|floatformat:2 }}%
                         </span>
                     </td>
                 </tr>
@@ -308,7 +376,7 @@
     <div class="px-4 py-3 bg-gray-50 sm:px-6">
         <div class="flex items-center justify-between">
             <div class="text-sm text-gray-700">
-                Showing {{ profit_data|length }} products
+                Showing {{ profit_data|length }} products with batch-based profit calculations
             </div>
             <div class="text-sm text-gray-500">
                 <div class="flex items-center space-x-4">
@@ -331,6 +399,24 @@
     {% endif %}
 </div>
 
+<!-- Batch Information Modal (optional) -->
+<div id="batchModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-3/4 shadow-lg rounded-lg bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-lg font-semibold text-gray-900">Batch Details</h3>
+            <button onclick="closeBatchModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="batchDetails" class="mt-4">
+            <!-- Batch details will be loaded here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Set default date range to today if not set
@@ -353,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $('table').DataTable({
             pageLength: 25,
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-            order: [[5, 'desc']], // Sort by margin descending
+            order: [[6, 'desc']], // Sort by margin descending
             dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
             language: {
                 search: "_INPUT_",
@@ -366,6 +452,73 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Function to view batch details
+function viewBatchDetails(productId) {
+    // You can implement AJAX call here to fetch batch details for the product
+    const modal = document.getElementById('batchModal');
+    const detailsDiv = document.getElementById('batchDetails');
+    
+    detailsDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-3xl text-indigo-600"></i><p class="mt-2">Loading batch details...</p></div>';
+    
+    modal.classList.remove('hidden');
+    
+    // Make AJAX call to get batch details
+    fetch(`/api/product-batches/${productId}/?start_date={{ start_date }}&end_date={{ end_date }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayBatchDetails(data.batches);
+            } else {
+                detailsDiv.innerHTML = '<p class="text-red-600">Error loading batch details</p>';
+            }
+        })
+        .catch(error => {
+            detailsDiv.innerHTML = '<p class="text-red-600">Error loading batch details</p>';
+            console.error('Error:', error);
+        });
+}
+
+function displayBatchDetails(batches) {
+    const detailsDiv = document.getElementById('batchDetails');
+    
+    if (!batches || batches.length === 0) {
+        detailsDiv.innerHTML = '<p class="text-gray-500 text-center py-4">No batch details available for this period</p>';
+        return;
+    }
+    
+    let html = '<table class="min-w-full divide-y divide-gray-200">';
+    html += '<thead class="bg-gray-50"><tr>';
+    html += '<th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Batch #</th>';
+    html += '<th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Purchase Price</th>';
+    html += '<th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Selling Price</th>';
+    html += '<th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Quantity Sold</th>';
+    html += '<th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Revenue</th>';
+    html += '<th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Cost</th>';
+    html += '<th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Profit</th>';
+    html += '<th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Margin</th>';
+    html += '</tr></thead><tbody>';
+    
+    batches.forEach(batch => {
+        html += '<tr class="hover:bg-gray-50">';
+        html += `<td class="px-4 py-2 text-sm">${batch.batch_number}</td>`;
+        html += `<td class="px-4 py-2 text-sm">KSh ${batch.purchase_price}</td>`;
+        html += `<td class="px-4 py-2 text-sm">KSh ${batch.selling_price}</td>`;
+        html += `<td class="px-4 py-2 text-sm">${batch.quantity_sold}</td>`;
+        html += `<td class="px-4 py-2 text-sm">KSh ${batch.revenue}</td>`;
+        html += `<td class="px-4 py-2 text-sm">KSh ${batch.cost}</td>`;
+        html += `<td class="px-4 py-2 text-sm ${batch.profit >= 0 ? 'text-green-600' : 'text-red-600'}">KSh ${batch.profit}</td>`;
+        html += `<td class="px-4 py-2 text-sm">${batch.profit_margin}%</td>`;
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    detailsDiv.innerHTML = html;
+}
+
+function closeBatchModal() {
+    document.getElementById('batchModal').classList.add('hidden');
+}
 
 // Export to CSV function
 function exportToCSV() {
@@ -403,14 +556,18 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
     return true;
 });
 
-// Auto-submit form when dates change (optional)
-document.getElementById('start_date').addEventListener('change', function() {
+// Auto-submit form when category changes
+document.getElementById('category').addEventListener('change', function() {
     document.getElementById('filterForm').submit();
 });
 
-document.getElementById('end_date').addEventListener('change', function() {
-    document.getElementById('filterForm').submit();
-});
+// Click outside modal to close
+window.onclick = function(event) {
+    const modal = document.getElementById('batchModal');
+    if (event.target === modal) {
+        modal.classList.add('hidden');
+    }
+}
 </script>
 
 <style>
@@ -422,6 +579,16 @@ tbody tr {
 tbody tr:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Modal animation */
+#batchModal {
+    transition: opacity 0.3s ease;
+}
+
+#batchModal.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Responsive adjustments */
@@ -459,7 +626,29 @@ tbody tr:hover {
     }
 }
 
-/* Loading state for filters */
+/* Tooltip for batch info */
+.batch-info {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.batch-info:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+/* Loading state */
 .form-control:disabled {
     background-color: #f3f4f6;
     cursor: not-allowed;

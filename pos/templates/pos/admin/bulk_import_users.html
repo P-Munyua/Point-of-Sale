@@ -1,0 +1,728 @@
+{% extends 'pos/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}Bulk Import Users{% endblock %}
+
+{% block page_title %}Bulk Import Users{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'user_list' %}">Users</a></li>
+<li class="breadcrumb-item active">Bulk Import</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Bulk Import Users</h1>
+            <p class="text-muted mb-0">Import multiple users from Excel spreadsheet</p>
+        </div>
+        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            Back to Users
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Import Form -->
+        <div class="col-lg-8">
+            <!-- Import Card -->
+            <div class="card shadow-md mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between py-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-wrapper bg-primary bg-opacity-10 text-primary p-2 rounded">
+                            <i class="fas fa-file-import fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">Import Users from Excel</h5>
+                            <p class="card-subtitle text-muted mb-0">Upload your Excel file with user data</p>
+                        </div>
+                    </div>
+                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                        Step 1 of 2
+                    </span>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="importForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- File Upload Section -->
+                        <div class="mb-5">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2 mb-3">
+                                <span class="badge bg-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px;">1</span>
+                                Select Excel File
+                            </label>
+                            
+                            <!-- File Upload Area -->
+                            <div class="file-upload-area border-2 border-dashed rounded-3 p-5 text-center bg-light bg-opacity-50 mb-3"
+                                 id="dropArea">
+                                <div class="mb-3">
+                                    <i class="fas fa-file-excel fa-4x text-primary mb-3"></i>
+                                    <h5 class="mb-2">Drop your Excel file here</h5>
+                                    <p class="text-muted mb-3">or click to browse</p>
+                                </div>
+                                <input type="file" class="form-control d-none" id="fileInput" 
+                                       name="file" accept=".xlsx,.xls" required>
+                                <label for="fileInput" class="btn btn-primary px-4">
+                                    <i class="fas fa-folder-open me-2"></i>Browse Files
+                                </label>
+                                <div class="form-text mt-3">
+                                    Supported formats: .xlsx, .xls (Max: 10MB)
+                                </div>
+                            </div>
+                            
+                            <!-- Selected File Info -->
+                            <div class="selected-file d-none" id="selectedFile">
+                                <div class="alert alert-success d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <i class="fas fa-check-circle text-success fa-lg"></i>
+                                        <div>
+                                            <h6 class="mb-0" id="fileName">file.xlsx</h6>
+                                            <small class="text-muted" id="fileInfo">0 KB</small>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="removeFile">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {% if form.file.errors %}
+                            <div class="alert alert-danger mt-2">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                {{ form.file.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Import Options -->
+                        <div class="mb-5">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2 mb-3">
+                                <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px;">2</span>
+                                Import Settings
+                            </label>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-check card-check">
+                                        {{ form.generate_passwords }}
+                                        <label class="form-check-label" for="{{ form.generate_passwords.id_for_label }}">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="icon-wrapper bg-success bg-opacity-10 text-success p-2 rounded">
+                                                    <i class="fas fa-key"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">Generate Passwords</h6>
+                                                    <small class="text-muted">Create secure random passwords</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-check card-check">
+                                        {{ form.send_email }}
+                                        <label class="form-check-label" for="{{ form.send_email.id_for_label }}">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="icon-wrapper bg-info bg-opacity-10 text-info p-2 rounded">
+                                                    <i class="fas fa-envelope"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">Send Welcome Email</h6>
+                                                    <small class="text-muted">Email credentials to users</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Default Role -->
+                        <div class="mb-5">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2 mb-3">
+                                <span class="badge bg-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px;">3</span>
+                                Default Role Assignment
+                            </label>
+                            
+                            <div class="card bg-light border">
+                                <div class="card-body">
+                                    <label for="defaultRole" class="form-label fw-semibold mb-2">Assign Default Role</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0">
+                                            <i class="fas fa-user-tag text-primary"></i>
+                                        </span>
+                                        <select class="form-select border-start-0 ps-0" id="defaultRole" name="default_role">
+                                            <option value="" selected>Select a role...</option>
+                                            {% for role in roles %}
+                                            <option value="{{ role.pk }}" data-color="{{ role.color|default:'#6c757d' }}">
+                                                {{ role.get_name_display }}
+                                                <small class="text-muted">({{ role.users.count }} users)</small>
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-text mt-2">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        This role will be assigned to users without a specified role in the file
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary px-4 py-3 flex-fill d-flex align-items-center justify-content-center gap-2" id="submitBtn">
+                                <i class="fas fa-upload"></i>
+                                <span>Start Import Process</span>
+                            </button>
+                            <button type="reset" class="btn btn-outline-secondary px-4 py-3 d-flex align-items-center gap-2">
+                                <i class="fas fa-redo"></i>
+                                Reset
+                            </button>
+                        </div>
+                        
+                        <div class="mt-3 text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Your data is encrypted during upload and processing
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Template Download -->
+            <div class="card shadow-md">
+                <div class="card-header d-flex align-items-center gap-3 py-3">
+                    <div class="icon-wrapper bg-success bg-opacity-10 text-success p-2 rounded">
+                        <i class="fas fa-download fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Download Template</h5>
+                        <p class="card-subtitle text-muted mb-0">Get started with our pre-formatted template</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info border-info bg-info bg-opacity-10 d-flex align-items-start gap-3">
+                        <i class="fas fa-info-circle fa-lg text-info mt-1"></i>
+                        <div>
+                            <h6 class="alert-heading mb-2">Why use our template?</h6>
+                            <p class="mb-2">Our template includes all required columns with proper formatting and validation rules already applied.</p>
+                            <ul class="mb-0 ps-3">
+                                <li>Pre-configured data validation</li>
+                                <li>Sample data for guidance</li>
+                                <li>Column descriptions included</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center py-3">
+                        <a href="{% static 'templates/user_import_template.xlsx' %}" 
+                           class="btn btn-success px-5 py-3 d-inline-flex align-items-center gap-3" 
+                           download>
+                            <i class="fas fa-file-excel fa-2x"></i>
+                            <div class="text-start">
+                                <div class="fw-bold">Download Excel Template</div>
+                                <small class="text-white text-opacity-75">v2.1 - Updated: Jan 2024</small>
+                            </div>
+                        </a>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-database me-1"></i>
+                                Template size: 15KB | Contains 5 sample records
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Instructions & Preview -->
+        <div class="col-lg-4">
+            <!-- Instructions Card -->
+            <div class="card shadow-md mb-4">
+                <div class="card-header bg-primary bg-opacity-10 border-primary py-3">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2">
+                        <i class="fas fa-graduation-cap text-primary"></i>
+                        Quick Guide
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Required Fields -->
+                    <div class="mb-4">
+                        <h6 class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge bg-danger rounded-pill px-3">Required</span>
+                            Mandatory Fields
+                        </h6>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <div class="field-item bg-danger bg-opacity-10 border border-danger rounded p-3 mb-2">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <code class="bg-white px-2 py-1 rounded">username</code>
+                                        <span class="badge bg-danger">Unique</span>
+                                    </div>
+                                    <small class="text-muted">Unique identifier for each user</small>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="field-item bg-danger bg-opacity-10 border border-danger rounded p-3 mb-2">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <code class="bg-white px-2 py-1 rounded">email</code>
+                                        <span class="badge bg-danger">Unique</span>
+                                    </div>
+                                    <small class="text-muted">Valid email address format</small>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="field-item bg-danger bg-opacity-10 border border-danger rounded p-3 mb-2">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <code class="bg-white px-2 py-1 rounded">first_name</code>
+                                    </div>
+                                    <small class="text-muted">User's first name</small>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="field-item bg-danger bg-opacity-10 border border-danger rounded p-3 mb-2">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <code class="bg-white px-2 py-1 rounded">last_name</code>
+                                    </div>
+                                    <small class="text-muted">User's last name</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Optional Fields -->
+                    <div class="mb-4">
+                        <h6 class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge bg-primary rounded-pill px-3">Optional</span>
+                            Additional Fields
+                        </h6>
+                        <div class="row g-2">
+                            {% for field in optional_fields %}
+                            <div class="col-12">
+                                <div class="field-item bg-primary bg-opacity-10 border border-primary rounded p-3 mb-2">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <code class="bg-white px-2 py-1 rounded">{{ field.name }}</code>
+                                        {% if field.required %}<span class="badge bg-warning">Required if present</span>{% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ field.description }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Tips -->
+                    <div class="alert alert-warning border-warning bg-warning bg-opacity-10">
+                        <h6 class="alert-heading d-flex align-items-center gap-2 mb-2">
+                            <i class="fas fa-lightbulb"></i>
+                            Pro Tips
+                        </h6>
+                        <ul class="mb-0 ps-3">
+                            <li>Keep column headers exactly as shown</li>
+                            <li>Use email addresses for user identification</li>
+                            <li>Test with 5-10 records first</li>
+                            <li>Save a backup of your original file</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="card shadow-md">
+                <div class="card-header bg-info bg-opacity-10 border-info py-3">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2">
+                        <i class="fas fa-eye text-info"></i>
+                        Format Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center">
+                                        <small>username</small>
+                                    </th>
+                                    <th class="text-center">
+                                        <small>email</small>
+                                    </th>
+                                    <th class="text-center">
+                                        <small>first_name</small>
+                                    </th>
+                                    <th class="text-center">
+                                        <small>last_name</small>
+                                    </th>
+                                    <th class="text-center">
+                                        <small>role</small>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sample in sample_data %}
+                                <tr>
+                                    <td><small>{{ sample.username }}</small></td>
+                                    <td><small>{{ sample.email }}</small></td>
+                                    <td><small>{{ sample.first_name }}</small></td>
+                                    <td><small>{{ sample.last_name }}</small></td>
+                                    <td><small><span class="badge bg-primary bg-opacity-10 text-primary">{{ sample.role }}</span></small></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            First row must contain column headers exactly as shown
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Results (Conditional) -->
+    {% if errors or success_count %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-md">
+                <div class="card-header {% if errors %}bg-danger{% else %}bg-success{% endif %} bg-opacity-10 {% if errors %}border-danger{% else %}border-success{% endif %} py-3">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2">
+                        <i class="fas fa-{% if errors %}exclamation-circle text-danger{% else %}check-circle text-success{% endif %}"></i>
+                        Import Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if success_count %}
+                    <div class="alert alert-success d-flex align-items-center gap-3">
+                        <div class="icon-wrapper bg-success text-white p-3 rounded-circle">
+                            <i class="fas fa-check fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="alert-heading mb-1">Successfully imported {{ success_count }} user{{ success_count|pluralize }}</h5>
+                            <p class="mb-0">All users have been added to the system successfully.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if errors %}
+                    <div class="alert alert-danger">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                            <div>
+                                <h5 class="mb-0">Import completed with {{ errors|length }} error{{ errors|pluralize }}</h5>
+                                <p class="mb-0">Please fix these errors and try again:</p>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th width="80">Row</th>
+                                        <th>Field</th>
+                                        <th>Error</th>
+                                        <th width="100">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for error in errors %}
+                                    <tr>
+                                        <td><span class="badge bg-secondary">#{{ forloop.counter }}</span></td>
+                                        <td><code>{{ error.field|default:"-" }}</code></td>
+                                        <td class="text-danger">{{ error.message }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="scrollToForm()">
+                                                <i class="fas fa-edit"></i> Fix
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <a href="#importForm" class="btn btn-warning px-4 py-2 d-inline-flex align-items-center gap-2" id="retryBtn">
+                                <i class="fas fa-redo"></i>
+                                Try Again
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Drag and drop functionality
+    const dropArea = document.getElementById('dropArea');
+    const fileInput = document.getElementById('fileInput');
+    const selectedFile = document.getElementById('selectedFile');
+    const fileName = document.getElementById('fileName');
+    const fileInfo = document.getElementById('fileInfo');
+    const removeFile = document.getElementById('removeFile');
+    
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // Highlight drop area
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight() {
+        dropArea.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+    }
+    
+    function unhighlight() {
+        dropArea.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+    }
+    
+    // Handle dropped files
+    dropArea.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        handleFiles(files);
+    }
+    
+    // Handle file input change
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+    
+    // Handle files
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            const fileSize = (file.size / 1024).toFixed(2); // in KB
+            
+            // Validate file type
+            const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+                               'application/vnd.ms-excel'];
+            
+            if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
+                alert('Please select an Excel file (.xlsx or .xls)');
+                resetFileInput();
+                return;
+            }
+            
+            // Validate file size
+            if (file.size > 10 * 1024 * 1024) { // 10MB
+                alert('File size must be less than 10MB');
+                resetFileInput();
+                return;
+            }
+            
+            // Show selected file info
+            fileName.textContent = file.name;
+            fileInfo.textContent = `${fileSize} KB • ${file.type}`;
+            selectedFile.classList.remove('d-none');
+            dropArea.classList.add('d-none');
+            
+            // Update submit button
+            $('#submitBtn').html(`
+                <i class="fas fa-file-excel"></i>
+                <span>Import "${file.name}"</span>
+            `);
+        }
+    }
+    
+    // Remove file
+    removeFile.addEventListener('click', function() {
+        resetFileInput();
+    });
+    
+    function resetFileInput() {
+        fileInput.value = '';
+        selectedFile.classList.add('d-none');
+        dropArea.classList.remove('d-none');
+        $('#submitBtn').html(`
+            <i class="fas fa-upload"></i>
+            <span>Start Import Process</span>
+        `);
+    }
+    
+    // Form validation
+    $('#importForm').on('submit', function(e) {
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert('Please select an Excel file to upload');
+            fileInput.focus();
+            return false;
+        }
+        
+        // Show loading state
+        const submitBtn = $('#submitBtn');
+        const originalText = submitBtn.html();
+        submitBtn.html(`
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <span>Processing your file...</span>
+        `);
+        submitBtn.prop('disabled', true);
+        
+        // Add file size indicator
+        const file = fileInput.files[0];
+        const fileSize = (file.size / (1024 * 1024)).toFixed(1);
+        setTimeout(() => {
+            submitBtn.html(`
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+                <span>Processing (${fileSize} MB)...</span>
+            `);
+        }, 2000);
+        
+        return true;
+    });
+    
+    // Role selection styling
+    $('#defaultRole').on('change', function() {
+        const selected = $(this).find('option:selected');
+        if (selected.val()) {
+            $(this).removeClass('border-primary').addClass('border-success');
+            $(this).parent().find('.input-group-text').addClass('bg-success bg-opacity-10 text-success');
+        } else {
+            $(this).removeClass('border-success').addClass('border-primary');
+            $(this).parent().find('.input-group-text').removeClass('bg-success bg-opacity-10 text-success');
+        }
+    });
+    
+    // Checkbox styling
+    $('.form-check-input').on('change', function() {
+        const card = $(this).closest('.card-check');
+        if ($(this).is(':checked')) {
+            card.addClass('checked');
+            card.find('.icon-wrapper').addClass('bg-primary bg-opacity-25');
+        } else {
+            card.removeClass('checked');
+            card.find('.icon-wrapper').removeClass('bg-primary bg-opacity-25');
+        }
+    });
+});
+
+function scrollToForm() {
+    document.getElementById('importForm').scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+</script>
+
+<style>
+.file-upload-area {
+    border-color: #dee2e6;
+    border-style: dashed;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.file-upload-area:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.05);
+}
+
+.field-item {
+    transition: transform 0.2s ease;
+}
+
+.field-item:hover {
+    transform: translateY(-2px);
+}
+
+.card-check {
+    border: 2px solid #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.card-check:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.02);
+}
+
+.card-check.checked {
+    border-color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.05);
+}
+
+.card-check .form-check-input {
+    margin-top: 0.5rem;
+}
+
+.icon-wrapper {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.border-2 {
+    border-width: 2px !important;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+}
+
+.table th small {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#submitBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .file-upload-area {
+        padding: 2rem 1rem;
+    }
+    
+    .icon-wrapper {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .card-check {
+        padding: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

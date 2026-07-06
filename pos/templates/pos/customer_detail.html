@@ -1,0 +1,290 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}{{ customer.name }} - Customer Details{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+        <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="p-2 rounded-lg bg-white bg-opacity-20">
+                        <i class="fas fa-user text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-white">{{ customer.name }}</h2>
+                        <p class="text-blue-100 text-sm">Customer details and purchase history</p>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <a href="{% url 'edit_customer' customer.id %}" 
+                       class="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">
+                        <i class="fas fa-edit mr-2"></i> Edit Customer
+                    </a>
+                    <a href="{% url 'customer_list' %}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Customers
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Information Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <!-- Contact Card -->
+        <div class="bg-white rounded-lg shadow p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-blue-500 rounded-lg p-3">
+                    <i class="fas fa-phone-alt text-white"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Phone</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ customer.phone|default:"Not provided" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Card -->
+        <div class="bg-white rounded-lg shadow p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-green-500 rounded-lg p-3">
+                    <i class="fas fa-envelope text-white"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Email</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ customer.email|default:"Not provided" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Balance Card -->
+        <div class="bg-white rounded-lg shadow p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 {% if customer.balance > 0 %}bg-red-500{% else %}bg-green-500{% endif %} rounded-lg p-3">
+                    <i class="fas fa-coins text-white"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Balance</p>
+                    <p class="text-lg font-semibold {% if customer.balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                        KSh {{ customer.balance|floatformat:2 }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credit Limit Card -->
+        <div class="bg-white rounded-lg shadow p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-purple-500 rounded-lg p-3">
+                    <i class="fas fa-credit-card text-white"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Credit Limit</p>
+                    <p class="text-lg font-semibold text-gray-900">KSh {{ customer.credit_limit|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Address Section -->
+    {% if customer.address %}
+    <div class="bg-white rounded-lg shadow p-5 mb-6">
+        <div class="flex items-start">
+            <div class="flex-shrink-0 bg-gray-500 rounded-lg p-3">
+                <i class="fas fa-map-marker-alt text-white"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Address</p>
+                <p class="text-gray-900">{{ customer.address }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Purchase History -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-900">
+                    <i class="fas fa-shopping-cart mr-2 text-blue-500"></i>
+                    Purchase History
+                </h3>
+                <div class="text-sm text-gray-500">
+                    Total Purchases: {{ sales.paginator.count }} | 
+                    Total Spent: KSh {{ total_spent|floatformat:2|default:"0.00" }}
+                </div>
+            </div>
+        </div>
+
+        {% if sales %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sale #</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for sale in sales %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                            {{ sale.sale_number }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ sale.date|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                            {{ sale.items.count }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                            KSh {{ sale.subtotal|floatformat:2 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                            {% if sale.discount_amount > 0 %}
+                            KSh {{ sale.discount_amount|floatformat:2 }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
+                            KSh {{ sale.total|floatformat:2 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 text-right">
+                            KSh {{ sale.amount_paid|floatformat:2 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm {% if sale.balance > 0 %}text-red-600 font-semibold{% else %}text-gray-500{% endif %} text-right">
+                            {% if sale.balance > 0 %}KSh {{ sale.balance|floatformat:2 }}{% else %}-{% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if sale.is_completed %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {% if sale.is_completed %}Completed{% else %}Pending{% endif %}
+                            </span>
+                            {% if sale.is_credit and sale.balance > 0 %}
+                            <span class="ml-1 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                Credit
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                            <a href="{% url 'sale_detail' sale.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if sale.balance > 0 %}
+                            <a href="{% url 'process_credit_payment' sale.id %}" class="text-green-600 hover:text-green-900">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if sales.has_other_pages %}
+        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div class="flex justify-between items-center">
+                <div class="text-sm text-gray-500">
+                    Showing page {{ sales.number }} of {{ sales.paginator.num_pages }}
+                </div>
+                <div class="flex space-x-2">
+                    {% if sales.has_previous %}
+                    <a href="?page=1" class="px-3 py-1 border rounded-md hover:bg-gray-100">&laquo; First</a>
+                    <a href="?page={{ sales.previous_page_number }}" class="px-3 py-1 border rounded-md hover:bg-gray-100">Previous</a>
+                    {% endif %}
+                    
+                    <span class="px-3 py-1 bg-blue-600 text-white rounded-md">{{ sales.number }}</span>
+                    
+                    {% if sales.has_next %}
+                    <a href="?page={{ sales.next_page_number }}" class="px-3 py-1 border rounded-md hover:bg-gray-100">Next</a>
+                    <a href="?page={{ sales.paginator.num_pages }}" class="px-3 py-1 border rounded-md hover:bg-gray-100">Last &raquo;</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="px-6 py-12 text-center">
+            <i class="fas fa-shopping-cart text-5xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500">No purchase history found for this customer.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Credit Payment Section (if customer has balance) -->
+    {% if customer.balance > 0 %}
+    <div class="bg-white rounded-lg shadow overflow-hidden mt-6">
+        <div class="px-6 py-4 border-b border-gray-200 bg-red-50">
+            <h3 class="text-lg font-medium text-red-700">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                Outstanding Balance: KSh {{ customer.balance|floatformat:2 }}
+            </h3>
+        </div>
+        <div class="px-6 py-4">
+            <p class="text-gray-600 mb-4">
+                This customer has an outstanding balance. You can record a payment or view all credit sales.
+            </p>
+            <div class="flex space-x-3">
+                <a href="{% url 'customer_payment' customer.id %}" 
+                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                    <i class="fas fa-money-bill-wave mr-2"></i> Record Payment
+                </a>
+                <a href="{% url 'credit_payments' %}?customer={{ customer.id }}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-md hover:bg-gray-50">
+                    <i class="fas fa-list mr-2"></i> View Credit Sales
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Stats Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Total Purchases</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ sales.paginator.count }}</p>
+                </div>
+                <i class="fas fa-shopping-cart text-3xl text-blue-400"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Total Spent</p>
+                    <p class="text-2xl font-bold text-gray-900">KSh {{ total_spent|floatformat:2|default:"0.00" }}</p>
+                </div>
+                <i class="fas fa-chart-line text-3xl text-green-400"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Average per Purchase</p>
+                    <p class="text-2xl font-bold text-gray-900">KSh {{ avg_purchase|floatformat:2|default:"0.00" }}</p>
+                </div>
+                <i class="fas fa-chart-bar text-3xl text-purple-400"></i>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,761 @@
+{% extends 'pos/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}Manage Roles - Admin Dashboard{% endblock %}
+
+{% block page_title %}Manage Roles{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Manage Roles</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 gradient-text">Role Management</h1>
+            <p class="text-muted mb-0">Manage system roles and permissions</p>
+        </div>
+        <div class="btn-group" role="group">
+            
+            <a href="{% url 'create_role' %}" class="btn btn-primary d-flex align-items-center gap-2">
+                <i class="fas fa-plus-circle"></i>
+                Create Role
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card shadow-lg border-0 mb-4">
+        <div class="card-header d-flex align-items-center gap-3 py-3 gradient-primary">
+            <div class="icon-wrapper bg-white text-primary p-2 rounded-circle shadow-sm">
+                <i class="fas fa-filter fa-lg"></i>
+            </div>
+            <div>
+                <h5 class="card-title mb-0 text-white">Filter Roles</h5>
+                <p class="card-subtitle text-white-50 mb-0">Search and filter system roles</p>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <form method="get" class="row g-4">
+                <div class="col-md-6">
+                    <label for="is_active" class="form-label fw-semibold d-flex align-items-center gap-2">
+                        <i class="fas fa-toggle-on text-primary"></i>
+                        Status Filter
+                    </label>
+                    <select name="is_active" id="is_active" class="form-select border-primary border-2 rounded-3">
+                        <option value="">All Status</option>
+                        <option value="true" {% if form.is_active.value == "true" %}selected{% endif %}>Active</option>
+                        <option value="false" {% if form.is_active.value == "false" %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="search" class="form-label fw-semibold d-flex align-items-center gap-2">
+                        <i class="fas fa-search text-primary"></i>
+                        Search Roles
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 border-primary border-2">
+                            <i class="fas fa-user-tag text-primary"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0 border-primary border-2" 
+                               id="search" name="search" placeholder="Search by name or description..." 
+                               value="{{ form.search.value|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2">
+                            <i class="fas fa-filter"></i>
+                            Apply Filters
+                        </button>
+                        <a href="?export=csv{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="btn btn-success px-4 py-2 d-flex align-items-center gap-2">
+                            <i class="fas fa-file-csv"></i>
+                            Export CSV
+                        </a>
+                        {% if request.GET %}
+                            <a href="{% url 'role_list' %}" class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2">
+                                <i class="fas fa-times"></i>
+                                Clear Filters
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Roles Table -->
+    <div class="card shadow-lg border-0">
+        <div class="card-header d-flex align-items-center justify-content-between py-3 gradient-info">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrapper bg-white text-info p-2 rounded-circle shadow-sm">
+                    <i class="fas fa-user-tag fa-lg"></i>
+                </div>
+                <div>
+                    <h5 class="card-title mb-0 text-white">System Roles</h5>
+                    <p class="card-subtitle text-white-50 mb-0">{{ roles|length }} role{{ roles|pluralize }} found</p>
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-light dropdown-toggle d-flex align-items-center gap-2" 
+                        type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-cog"></i>
+                    Bulk Actions
+                </button>
+                <ul class="dropdown-menu shadow-lg">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2" href="#">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <span>Activate Selected</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2" href="#">
+                            <i class="fas fa-times-circle text-danger"></i>
+                            <span>Deactivate Selected</span>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2" href="#">
+                            <i class="fas fa-copy text-info"></i>
+                            <span>Duplicate Selected</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            {% if roles %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 datatable">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="border-0 ps-4" style="width: 40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllRoles">
+                                    </div>
+                                </th>
+                                <th class="border-0">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fas fa-user-tag text-primary"></i>
+                                        <span>Role Name</span>
+                                    </div>
+                                </th>
+                                <th class="border-0">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fas fa-align-left text-primary"></i>
+                                        <span>Description</span>
+                                    </div>
+                                </th>
+                                <th class="border-0 text-center">
+                                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                                        <i class="fas fa-users text-primary"></i>
+                                        <span>Users</span>
+                                    </div>
+                                </th>
+                                <th class="border-0 text-center">
+                                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                                        <i class="fas fa-key text-primary"></i>
+                                        <span>Permissions</span>
+                                    </div>
+                                </th>
+                                <th class="border-0 text-center">
+                                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                                        <i class="fas fa-toggle-on text-primary"></i>
+                                        <span>Status</span>
+                                    </div>
+                                </th>
+                                <th class="border-0 text-center" style="width: 180px;">
+                                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                                        <i class="fas fa-cogs text-primary"></i>
+                                        <span>Actions</span>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for role in roles %}
+                            <tr class="role-row hover-lift">
+                                <td class="ps-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input role-checkbox" type="checkbox" value="{{ role.id }}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <strong class="text-dark">{{ role.get_name_display }}</strong>
+                                        <small class="text-muted">{{ role.name }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="description-truncate" data-bs-toggle="tooltip" 
+                                         title="{{ role.description }}">
+                                        {{ role.description|truncatechars:80|default:"No description" }}
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="user-count-badge">
+                                        <i class="fas fa-users me-1"></i>
+                                        {{ role.user_count }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    {% with permissions=role.get_permissions_list %}
+                                        <span class="permission-count-badge">
+                                            <i class="fas fa-key me-1"></i>
+                                            {{ permissions|length }}
+                                        </span>
+                                    {% endwith %}
+                                </td>
+                                <td class="text-center">
+                                    {% if role.is_active %}
+                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            Active
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">
+                                            <i class="fas fa-times-circle me-1"></i>
+                                            Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'role_detail' role.id %}" 
+                                           class="btn btn-sm btn-outline-info d-flex align-items-center" 
+                                           data-bs-toggle="tooltip" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'edit_role' role.id %}" 
+                                           class="btn btn-sm btn-outline-primary d-flex align-items-center" 
+                                           data-bs-toggle="tooltip" title="Edit Role">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'duplicate_role' role.id %}" 
+                                           class="btn btn-sm btn-outline-secondary d-flex align-items-center" 
+                                           data-bs-toggle="tooltip" title="Duplicate Role">
+                                            <i class="fas fa-copy"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm toggle-role-status {% if role.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %} d-flex align-items-center"
+                                                data-role-id="{{ role.id }}" 
+                                                data-role-name="{{ role.get_name_display }}"
+                                                data-is-active="{{ role.is_active|lower }}"
+                                                data-bs-toggle="tooltip" 
+                                                title="{% if role.is_active %}Deactivate{% else %}Activate{% endif %} Role">
+                                            <i class="fas {% if role.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="empty-state mb-4">
+                        <div class="icon-wrapper bg-primary bg-opacity-10 text-primary p-4 rounded-circle mb-3">
+                            <i class="fas fa-user-tag fa-3x"></i>
+                        </div>
+                        <h4 class="text-muted mb-3">No Roles Found</h4>
+                        <p class="text-muted mb-4">Try adjusting your filters or create a new role to get started.</p>
+                        <a href="{% url 'create_role' %}" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2 mx-auto">
+                            <i class="fas fa-plus-circle"></i>
+                            Create First Role
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        {% if roles %}
+        <div class="card-footer py-3 bg-light">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        Showing {{ roles|length }} of {{ roles|length }} role{{ roles|pluralize }}
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle text-primary me-1"></i>
+                        Click on role actions to manage
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Default Roles Overview -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card shadow-lg border-0">
+                <div class="card-header d-flex align-items-center gap-3 py-3 gradient-success">
+                    <div class="icon-wrapper bg-white text-success p-2 rounded-circle shadow-sm">
+                        <i class="fas fa-shield-alt fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0 text-white">Default Roles Overview</h5>
+                        <p class="card-subtitle text-white-50 mb-0">Pre-configured role templates</p>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="default-role-card border-0 shadow-sm h-100">
+                                <div class="card-header bg-primary bg-opacity-10 border-0 py-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="icon-wrapper bg-primary text-white p-2 rounded-circle">
+                                            <i class="fas fa-crown"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">Administrator</h6>
+                                            <small class="text-muted">Full system control</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text text-muted small">
+                                        Complete access to all system features and user management.
+                                    </p>
+                                    <div class="mt-3">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary me-2">
+                                            <i class="fas fa-key me-1"></i>All Permissions
+                                        </span>
+                                        <span class="badge bg-success bg-opacity-10 text-success">
+                                            <i class="fas fa-users me-1"></i>User Management
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6">
+                            <div class="default-role-card border-0 shadow-sm h-100">
+                                <div class="card-header bg-success bg-opacity-10 border-0 py-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="icon-wrapper bg-success text-white p-2 rounded-circle">
+                                            <i class="fas fa-user-tie"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">Manager</h6>
+                                            <small class="text-muted">Operational control</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text text-muted small">
+                                        Full access to operations except user and role management.
+                                    </p>
+                                    <div class="mt-3">
+                                        <span class="badge bg-success bg-opacity-10 text-success me-2">
+                                            <i class="fas fa-chart-bar me-1"></i>Reports
+                                        </span>
+                                        <span class="badge bg-info bg-opacity-10 text-info">
+                                            <i class="fas fa-cog me-1"></i>Operations
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6">
+                            <div class="default-role-card border-0 shadow-sm h-100">
+                                <div class="card-header bg-info bg-opacity-10 border-0 py-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="icon-wrapper bg-info text-white p-2 rounded-circle">
+                                            <i class="fas fa-cash-register"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">Cashier</h6>
+                                            <small class="text-muted">Sales processing</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text text-muted small">
+                                        Basic sales operations, customer service, and transaction processing.
+                                    </p>
+                                    <div class="mt-3">
+                                        <span class="badge bg-info bg-opacity-10 text-info me-2">
+                                            <i class="fas fa-shopping-cart me-1"></i>Sales
+                                        </span>
+                                        <span class="badge bg-warning bg-opacity-10 text-warning">
+                                            <i class="fas fa-users me-1"></i>Customers
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6">
+                            <div class="default-role-card border-0 shadow-sm h-100">
+                                <div class="card-header bg-warning bg-opacity-10 border-0 py-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="icon-wrapper bg-warning text-white p-2 rounded-circle">
+                                            <i class="fas fa-boxes"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">Inventory</h6>
+                                            <small class="text-muted">Stock management</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text text-muted small">
+                                        Product management, stock control, and supplier management.
+                                    </p>
+                                    <div class="mt-3">
+                                        <span class="badge bg-warning bg-opacity-10 text-warning me-2">
+                                            <i class="fas fa-box me-1"></i>Products
+                                        </span>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger">
+                                            <i class="fas fa-warehouse me-1"></i>Stock
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <small class="text-muted d-flex align-items-center justify-content-center gap-2">
+                            <i class="fas fa-lightbulb text-warning"></i>
+                            Default roles can be duplicated or used as templates for custom roles
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Toggle Modal -->
+<div class="modal fade" id="roleStatusModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header gradient-warning">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-wrapper bg-white text-warning p-2 rounded-circle">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0 text-white" id="roleStatusModalLabel">Confirm Status Change</h5>
+                        <small class="text-white-50">Role status modification</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-warning border-warning bg-warning bg-opacity-10 mb-4">
+                    <div class="d-flex align-items-start gap-3">
+                        <i class="fas fa-exclamation-triangle fa-lg text-warning mt-1"></i>
+                        <div>
+                            <h6 class="alert-heading mb-2">Important Notice</h6>
+                            <p class="mb-0">Users assigned to this role will be affected by this change.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="confirmation-content text-center">
+                    <div class="role-icon-wrapper bg-primary bg-opacity-10 text-primary p-4 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-user-tag fa-2x"></i>
+                    </div>
+                    <h4 id="roleName" class="mb-3"></h4>
+                    <p class="text-muted">
+                        Are you sure you want to 
+                        <span id="roleStatusAction" class="fw-bold"></span> 
+                        this role?
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer border-top bg-light">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <form id="roleStatusForm" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary px-4 py-2">
+                        <i class="fas fa-check me-2"></i>Confirm Change
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    
+    // Select All checkbox
+    $('#selectAllRoles').on('click', function() {
+        $('.role-checkbox').prop('checked', this.checked);
+        updateSelectionCount();
+    });
+    
+    // Update selection count when individual checkboxes change
+    $('.role-checkbox').on('change', function() {
+        if (!this.checked) {
+            $('#selectAllRoles').prop('checked', false);
+        }
+        updateSelectionCount();
+    });
+    
+    // Role status toggle
+    $('.toggle-role-status').on('click', function() {
+        const roleId = $(this).data('role-id');
+        const roleName = $(this).data('role-name');
+        const isActive = $(this).data('is-active') === 'true';
+        
+        const action = isActive ? 'deactivate' : 'activate';
+        $('#roleStatusAction').text(action);
+        $('#roleName').text(roleName);
+        $('#roleStatusForm').attr('action', `/admin/roles/${roleId}/toggle-status/`);
+        
+        // Update modal icon based on action
+        const modalIcon = $('.role-icon-wrapper i');
+        const modalHeader = $('.modal-header');
+        
+        if (isActive) {
+            modalIcon.removeClass('fa-user-tag').addClass('fa-ban');
+            modalHeader.removeClass('gradient-warning').addClass('gradient-danger');
+        } else {
+            modalIcon.removeClass('fa-ban').addClass('fa-user-tag');
+            modalHeader.removeClass('gradient-danger').addClass('gradient-warning');
+        }
+        
+        $('#roleStatusModal').modal('show');
+    });
+    
+    // Update selection count
+    function updateSelectionCount() {
+        const selectedCount = $('.role-checkbox:checked').length;
+        if (selectedCount > 0) {
+            $('.dropdown-toggle').text(`Bulk Actions (${selectedCount})`);
+        } else {
+            $('.dropdown-toggle').text('Bulk Actions');
+        }
+    }
+    
+    // Initialize
+    updateSelectionCount();
+});
+</script>
+
+<style>
+/* Custom CSS for enhanced role management */
+:root {
+    --primary-color: #4e54c8;
+    --secondary-color: #8f94fb;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --gradient-primary: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+    --gradient-success: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    --gradient-warning: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    --gradient-danger: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%);
+    --gradient-info: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+}
+
+.gradient-primary {
+    background: var(--gradient-primary);
+}
+
+.gradient-info {
+    background: var(--gradient-info);
+}
+
+.gradient-success {
+    background: var(--gradient-success);
+}
+
+.gradient-warning {
+    background: var(--gradient-warning);
+}
+
+.gradient-danger {
+    background: var(--gradient-danger);
+}
+
+.gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    background-color: rgba(78, 84, 200, 0.03) !important;
+    box-shadow: inset 0 0 0 1px rgba(78, 84, 200, 0.1);
+}
+
+.icon-wrapper {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.role-row:hover .btn-group .btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.btn-group .btn {
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.btn-group .btn:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.description-truncate {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
+}
+
+.user-count-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: rgba(23, 162, 184, 0.1);
+    color: var(--info-color);
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.permission-count-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--success-color);
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.default-role-card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+.default-role-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+.empty-state {
+    padding: 40px 20px;
+}
+
+.empty-state .icon-wrapper {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(78, 84, 200, 0.25);
+}
+
+.role-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.modal-content {
+    border-radius: 16px;
+}
+
+.modal-header {
+    border-radius: 16px 16px 0 0;
+}
+
+.border-2 {
+    border-width: 2px !important;
+}
+
+.btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.dropdown-menu {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.dropdown-item {
+    padding: 10px 20px;
+    border-radius: 8px;
+    margin: 2px 10px;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(78, 84, 200, 0.1);
+}
+
+@media (max-width: 768px) {
+    .description-truncate {
+        max-width: 150px;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .user-count-badge,
+    .permission-count-badge {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    
+    .icon-wrapper {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .icon-wrapper i {
+        font-size: 14px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,215 +1,591 @@
 {% extends 'pos/base.html' %}
 {% load static %}
+{% load humanize %}
+{% load custom_filters %}
 
-{% block title %}Credit Payments{% endblock %}
+{% block title %}Credit Payments Management{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto bg-white rounded-lg shadow overflow-hidden">
-    <!-- Header with gradient background -->
-    <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <div class="p-2 rounded-lg bg-white bg-opacity-20">
-                    <i class="fas fa-credit-card text-white text-xl"></i>
+<div class="max-w-full mx-auto px-4">
+    <!-- Header Section - Compact -->
+    <div class="mb-4">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-gray-900">Credit Sale & Payments</h1>
+                <p class="text-xs text-gray-600">Manage outstanding customer balances and process payments</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <!-- Summary Cards Compact -->
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg px-3 py-1 shadow">
+                    <div class="text-white text-xs font-medium">Total Balance</div>
+                    <div class="text-white text-base font-bold">KES {{ total_outstanding|default:"0.00"|floatformat:2 }}</div>
                 </div>
-                <div>
-                    <h2 class="text-xl font-semibold text-white">Credit Sales</h2>
-                    <p class="text-blue-100 text-sm">Manage outstanding customer balances</p>
+                <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg px-3 py-1 shadow">
+                    <div class="text-white text-xs font-medium">Active Credit Sales</div>
+                    <div class="text-white text-base font-bold">{{ credit_sales.paginator.count }}</div>
                 </div>
             </div>
-            <button id="toggle-filters" class="text-white hover:text-blue-100 text-sm">
-                <i class="fas fa-filter mr-1"></i> Filters
-            </button>
         </div>
     </div>
 
-    <!-- Filters -->
-    <div id="filters" class="px-6 py-4 border-b border-gray-200 hidden">
-        <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-                <select name="customer" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">All Customers</option>
-                    {% for customer in customers %}
-                        <option value="{{ customer.id }}" {% if customer.id|stringformat:"s" == selected_customer %}selected{% endif %}>
-                            {{ customer.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-                <input type="date" name="start_date" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" value="{{ start_date }}">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-                <input type="date" name="end_date" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" value="{{ end_date }}">
-            </div>
-            <div class="flex items-end space-x-2">
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-search mr-1"></i> Apply
+    <!-- Filters Card with Customer Search - VISIBLE BY DEFAULT -->
+    <div class="bg-white rounded-lg shadow mb-4 border border-gray-200">
+        <div class="px-4 py-2 border-b border-gray-200 bg-gray-50">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-medium text-gray-900">
+                    <i class="fas fa-filter mr-1 text-blue-500"></i> Filters
+                </h2>
+                <button id="toggle-filters" class="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center">
+                    <i class="fas fa-chevron-up mr-1"></i>
+                    <span id="filter-text">Hide Filters</span>
                 </button>
-                <a href="{% url 'credit_payments' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-sync-alt mr-1"></i> Reset
-                </a>
             </div>
-        </form>
+        </div>
+        
+        <div id="filters-section" class="px-4 py-3">
+            <form method="get" id="filterForm" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <!-- Customer Search with AJAX Autocomplete -->
+                <div class="relative">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                        <i class="fas fa-user mr-1"></i> Search Customer
+                    </label>
+                    <div class="relative">
+                        <input type="text" 
+                               id="customer_search" 
+                               name="customer_search"
+                               placeholder="Type name or phone..." 
+                               autocomplete="off"
+                               value="{{ selected_customer_name|default:'' }}"
+                               class="w-full text-sm px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        <input type="hidden" name="customer" id="selected_customer_id" value="{{ selected_customer|default:'' }}">
+                        <div id="customer_search_results" class="absolute z-20 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <!-- Date Range Filters -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                        <i class="fas fa-calendar-alt mr-1"></i> From Date
+                    </label>
+                    <input type="date" name="start_date" value="{{ start_date|default:'' }}" class="w-full text-sm px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                        <i class="fas fa-calendar-alt mr-1"></i> To Date
+                    </label>
+                    <input type="date" name="end_date" value="{{ end_date|default:'' }}" class="w-full text-sm px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+
+                <!-- Balance Status Filter -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                        <i class="fas fa-balance-scale mr-1"></i> Balance Status
+                    </label>
+                    <select name="balance_status" class="w-full text-sm px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="">All</option>
+                        <option value="high" {% if balance_status == 'high' %}selected{% endif %}>High Balance (> KES 10,000)</option>
+                        <option value="medium" {% if balance_status == 'medium' %}selected{% endif %}>Medium Balance (KES 1k-10k)</option>
+                        <option value="low" {% if balance_status == 'low' %}selected{% endif %}>Low Balance (< KES 1,000)</option>
+                        <option value="overdue" {% if balance_status == 'overdue' %}selected{% endif %}>Overdue (> 30 days)</option>
+                    </select>
+                </div>
+
+                <!-- Filter Buttons -->
+                <div class="flex items-end space-x-2">
+                    <button type="submit" class="w-full inline-flex justify-center items-center px-3 py-1.5 text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <i class="fas fa-search mr-1"></i> Apply
+                    </button>
+                    <a href="{% url 'credit_payments' %}" class="w-full inline-flex justify-center items-center px-3 py-1.5 text-xs font-medium rounded text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-gray-500">
+                        <i class="fas fa-redo mr-1"></i> Reset
+                    </a>
+                </div>
+            </form>
+
+            <!-- Quick Date Filters -->
+            <div class="mt-3 pt-2 border-t border-gray-200">
+                <div class="flex flex-wrap gap-1 items-center">
+                    <span class="text-xs text-gray-500 mr-1">Quick Filters:</span>
+                    <a href="?start_date={{ today|date:'Y-m-d' }}&end_date={{ today|date:'Y-m-d' }}{% if selected_customer %}&customer={{ selected_customer }}{% endif %}" class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800 hover:bg-blue-200 transition">Today</a>
+                    <a href="?start_date={{ last_7_days|date:'Y-m-d' }}&end_date={{ today|date:'Y-m-d' }}{% if selected_customer %}&customer={{ selected_customer }}{% endif %}" class="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800 hover:bg-green-200 transition">Last 7 Days</a>
+                    <a href="?start_date={{ this_month_start|date:'Y-m-d' }}&end_date={{ today|date:'Y-m-d' }}{% if selected_customer %}&customer={{ selected_customer }}{% endif %}" class="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-800 hover:bg-purple-200 transition">This Month</a>
+                    <a href="?start_date={{ last_30_days|date:'Y-m-d' }}&end_date={{ today|date:'Y-m-d' }}{% if selected_customer %}&customer={{ selected_customer }}{% endif %}" class="px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition">Last 30 Days</a>
+                </div>
+            </div>
+            
+            <!-- Active Filters Display -->
+            {% if selected_customer or start_date or end_date or balance_status %}
+            <div class="mt-3 pt-2 border-t border-gray-200">
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-xs text-gray-500">Active Filters:</span>
+                    {% if selected_customer and selected_customer_name %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <i class="fas fa-user mr-1"></i> {{ selected_customer_name }}
+                        <a href="?{% if start_date %}start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if balance_status %}&balance_status={{ balance_status }}{% endif %}" class="ml-1 text-blue-600 hover:text-blue-800">&times;</a>
+                    </span>
+                    {% endif %}
+                    {% if start_date %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        <i class="fas fa-calendar mr-1"></i> From: {{ start_date }}
+                        <a href="?{% if selected_customer %}&customer={{ selected_customer }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if balance_status %}&balance_status={{ balance_status }}{% endif %}" class="ml-1 text-gray-500 hover:text-gray-700">&times;</a>
+                    </span>
+                    {% endif %}
+                    {% if end_date %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        <i class="fas fa-calendar mr-1"></i> To: {{ end_date }}
+                        <a href="?{% if selected_customer %}&customer={{ selected_customer }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if balance_status %}&balance_status={{ balance_status }}{% endif %}" class="ml-1 text-gray-500 hover:text-gray-700">&times;</a>
+                    </span>
+                    {% endif %}
+                    {% if balance_status %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <i class="fas fa-chart-line mr-1"></i> {{ balance_status|title }}
+                        <a href="?{% if selected_customer %}&customer={{ selected_customer }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" class="ml-1 text-yellow-600 hover:text-yellow-800">&times;</a>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- Credit Sales Table -->
-    <div class="px-6 py-4">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200" id="creditSalesTable">
-                <thead class="bg-gray-50">
+    <!-- Credit Sales Table Card - Full Width with Scroll -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <!-- Table Header with Export/Print -->
+        <div class="px-4 py-2 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+            <div>
+                <h3 class="text-sm font-medium text-gray-900">
+                    <i class="fas fa-credit-card mr-1 text-blue-500"></i> Credit Sales
+                </h3>
+                <p class="text-xs text-gray-600">{{ credit_sales.paginator.count }} records found</p>
+            </div>
+            <div class="flex space-x-2">
+                <button id="export-btn" class="inline-flex items-center px-2 py-1 border text-xs rounded text-green-700 bg-white hover:bg-green-50">
+                    <i class="fas fa-file-export mr-1"></i> Export
+                </button>
+                <button onclick="window.print()" class="inline-flex items-center px-2 py-1 border text-xs rounded text-gray-700 bg-white hover:bg-gray-50">
+                    <i class="fas fa-print mr-1"></i> Print
+                </button>
+            </div>
+        </div>
+
+        <!-- Scrollable Table Container -->
+        <div class="overflow-x-auto" style="max-height: 60vh; overflow-y: auto;">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sale #</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Sale #</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Paid</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Balance</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Days Out</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for sale in credit_sales %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ sale.sale_number }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.date|date:"Y-m-d H:i" }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.customer.name|default:"Walk-in" }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.total }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.amount_paid }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {% if sale.balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
-                            {{ sale.balance }}
+                    <tr class="hover:bg-gray-50 {% if sale.balance <= 0 %}bg-green-50{% endif %}">
+                        <td class="px-3 py-2 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-7 w-7 bg-blue-100 rounded flex items-center justify-center">
+                                    <i class="fas fa-receipt text-blue-600 text-xs"></i>
+                                </div>
+                                <div class="ml-2">
+                                    <div class="text-xs font-semibold text-gray-900">{{ sale.sale_number }}</div>
+                                    <div class="text-xs">
+                                        {% if sale.balance <= 0 %}
+                                            <span class="px-1 py-0.5 rounded text-xs bg-green-100 text-green-800">Paid</span>
+                                        {% elif sale.balance > sale.total|multiply:0.5 %}
+                                            <span class="px-1 py-0.5 rounded text-xs bg-red-100 text-red-800">High</span>
+                                        {% else %}
+                                            <span class="px-1 py-0.5 rounded text-xs bg-yellow-100 text-yellow-800">Pending</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div class="flex justify-end space-x-2">
-                                <a href="{% url 'process_credit_payment' sale.id %}" 
-                                   class="text-green-600 hover:text-green-900" title="Record Payment">
-                                    <i class="fas fa-money-bill-wave"></i>
+                        <td class="px-3 py-2 whitespace-nowrap">
+                            <div class="text-xs text-gray-900">{{ sale.date|date:"Y-m-d" }}</div>
+                            <div class="text-xs text-gray-500">{{ sale.date|date:"H:i" }}</div>
+                        </td>
+                        <td class="px-3 py-2">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-7 w-7 bg-gray-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-400 text-xs"></i>
+                                </div>
+                                <div class="ml-2">
+                                    <div class="text-xs font-medium text-gray-900">{{ sale.customer.name|default:"Walk-in"|truncatechars:20 }}</div>
+                                    {% if sale.customer and sale.customer.phone %}
+                                    <div class="text-xs text-gray-500">{{ sale.customer.phone }}</div>
+                                    {% endif %}
+                                    {% if sale.customer and sale.customer.balance > 0 %}
+                                    <div class="text-xs text-red-600">Cust Bal: KES {{ sale.customer.balance|floatformat:2 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-gray-900">
+                            {{ sale.items.count }} items
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap">
+                            <div class="text-xs font-semibold">KES {{ sale.total|floatformat:2 }}</div>
+                            {% if sale.discount_amount %}
+                            <div class="text-xs text-green-600">-{{ sale.discount_amount|floatformat:2 }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap">
+                            <div class="text-xs font-medium">KES {{ sale.amount_paid|floatformat:2 }}</div>
+                            <div class="w-16 bg-gray-200 rounded-full h-1.5 mt-1">
+                                {% with progress=sale.amount_paid|divide:sale.total|multiply:100 %}
+                                <div class="bg-green-600 h-1.5 rounded-full" style="width: {{ progress|floatformat:0 }}%"></div>
+                                {% endwith %}
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap">
+                            <div class="text-xs font-bold {% if sale.balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                KES {{ sale.balance|floatformat:2 }}
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap">
+                            {% with days=sale.date|timesince_in_days %}
+                            <span class="px-2 py-0.5 rounded-full text-xs 
+                                {% if days > 30 %}bg-red-100 text-red-800
+                                {% elif days > 15 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                {{ days }} days
+                            </span>
+                            {% endwith %}
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap">
+                            <div class="flex items-center justify-start space-x-1">
+                                <a href="{% url 'product_level_credit_payment' sale.id %}" class="p-1.5 border rounded text-white bg-green-600 hover:bg-green-700" title="Pay by Product">
+                                    <i class="fas fa-boxes text-xs"></i>
                                 </a>
-                                <a href="{% url 'view_sale' sale.id %}" 
-                                   class="text-blue-600 hover:text-blue-900" title="View Details">
-                                    <i class="fas fa-eye"></i>
+                                <a href="{% url 'process_credit_payment' sale.id %}" class="p-1.5 border rounded text-white bg-blue-600 hover:bg-blue-700" title="Bulk Payment">
+                                    <i class="fas fa-money-bill-wave text-xs"></i>
+                                </a>
+                                <a href="{% url 'view_sale' sale.id %}" class="p-1.5 border rounded text-gray-700 bg-white hover:bg-gray-50" title="View Details">
+                                    <i class="fas fa-eye text-xs"></i>
+                                </a>
+                                <a href="{% url 'credit_payment_history' sale.id %}" class="p-1.5 border rounded text-gray-700 bg-white hover:bg-gray-50" title="Payment History">
+                                    <i class="fas fa-history text-xs"></i>
                                 </a>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">No credit sales found</td>
+                        <td colspan="9" class="px-3 py-8 text-center">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-credit-card text-gray-400 text-3xl mb-2"></i>
+                                <p class="text-sm text-gray-500">No credit sales found</p>
+                                {% if selected_customer or start_date or end_date or balance_status %}
+                                <a href="{% url 'credit_payments' %}" class="mt-2 inline-flex items-center px-3 py-1 text-xs rounded text-white bg-blue-600 hover:bg-blue-700">
+                                    <i class="fas fa-redo mr-1"></i> Clear All Filters
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
-                {% if credit_sales %}
-                <tfoot class="bg-gray-50">
-                    <tr>
-                        <td colspan="3" class="px-6 py-3 text-right text-sm font-medium text-gray-700">Totals:</td>
-                        <td class="px-6 py-3 text-sm font-medium text-gray-900">{{ credit_sales_total.total|default:"0.00" }}</td>
-                        <td class="px-6 py-3 text-sm font-medium text-gray-900">{{ credit_sales_total.amount_paid|default:"0.00" }}</td>
-                        <td class="px-6 py-3 text-sm font-medium {% if credit_sales_total.balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
-                            {{ credit_sales_total.balance|default:"0.00" }}
-                        </td>
-                        <td class="px-6 py-3"></td>
-                    </tr>
-                </tfoot>
-                {% endif %}
             </table>
+        </div>
+
+        <!-- Pagination Compact -->
+        {% if credit_sales.has_other_pages %}
+        <div class="px-4 py-2 border-t border-gray-200 bg-gray-50">
+            <div class="flex items-center justify-between">
+                <div class="text-xs text-gray-700">
+                    Showing {{ credit_sales.start_index }} - {{ credit_sales.end_index }} of {{ credit_sales.paginator.count }}
+                </div>
+                <div class="flex space-x-1">
+                    {% if credit_sales.has_previous %}
+                    <a href="?page={{ credit_sales.previous_page_number }}{% if selected_customer %}&customer={{ selected_customer }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if balance_status %}&balance_status={{ balance_status }}{% endif %}" class="px-2 py-1 border rounded text-xs bg-white hover:bg-gray-50">
+                        <i class="fas fa-chevron-left mr-1"></i> Prev
+                    </a>
+                    {% endif %}
+                    
+                    {% for num in credit_sales.paginator.page_range %}
+                        {% if credit_sales.number == num %}
+                            <span class="px-2 py-1 border rounded text-xs bg-blue-600 text-white">{{ num }}</span>
+                        {% elif num > credit_sales.number|add:'-3' and num < credit_sales.number|add:'3' %}
+                            <a href="?page={{ num }}{% if selected_customer %}&customer={{ selected_customer }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if balance_status %}&balance_status={{ balance_status }}{% endif %}" class="px-2 py-1 border rounded text-xs bg-white hover:bg-gray-50">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if credit_sales.has_next %}
+                    <a href="?page={{ credit_sales.next_page_number }}{% if selected_customer %}&customer={{ selected_customer }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if balance_status %}&balance_status={{ balance_status }}{% endif %}" class="px-2 py-1 border rounded text-xs bg-white hover:bg-gray-50">
+                        Next <i class="fas fa-chevron-right ml-1"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Summary Section - Compact Grid -->
+    {% if credit_sales %}
+    <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-white rounded-lg shadow p-3 border-l-4 border-blue-500">
+            <div class="flex items-center">
+                <i class="fas fa-scale-balanced text-blue-500 text-base mr-2"></i>
+                <div>
+                    <p class="text-xs text-gray-500">Total Outstanding</p>
+                    <p class="text-base font-bold">KES {{ credit_sales_total.balance|default:"0.00"|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-3 border-l-4 border-green-500">
+            <div class="flex items-center">
+                <i class="fas fa-chart-line text-green-500 text-base mr-2"></i>
+                <div>
+                    <p class="text-xs text-gray-500">Total Credit Sales</p>
+                    <p class="text-base font-bold">KES {{ credit_sales_total.total|default:"0.00"|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-3 border-l-4 border-purple-500">
+            <div class="flex items-center">
+                <i class="fas fa-money-check-alt text-purple-500 text-base mr-2"></i>
+                <div>
+                    <p class="text-xs text-gray-500">Amount Collected</p>
+                    <p class="text-base font-bold">KES {{ credit_sales_total.amount_paid|default:"0.00"|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-3 border-l-4 border-yellow-500">
+            <div class="flex items-center">
+                <i class="fas fa-clock text-yellow-500 text-base mr-2"></i>
+                <div>
+                    <p class="text-xs text-gray-500">Avg. Days Outstanding</p>
+                    <p class="text-base font-bold">{{ average_days_outstanding|default:"0" }} days</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Export Modal -->
+<div id="exportModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-xs w-full mx-4">
+        <div class="px-4 py-2 border-b">
+            <h3 class="text-sm font-medium">Export Credit Sales</h3>
+        </div>
+        <div class="px-4 py-3">
+            <p class="text-xs text-gray-600 mb-2">Select format:</p>
+            <div class="grid grid-cols-2 gap-2">
+                <a href="{% url 'credit_payments' %}?export=csv{% if selected_customer %}&customer={{ selected_customer }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if balance_status %}&balance_status={{ balance_status }}{% endif %}" class="text-center px-2 py-1 border rounded text-xs bg-white hover:bg-gray-50">
+                    <i class="fas fa-file-csv text-green-600 mr-1"></i> CSV
+                </a>
+                <a href="{% url 'credit_payments' %}?export=excel{% if selected_customer %}&customer={{ selected_customer }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if balance_status %}&balance_status={{ balance_status }}{% endif %}" class="text-center px-2 py-1 border rounded text-xs bg-white hover:bg-gray-50">
+                    <i class="fas fa-file-excel text-green-600 mr-1"></i> Excel
+                </a>
+            </div>
+        </div>
+        <div class="px-4 py-2 border-t flex justify-end">
+            <button id="closeExportModal" class="px-2 py-1 border rounded text-xs bg-white">Cancel</button>
         </div>
     </div>
 </div>
 
-<!-- Payment Modal (placeholder - you'll need to implement this) -->
-<div id="payment-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full">
-        <!-- Payment form would go here -->
-    </div>
-</div>
-
-{% endblock %}
-
-{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Toggle filters
+    // Toggle Filters
     const toggleFilters = document.getElementById('toggle-filters');
-    const filters = document.getElementById('filters');
+    const filtersSection = document.getElementById('filters-section');
+    const filterText = document.getElementById('filter-text');
     
-    toggleFilters.addEventListener('click', function() {
-        filters.classList.toggle('hidden');
-    });
-
-    // Initialize DataTable
-    $('#creditSalesTable').DataTable({
-        "order": [[1, "desc"]],
-        "dom": "<'flex justify-between items-center mb-4'<'flex-1'f><'flex-none'<'inline-flex space-x-2'>>>" +
-               "<'overflow-x-auto'tr>" +
-               "<'flex justify-between items-center mt-4'<'text-sm text-gray-500'i><'pagination'p>>",
-        "language": {
-            "emptyTable": "No credit sales found",
-            "info": "Showing _START_ to _END_ of _TOTAL_ entries",
-            "infoEmpty": "Showing 0 to 0 of 0 entries",
-            "infoFiltered": "(filtered from _MAX_ total entries)",
-            "lengthMenu": "Show _MENU_ entries",
-            "search": "",
-            "searchPlaceholder": "Search credit sales...",
-            "zeroRecords": "No matching records found",
-            "paginate": {
-                "first": "First",
-                "last": "Last",
-                "next": "Next",
-                "previous": "Previous"
-            }
-        },
-        "initComplete": function() {
-            // Style the search input
-            $('input[type="search"]').addClass(
-                'block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm ' +
-                'focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
-            );
-        }
-    });
-
-    // Set default dates if not set
-    if (!$('input[name="start_date"]').val()) {
-        const date = new Date();
-        date.setDate(date.getDate() - 30);
-        $('input[name="start_date"]').val(date.toISOString().split('T')[0]);
+    if(toggleFilters) {
+        toggleFilters.addEventListener('click', function() {
+            const isHidden = filtersSection.classList.contains('hidden');
+            filtersSection.classList.toggle('hidden');
+            filterText.innerHTML = isHidden ? '<i class="fas fa-chevron-up mr-1"></i> Hide Filters' : '<i class="fas fa-chevron-down mr-1"></i> Show Filters';
+        });
     }
+
+    // Customer Search with AJAX
+    const customerSearchInput = document.getElementById('customer_search');
+    const selectedCustomerId = document.getElementById('selected_customer_id');
+    const searchResultsDiv = document.getElementById('customer_search_results');
+    let searchTimeout;
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if(document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for(let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if(cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function escapeHtml(text) {
+        if(!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function performCustomerSearch() {
+        const query = customerSearchInput.value.trim();
+        
+        if(query.length < 2) {
+            searchResultsDiv.classList.add('hidden');
+            return;
+        }
+
+        searchResultsDiv.innerHTML = '<div class="px-3 py-2 text-xs text-gray-500"><i class="fas fa-spinner fa-spin mr-1"></i> Searching...</div>';
+        searchResultsDiv.classList.remove('hidden');
+
+        fetch('{% url "search_customers" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: 'q=' + encodeURIComponent(query)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.length === 0) {
+                searchResultsDiv.innerHTML = '<div class="px-3 py-2 text-xs text-gray-500">No customers found</div>';
+                return;
+            }
+            
+            searchResultsDiv.innerHTML = data.map(customer => `
+                <div class="customer-result px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0" 
+                     data-id="${customer.id}" 
+                     data-name="${escapeHtml(customer.name)}"
+                     data-phone="${escapeHtml(customer.phone)}">
+                    <div class="font-medium text-sm text-gray-900">${escapeHtml(customer.name)}</div>
+                    ${customer.phone ? `<div class="text-xs text-gray-500">${escapeHtml(customer.phone)}</div>` : ''}
+                    <div class="text-xs text-blue-600 font-medium">Balance: KES ${parseFloat(customer.balance).toFixed(2)}</div>
+                </div>
+            `).join('');
+            
+            document.querySelectorAll('.customer-result').forEach(el => {
+                el.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    const name = this.dataset.name;
+                    customerSearchInput.value = name;
+                    selectedCustomerId.value = id;
+                    searchResultsDiv.classList.add('hidden');
+                    document.getElementById('filterForm').submit();
+                });
+            });
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            searchResultsDiv.innerHTML = '<div class="px-3 py-2 text-xs text-red-500">Error searching customers</div>';
+        });
+    }
+
+    if(customerSearchInput) {
+        customerSearchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(performCustomerSearch, 300);
+        });
+        
+        customerSearchInput.addEventListener('focus', function() {
+            if(customerSearchInput.value.trim().length >= 2) {
+                performCustomerSearch();
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            if(!customerSearchInput.contains(e.target) && !searchResultsDiv.contains(e.target)) {
+                searchResultsDiv.classList.add('hidden');
+            }
+        });
+    }
+
+    // Export Modal
+    const exportBtn = document.getElementById('export-btn');
+    const exportModal = document.getElementById('exportModal');
+    const closeExportModal = document.getElementById('closeExportModal');
+
+    if(exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            exportModal.classList.remove('hidden');
+        });
+    }
+    if(closeExportModal) {
+        closeExportModal.addEventListener('click', function() {
+            exportModal.classList.add('hidden');
+        });
+    }
+    if(exportModal) {
+        exportModal.addEventListener('click', function(e) {
+            if (e.target === exportModal) exportModal.classList.add('hidden');
+        });
+    }
+
+    // Date validation
+    const startDateInput = document.querySelector('input[name="start_date"]');
+    const endDateInput = document.querySelector('input[name="end_date"]');
+    const today = new Date().toISOString().split('T')[0];
     
-    if (!$('input[name="end_date"]').val()) {
-        $('input[name="end_date"]').val(new Date().toISOString().split('T')[0]);
+    if(startDateInput) startDateInput.max = today;
+    if(endDateInput) endDateInput.max = today;
+
+    if(startDateInput && endDateInput) {
+        startDateInput.addEventListener('change', function() {
+            if (endDateInput.value && this.value > endDateInput.value) {
+                endDateInput.value = this.value;
+            }
+        });
+        endDateInput.addEventListener('change', function() {
+            if (startDateInput.value && this.value < startDateInput.value) {
+                startDateInput.value = this.value;
+            }
+        });
     }
 });
 </script>
 
 <style>
-    /* Custom styling for DataTables */
-    .dataTables_wrapper .dataTables_paginate .paginate_button {
-        @apply px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
-        margin: 0 2px;
+/* Ensure all content fits and is scrollable */
+.max-w-full {
+    max-width: 100%;
+}
+.overflow-x-auto {
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+table {
+    min-width: 1000px;
+}
+#customer_search_results {
+    z-index: 50;
+}
+.customer-result {
+    transition: background-color 0.15s ease;
+}
+@media print {
+    .no-print, .bg-gray-50, .shadow, #toggle-filters, #export-btn, [onclick="window.print()"] {
+        display: none !important;
     }
-    
-    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-        @apply bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white;
+    body, .bg-white, .max-w-full {
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
-    
-    .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
-        @apply opacity-50 cursor-not-allowed;
+    table {
+        font-size: 9px !important;
     }
-    
-    /* Custom styling for the search input */
-    .dataTables_filter input {
-        @apply block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm;
+    .sticky {
+        position: static !important;
     }
-    
-    /* Hover effect for table rows */
-    tbody tr {
-        transition: background-color 0.2s ease;
-    }
-    
-    tbody tr:hover {
-        @apply bg-gray-50;
-    }
+}
 </style>
 {% endblock %}

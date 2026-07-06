@@ -1,0 +1,893 @@
+{% extends 'pos/admin/base_admin.html' %}
+{% load static %}
+{% comment %} Remove custom_filters if not available {% endcomment %}
+
+{% load custom_filters %}
+{% load role_filters %}
+
+{% block title %}Edit Role: {{ role.get_name_display }} - Admin{% endblock %}
+
+{% block page_title %}Edit Role: {{ role.get_name_display }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'role_list' %}">Roles</a></li>
+<li class="breadcrumb-item"><a href="{% url 'role_detail' role.pk %}">{{ role.get_name_display|truncatechars:30 }}</a></li>
+<li class="breadcrumb-item active">Edit</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 gradient-text">Edit Role</h1>
+            <p class="text-muted mb-0">Modify role settings and permissions</p>
+        </div>
+        <div class="btn-group" role="group">
+            <a href="{% url 'role_detail' role.pk %}" class="btn btn-outline-info d-flex align-items-center gap-2">
+                <i class="fas fa-eye"></i>
+                View Details
+            </a>
+            <a href="{% url 'role_list' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <i class="fas fa-arrow-left"></i>
+                Back to Roles
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Edit Form -->
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between py-3 gradient-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-wrapper bg-white text-primary p-2 rounded-circle shadow-sm">
+                            <i class="fas fa-user-edit fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0 text-white">Edit Role Information</h5>
+                            <p class="card-subtitle text-white-50 mb-0">Update role details and permissions</p>
+                        </div>
+                    </div>
+                    <span class="badge {% if role.is_active %}bg-success{% else %}bg-danger{% endif %} px-3 py-2 rounded-pill shadow-sm">
+                        <i class="fas {% if role.is_active %}fa-toggle-on{% else %}fa-toggle-off{% endif %} me-1"></i>
+                        {% if role.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" id="roleForm">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information -->
+                        <div class="mb-5">
+                            <div class="section-header mb-4">
+                                <div class="step-badge">1</div>
+                                <h5 class="section-title mb-0">Basic Information</h5>
+                                <div class="section-line"></div>
+                            </div>
+                            
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold d-flex align-items-center gap-2">
+                                            <i class="fas fa-tag text-primary"></i>
+                                            Role Type <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 border-start-0 border-top-0 border-primary border-2 rounded-0">
+                                                <i class="fas fa-user-tag text-primary"></i>
+                                            </span>
+                                            {{ form.name }}
+                                        </div>
+                                        {% if form.name.errors %}
+                                            <div class="alert alert-danger mt-2 p-2 border-0 shadow-sm">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                {{ form.name.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold d-flex align-items-center gap-2">
+                                            <i class="fas fa-align-left text-primary"></i>
+                                            Description
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 border-start-0 border-top-0 border-primary border-2 rounded-0 align-items-start pt-3">
+                                                <i class="fas fa-file-alt text-primary"></i>
+                                            </span>
+                                            {{ form.description }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Permissions -->
+                        <div class="mb-5">
+                            <div class="section-header mb-4">
+                                <div class="step-badge">2</div>
+                                <h5 class="section-title mb-0">Role Permissions</h5>
+                                <div class="section-line"></div>
+                                <div class="btn-group ms-auto" role="group">
+                                    <button type="button" class="btn btn-sm btn-primary d-flex align-items-center gap-2 px-3" id="selectAll">
+                                        <i class="fas fa-check-double"></i>
+                                        Select All
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 px-3" id="selectNone">
+                                        <i class="fas fa-times"></i>
+                                        Clear All
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Permission Categories Accordion -->
+                            <div class="accordion" id="permissionsAccordion">
+                                {% for category_name, fields in permission_categories.items %}
+                                <div class="accordion-item border-0 mb-3 shadow-sm">
+                                    <div class="accordion-header">
+                                        <button class="accordion-button collapsed rounded-3 p-4" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#collapse{{ forloop.counter }}"
+                                                aria-expanded="false">
+                                            <div class="d-flex align-items-center justify-content-between w-100">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="category-icon-wrapper bg-gradient-primary text-white p-3 rounded-circle shadow">
+                                                        <i class="fas fa-{% cycle 'shield-alt' 'chart-bar' 'shopping-cart' 'box' 'users' 'cog' %}"></i>
+                                                    </div>
+                                                    <div class="text-start">
+                                                        <h6 class="mb-0 fw-semibold text-dark">{{ category_name }}</h6>
+                                                        <small class="text-muted">Manage {{ category_name|lower }} permissions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                                                        <i class="fas fa-lock me-1"></i>
+                                                        {{ fields|length }} permissions
+                                                    </span>
+                                                    <i class="fas fa-chevron-down ms-2 text-primary"></i>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                    <div id="collapse{{ forloop.counter }}" 
+                                         class="accordion-collapse collapse" 
+                                         data-bs-parent="#permissionsAccordion">
+                                        <div class="accordion-body pt-4 pb-4">
+                                            <div class="row g-3">
+                                                {% for field_name, field_label in fields %}
+                                                <div class="col-md-6">
+                                                    <label class="permission-card form-check-label p-3 border rounded-3 position-relative d-block" for="id_{{ field_name }}">
+                                                        <div class="d-flex align-items-start">
+                                                            {# Direct access to form field value #}
+                                                            {% with field_value=form|get_item_or_default:field_name %}
+                                                            <input type="checkbox" 
+                                                                   class="form-check-input permission-checkbox me-3 mt-1" 
+                                                                   name="{{ field_name }}" 
+                                                                   id="id_{{ field_name }}"
+                                                                   {% if field_value %}checked{% endif %}>
+                                                            {% endwith %}
+                                                            <div class="flex-grow-1">
+                                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                                    <span class="fw-semibold text-dark">{{ field_label }}</span>
+                                                                    <div class="permission-indicator">
+                                                                        <i class="fas fa-check-circle text-success d-none"></i>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="text-muted small">
+                                                                    <i class="fas fa-{% cycle 'key' 'eye' 'edit' 'trash' 'download' 'upload' as icons %} me-1"></i>
+                                                                    {% if "can_add" in field_name %}Create new records
+                                                                    {% elif "can_edit" in field_name %}Modify existing records
+                                                                    {% elif "can_delete" in field_name %}Remove records
+                                                                    {% elif "can_view" in field_name %}View records
+                                                                    {% elif "can_manage" in field_name %}Full management
+                                                                    {% else %}System permission{% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="permission-card-overlay"></div>
+                                                    </label>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mb-5">
+                            <div class="section-header mb-4">
+                                <div class="step-badge">3</div>
+                                <h5 class="section-title mb-0">Role Status</h5>
+                                <div class="section-line"></div>
+                            </div>
+                            
+                            <div class="card border-0 shadow-sm bg-gradient-light">
+                                <div class="card-body p-4">
+                                    <div class="form-check form-switch d-flex align-items-center gap-3">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label fw-semibold cursor-pointer w-100" for="{{ form.is_active.id_for_label }}">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="icon-wrapper bg-white shadow-sm p-3 rounded-circle">
+                                                    <i class="fas fa-toggle-on fa-lg text-success"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1 text-dark">Active Role</h6>
+                                                    <small class="text-muted">
+                                                        This role can be assigned to users. Uncheck to disable temporarily.
+                                                    </small>
+                                                </div>
+                                                <div class="status-indicator">
+                                                    {% if role.is_active %}
+                                                    <span class="badge bg-success px-3 py-2 rounded-pill">
+                                                        <i class="fas fa-check me-1"></i>
+                                                        Active
+                                                    </span>
+                                                    {% else %}
+                                                    <span class="badge bg-danger px-3 py-2 rounded-pill">
+                                                        <i class="fas fa-times me-1"></i>
+                                                        Inactive
+                                                    </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Assignment Warning -->
+                        {% if user_count > 0 %}
+                        <div class="alert alert-warning border-warning border-2 shadow-sm mb-5">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="icon-wrapper bg-warning bg-opacity-10 text-warning p-2 rounded-circle flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="alert-heading fw-semibold mb-2">
+                                        <i class="fas fa-users me-1"></i>
+                                        Role In Use
+                                    </h6>
+                                    <p class="mb-2">
+                                        This role is currently assigned to <strong>{{ user_count }} user{{ user_count|pluralize }}</strong>.
+                                        Changes will affect all users with this role immediately.
+                                    </p>
+                                    <div class="mt-3">
+                                        <a href="{% url 'role_users' role.pk %}" class="btn btn-sm btn-outline-warning d-flex align-items-center gap-2">
+                                            <i class="fas fa-user-friends"></i>
+                                            View Assigned Users
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="sticky-bottom bg-white pt-4 pb-3 border-top mt-5">
+                            <div class="d-flex gap-3 justify-content-center">
+                                <button type="submit" class="btn btn-primary px-5 py-3 d-flex align-items-center gap-2 shadow-lg hover-lift">
+                                    <i class="fas fa-save"></i>
+                                    Save Changes
+                                </button>
+                                <button type="reset" class="btn btn-outline-primary px-5 py-3 d-flex align-items-center gap-2 hover-lift">
+                                    <i class="fas fa-redo"></i>
+                                    Reset Changes
+                                </button>
+                                <a href="{% url 'role_list' %}" class="btn btn-light px-5 py-3 d-flex align-items-center gap-2 hover-lift">
+                                    <i class="fas fa-times"></i>
+                                    Cancel
+                                </a>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <small class="text-muted d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fas fa-shield-alt text-primary"></i>
+                                    All changes are logged in the audit trail
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Role Statistics -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header d-flex align-items-center gap-3 py-3 gradient-info">
+                    <div class="icon-wrapper bg-white text-info p-2 rounded-circle shadow-sm">
+                        <i class="fas fa-chart-bar fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0 text-white">Role Statistics</h5>
+                        <p class="card-subtitle text-white-50 mb-0">Current role metrics</p>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="position-relative d-inline-block">
+                            <div class="stats-circle">
+                                <svg width="120" height="120" viewBox="0 0 120 120">
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="#e9ecef" stroke-width="8"/>
+                                    <circle id="permissionCircle" cx="60" cy="60" r="54" fill="none" 
+                                            stroke="url(#gradientStats)" stroke-width="8" 
+                                            stroke-dasharray="339.292" stroke-dashoffset="0"
+                                            stroke-linecap="round" transform="rotate(-90 60 60)"/>
+                                    <defs>
+                                        <linearGradient id="gradientStats" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#17a2b8" />
+                                            <stop offset="100%" stop-color="#20c997" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                    <h2 class="mb-0 fw-bold gradient-text">{{ user_count }}</h2>
+                                    <small class="text-muted">Users</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row text-center mb-4">
+                        <div class="col-6">
+                            <div class="border rounded p-3 bg-light shadow-sm hover-lift">
+                                <h3 class="mb-0 fw-bold text-primary">{{ user_count }}</h3>
+                                <small class="text-muted d-block">Assigned Users</small>
+                                <div class="progress mt-2" style="height: 4px;">
+                                    <div class="progress-bar bg-primary" style="width: 100%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3 bg-light shadow-sm hover-lift">
+                                <h3 class="mb-0 fw-bold text-success">{{ permission_count }}</h3>
+                                <small class="text-muted d-block">Permissions</small>
+                                <div class="progress mt-2" style="height: 4px;">
+                                    <div class="progress-bar bg-success" style="width: 100%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline mt-4">
+                        <div class="timeline-item">
+                            <div class="timeline-icon bg-primary text-white">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1 fw-semibold">Created</h6>
+                                <p class="text-muted mb-0">{{ role.created_at|date:"F d, Y H:i" }}</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-icon bg-info text-white">
+                                <i class="fas fa-sync"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1 fw-semibold">Last Updated</h6>
+                                <p class="text-muted mb-0">{{ role.updated_at|date:"F d, Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow-lg border-0">
+                <div class="card-header d-flex align-items-center gap-3 py-3 gradient-success">
+                    <div class="icon-wrapper bg-white text-success p-2 rounded-circle shadow-sm">
+                        <i class="fas fa-bolt fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0 text-white">Quick Actions</h5>
+                        <p class="card-subtitle text-white-50 mb-0">Manage role quickly</p>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="vstack gap-3">
+                        <a href="{% url 'duplicate_role' role.pk %}" class="btn btn-outline-primary text-start p-3 border-2 rounded-3 hover-lift d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-wrapper bg-primary bg-opacity-10 text-primary p-2 rounded-circle">
+                                    <i class="fas fa-copy"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 fw-semibold">Duplicate Role</h6>
+                                    <small class="text-muted d-block">Create a copy with same permissions</small>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right text-primary"></i>
+                        </a>
+                        
+                        <form method="post" action="{% url 'toggle_role_status' role.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn {% if role.is_active %}btn-warning{% else %}btn-success{% endif %} text-start p-3 border-0 rounded-3 hover-lift d-flex align-items-center justify-content-between w-100">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="icon-wrapper {% if role.is_active %}bg-warning bg-opacity-10 text-warning{% else %}bg-success bg-opacity-10 text-success{% endif %} p-2 rounded-circle">
+                                        <i class="fas {% if role.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1 fw-semibold">
+                                            {% if role.is_active %}Deactivate{% else %}Activate{% endif %} Role
+                                        </h6>
+                                        <small class="text-muted d-block">
+                                            {% if role.is_active %}Temporarily disable this role{% else %}Enable this role{% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right {% if role.is_active %}text-warning{% else %}text-success{% endif %}"></i>
+                            </button>
+                        </form>
+                        
+                        <a href="{% url 'role_detail' role.pk %}" class="btn btn-outline-info text-start p-3 border-2 rounded-3 hover-lift d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-wrapper bg-info bg-opacity-10 text-info p-2 rounded-circle">
+                                    <i class="fas fa-eye"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 fw-semibold">View Details</h6>
+                                    <small class="text-muted d-block">See full role information</small>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right text-info"></i>
+                        </a>
+                        
+                        <a href="{% url 'role_list' %}" class="btn btn-outline-secondary text-start p-3 border-2 rounded-3 hover-lift d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-wrapper bg-secondary bg-opacity-10 text-secondary p-2 rounded-circle">
+                                    <i class="fas fa-list"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 fw-semibold">All Roles</h6>
+                                    <small class="text-muted d-block">View all system roles</small>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right text-secondary"></i>
+                        </a>
+                    </div>
+                    
+                   
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize total permissions count
+    const totalPermissions = $('.permission-checkbox').length;
+    
+    // Permission circle animation
+    const circle = document.getElementById('permissionCircle');
+    const circumference = 2 * Math.PI * 54;
+    
+    // Update permission summary
+    function updatePermissionSummary() {
+        const selectedPermissions = $('.permission-checkbox:checked').length;
+        const percentage = totalPermissions > 0 ? (selectedPermissions / totalPermissions) : 0;
+        const offset = circumference - (percentage * circumference);
+        
+        // Update circle animation
+        circle.style.strokeDashoffset = offset;
+        
+        // Update category counts
+        {% for category_name, fields in permission_categories.items %}
+            const count{{ forloop.counter }} = $(`#collapse{{ forloop.counter }} .permission-checkbox:checked`).length;
+            const categoryPercentage = (count{{ forloop.counter }} / {{ fields|length }}) * 100;
+            
+            // Update category dot color
+            const dot = $(`#count-{{ forloop.counter }}`).closest('.d-flex').find('.category-dot');
+            if (dot.length) {
+                dot.removeClass('bg-danger bg-warning bg-success bg-primary');
+                if (categoryPercentage === 0) {
+                    dot.addClass('bg-danger');
+                } else if (categoryPercentage < 100) {
+                    dot.addClass('bg-warning');
+                } else {
+                    dot.addClass('bg-success');
+                }
+            }
+        {% endfor %}
+        
+        // Update permission cards
+        $('.permission-checkbox').each(function() {
+            const card = $(this).closest('.permission-card');
+            const indicator = card.find('.permission-indicator i');
+            
+            if ($(this).is(':checked')) {
+                card.addClass('permission-active');
+                indicator.removeClass('d-none');
+            } else {
+                card.removeClass('permission-active');
+                indicator.addClass('d-none');
+            }
+        });
+    }
+    
+    // Initialize
+    updatePermissionSummary();
+    
+    // Update summary on checkbox change
+    $('.permission-checkbox').on('change', updatePermissionSummary);
+    
+    // Select All / Select None
+    $('#selectAll').on('click', function() {
+        $('.permission-checkbox').prop('checked', true).trigger('change');
+        showToast('All permissions selected', 'success');
+    });
+    
+    $('#selectNone').on('click', function() {
+        $('.permission-checkbox').prop('checked', false).trigger('change');
+        showToast('All permissions cleared', 'warning');
+    });
+    
+    // Status switch handler
+    $('.status-switch').on('change', function() {
+        const statusIndicator = $('.status-indicator');
+        if ($(this).is(':checked')) {
+            statusIndicator.html(`
+                <span class="badge bg-success px-3 py-2 rounded-pill">
+                    <i class="fas fa-check me-1"></i>
+                    Active
+                </span>
+            `);
+        } else {
+            statusIndicator.html(`
+                <span class="badge bg-danger px-3 py-2 rounded-pill">
+                    <i class="fas fa-times me-1"></i>
+                    Inactive
+                </span>
+            `);
+        }
+    });
+    
+    // Form validation and unsaved changes warning
+    let formChanged = false;
+    const originalFormData = $('#roleForm').serialize();
+    
+    $('input, select, textarea').on('change input', function() {
+        const currentFormData = $('#roleForm').serialize();
+        formChanged = (originalFormData !== currentFormData);
+        
+        // Show visual feedback for changed fields
+        if ($(this).val() !== $(this).data('original-value')) {
+            $(this).addClass('is-changed');
+        } else {
+            $(this).removeClass('is-changed');
+        }
+    });
+    
+    // Store original values
+    $('input, select, textarea').each(function() {
+        $(this).data('original-value', $(this).val());
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            return 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+    
+    $('form').on('submit', function() {
+        formChanged = false;
+    });
+    
+    // Reset button handler
+    $('button[type="reset"]').on('click', function() {
+        if (confirm('Are you sure you want to reset all changes?')) {
+            setTimeout(() => {
+                formChanged = false;
+                updatePermissionSummary();
+                showToast('Form reset to original values', 'info');
+            }, 100);
+        }
+    });
+    
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toast = `<div class="toast align-items-center text-bg-${type} border-0 shadow-lg" role="alert">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>`;
+        
+        $('.toast-container').remove();
+        $('body').append(`<div class="toast-container position-fixed bottom-0 end-0 p-3">${toast}</div>`);
+        $('.toast').toast('show');
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            $('.toast').toast('hide');
+        }, 3000);
+    }
+    
+    // Add focus effects
+    $('.focus-ring').on('focus', function() {
+        $(this).parent().addClass('focused');
+    }).on('blur', function() {
+        $(this).parent().removeClass('focused');
+    });
+});
+</script>
+
+<style>
+/* Custom CSS for enhanced edit role styling */
+:root {
+    --primary-color: #4e54c8;
+    --secondary-color: #8f94fb;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --gradient-primary: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+    --gradient-secondary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-success: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    --gradient-info: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+    --gradient-warning: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+}
+
+.gradient-header {
+    background: var(--gradient-primary);
+}
+
+.gradient-info {
+    background: var(--gradient-info);
+}
+
+.gradient-success {
+    background: var(--gradient-success);
+}
+
+.gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.bg-gradient-light {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.step-badge {
+    width: 32px;
+    height: 32px;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    margin-right: 12px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.section-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.section-line {
+    flex-grow: 1;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, transparent 100%);
+    margin-left: 15px;
+}
+
+.category-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+}
+
+.permission-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: 2px solid #e9ecef;
+    position: relative;
+    overflow: hidden;
+}
+
+.permission-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(78, 84, 200, 0.15);
+}
+
+.permission-card.permission-active {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(78, 84, 200, 0.05) 0%, rgba(143, 148, 251, 0.05) 100%);
+    box-shadow: 0 5px 15px rgba(78, 84, 200, 0.1);
+}
+
+.permission-card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+}
+
+.permission-card:hover .permission-card-overlay {
+    opacity: 0.1;
+}
+
+.accordion-button {
+    border: none;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.accordion-button:not(.collapsed) {
+    background: white;
+    color: inherit;
+    box-shadow: 0 5px 15px rgba(78, 84, 200, 0.1);
+}
+
+.accordion-button::after {
+    display: none;
+}
+
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.status-switch {
+    width: 3.5em;
+    height: 1.8em;
+    background-image: none;
+    background-color: #e9ecef;
+}
+
+.status-switch:checked {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.input-group.focused {
+    box-shadow: 0 0 0 0.25rem rgba(78, 84, 200, 0.25);
+    border-radius: 0.375rem;
+}
+
+.sticky-bottom {
+    position: sticky;
+    bottom: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    margin-top: 30px;
+    z-index: 1000;
+}
+
+.stats-circle {
+    position: relative;
+    display: inline-block;
+}
+
+.stats-circle svg circle {
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-wrapper {
+    transition: all 0.3s ease;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Timeline styling */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--primary-color), transparent);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-icon {
+    position: absolute;
+    left: -30px;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.timeline-content {
+    padding-left: 10px;
+}
+
+/* Changed field indicator */
+.is-changed {
+    border-color: var(--warning-color) !important;
+    background-color: rgba(255, 193, 7, 0.05) !important;
+}
+
+@media (max-width: 768px) {
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .section-line {
+        display: none;
+    }
+    
+    .sticky-bottom {
+        position: static;
+        background: transparent;
+        backdrop-filter: none;
+    }
+    
+    .timeline {
+        padding-left: 20px;
+    }
+    
+    .timeline::before {
+        left: 10px;
+    }
+    
+    .timeline-icon {
+        left: -20px;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+    }
+}
+</style>
+{% endblock %}

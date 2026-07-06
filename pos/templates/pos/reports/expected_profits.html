@@ -1,0 +1,349 @@
+<!-- templates/pos/reports/expected_profits.html -->
+{% extends 'pos/reports/base_report.html' %}
+{% load static humanize %}
+
+{% block title %}Expected Profits from Inventory{% endblock %}
+
+{% block content %}
+{% with report_title="Expected Profits from Inventory" report_icon="fa-chart-pie" report_color="green" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+{% block filters %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <div class="flex items-center mb-4">
+            <i class="fas fa-filter text-green-600 mr-2"></i>
+            <h3 class="text-lg font-medium text-gray-900">Filter Options</h3>
+        </div>
+        
+        <form method="get" id="filterForm" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Category Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select name="category" class="w-full px-3 py-2 border rounded-md">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Supplier Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                    <select name="supplier" class="w-full px-3 py-2 border rounded-md">
+                        <option value="">All Suppliers</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" {% if selected_supplier == supplier.id|stringformat:"s" %}selected{% endif %}>
+                            {{ supplier.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Product Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                    <select name="product" class="w-full px-3 py-2 border rounded-md">
+                        <option value="">All Products</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}" {% if selected_product == product.id|stringformat:"s" %}selected{% endif %}>
+                            {{ product.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Sort By -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                    <select name="sort" class="w-full px-3 py-2 border rounded-md">
+                        {% for value, label in sort_options %}
+                        <option value="{{ value }}" {% if selected_sort == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Min Profit Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Minimum Expected Profit (KSh)</label>
+                    <input type="number" name="min_profit" value="{{ selected_min_profit }}" 
+                           class="w-full px-3 py-2 border rounded-md" step="1000" min="0">
+                </div>
+                
+                <!-- Apply Button -->
+                <div class="flex items-end">
+                    <div class="flex space-x-2 w-full">
+                        <button type="submit" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                            <i class="fas fa-filter mr-2"></i> Apply
+                        </button>
+                        <a href="{% url 'expected_profits_report' %}" class="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 text-center">
+                            <i class="fas fa-sync-alt mr-2"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Info Alert -->
+        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div class="flex">
+                <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+                <p class="text-sm text-blue-700">
+                    Expected profits calculated based on current batch stock × (selling price - purchase price)
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="bg-blue-100 rounded-full p-3 mr-3">
+                <i class="fas fa-boxes text-blue-600"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Total Batches</p>
+                <p class="text-xl font-bold">{{ total_batches }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="bg-purple-100 rounded-full p-3 mr-3">
+                <i class="fas fa-weight-hanging text-purple-600"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Total Quantity</p>
+                <p class="text-xl font-bold">{{ total_quantity|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="bg-red-100 rounded-full p-3 mr-3">
+                <i class="fas fa-shopping-cart text-red-600"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Inventory Cost</p>
+                <p class="text-xl font-bold">KSh {{ total_inventory_cost|floatformat:2|intcomma }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="bg-green-100 rounded-full p-3 mr-3">
+                <i class="fas fa-chart-line text-green-600"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Expected Revenue</p>
+                <p class="text-xl font-bold text-green-600">KSh {{ total_expected_revenue|floatformat:2|intcomma }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="bg-yellow-100 rounded-full p-3 mr-3">
+                <i class="fas fa-coins text-yellow-600"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Expected Profit</p>
+                <p class="text-xl font-bold text-yellow-600">KSh {{ total_expected_profit|floatformat:2|intcomma }}</p>
+                <p class="text-xs text-gray-500">Margin: {{ avg_profit_margin|floatformat:2 }}%</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Breakdown -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <!-- Category Breakdown -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="px-4 py-3 bg-gray-50 border-b">
+            <h4 class="font-medium text-gray-700">
+                <i class="fas fa-folder-open text-blue-600 mr-2"></i>By Category
+            </h4>
+        </div>
+        <div class="p-4">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase">Cost</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase">Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for cat, data in category_breakdown.items %}
+                        <tr>
+                            <td class="py-2 text-sm">{{ cat }}</td>
+                            <td class="py-2 text-sm text-right">{{ data.quantity|floatformat:2 }}</td>
+                            <td class="py-2 text-sm text-right">KSh {{ data.cost|floatformat:2|intcomma }}</td>
+                            <td class="py-2 text-sm text-right">KSh {{ data.revenue|floatformat:2|intcomma }}</td>
+                            <td class="py-2 text-sm text-right font-medium {% if data.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                KSh {{ data.profit|floatformat:2|intcomma }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Supplier Breakdown -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="px-4 py-3 bg-gray-50 border-b">
+            <h4 class="font-medium text-gray-700">
+                <i class="fas fa-truck text-green-600 mr-2"></i>By Supplier
+            </h4>
+        </div>
+        <div class="p-4">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase">Supplier</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase">Cost</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase">Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for sup, data in supplier_breakdown.items %}
+                        <tr>
+                            <td class="py-2 text-sm">{{ sup }}</td>
+                            <td class="py-2 text-sm text-right">{{ data.quantity|floatformat:2 }}</td>
+                            <td class="py-2 text-sm text-right">KSh {{ data.cost|floatformat:2|intcomma }}</td>
+                            <td class="py-2 text-sm text-right">KSh {{ data.revenue|floatformat:2|intcomma }}</td>
+                            <td class="py-2 text-sm text-right font-medium {% if data.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                KSh {{ data.profit|floatformat:2|intcomma }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Batch Table -->
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <div>
+            <h3 class="text-lg font-medium text-gray-900">
+                <i class="fas fa-list text-green-600 mr-2"></i>Detailed Batch Profit Analysis
+            </h3>
+            <p class="text-sm text-gray-500">Expected profits by batch based on current stock</p>
+        </div>
+        <div class="flex space-x-2">
+            <a href="?export=csv{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+               class="bg-green-600 text-white px-3 py-2 rounded-md text-sm hover:bg-green-700">
+                <i class="fas fa-file-csv mr-1"></i> CSV
+            </a>
+            <a href="?export=excel{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+               class="bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700">
+                <i class="fas fa-file-excel mr-1"></i> Excel
+            </a>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product/Batch</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supplier</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Purchase</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Selling</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Cost</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Profit</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Margin</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Expiry</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for item in batch_profits %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div class="font-medium">{{ item.product.name }}</div>
+                        <div class="text-xs text-gray-500">Batch: {{ item.batch_number }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ item.supplier }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ item.quantity|floatformat:2 }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">KSh {{ item.purchase_price|floatformat:2 }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">KSh {{ item.selling_price|floatformat:2 }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">KSh {{ item.cost_value|floatformat:2|intcomma }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">KSh {{ item.revenue_value|floatformat:2|intcomma }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {% if item.expected_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                        KSh {{ item.expected_profit|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if item.profit_margin >= 20 %}bg-green-100 text-green-800
+                            {% elif item.profit_margin >= 10 %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ item.profit_margin|floatformat:2 }}%
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        {% if item.expiry_date %}
+                            <span class="{% if item.days_to_expiry and item.days_to_expiry <= 30 %}text-orange-600 font-bold{% endif %}">
+                                {{ item.expiry_date|date:"d/m/Y" }}
+                            </span>
+                            {% if item.days_to_expiry and item.days_to_expiry <= 30 %}
+                            <br><span class="text-xs text-orange-500">⚠️ {{ item.days_to_expiry }} days</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+                        <i class="fas fa-chart-line fa-4x mb-4 text-gray-400"></i>
+                        <p class="text-lg">No inventory data found</p>
+                        <p class="text-sm">Add purchases with batch information to see expected profits</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit on filter change
+    const filterSelects = document.querySelectorAll('select[name="category"], select[name="supplier"], select[name="product"], select[name="sort"]');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    });
+});
+</script>
+{% endblock %}

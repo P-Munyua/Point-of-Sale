@@ -144,3 +144,32 @@ admin.site.register(PendingSale)
 
 
 
+# admin.py
+from django.contrib import admin
+from .models import CreditSaleItem, CreditPayment, CreditPaymentDetail
+
+@admin.register(CreditSaleItem)
+class CreditSaleItemAdmin(admin.ModelAdmin):
+    list_display = ['id', 'product_name', 'quantity_credited', 'quantity_paid', 'remaining_quantity', 'is_fully_paid']
+    list_filter = ['is_fully_paid', 'created_at']
+    search_fields = ['sale_item__product__name', 'sale_item__sale__sale_number']
+    
+    def product_name(self, obj):
+        return obj.sale_item.product.name
+
+@admin.register(CreditPayment)
+class CreditPaymentAdmin(admin.ModelAdmin):
+    list_display = ['id', 'sale_number', 'amount', 'payment_date', 'payment_method', 'reference']
+    list_filter = ['payment_method', 'payment_date']
+    search_fields = ['sale__sale_number', 'reference']
+    
+    def sale_number(self, obj):
+        return obj.sale.sale_number
+
+@admin.register(CreditPaymentDetail)
+class CreditPaymentDetailAdmin(admin.ModelAdmin):
+    list_display = ['id', 'credit_payment', 'product_name', 'quantity_paid', 'amount_paid']
+    list_filter = ['credit_payment__payment_date']
+    
+    def product_name(self, obj):
+        return obj.credit_sale_item.sale_item.product.name
