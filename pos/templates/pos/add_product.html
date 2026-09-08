@@ -1,0 +1,412 @@
+{% extends 'pos/base.html' %}
+
+{% block title %}Add Product{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800">Add New Product</h2>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data" class="px-6 py-4">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Left Column -->
+            <div>
+                <div class="mb-4">
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Product Name*</label>
+                    <input type="text" id="name" name="name" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="barcode" class="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
+                    <input type="text" id="barcode" name="barcode"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <div class="flex space-x-2">
+                        <select id="category" name="category"
+                                class="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Category</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" onclick="openCategorySearch()" 
+                                class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200">
+                            🔍
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="supplier" class="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                    <div class="flex space-x-2">
+                        <select id="supplier" name="supplier"
+                                class="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Supplier</option>
+                            {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" onclick="openSupplierSearch()"
+                                class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200">
+                            🔍
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Pricing Section -->
+            <div>
+                <div class="mb-4">
+                    <label for="purchase_price" class="block text-sm font-medium text-gray-700 mb-1">Purchase Price*</label>
+                    <input type="number" id="purchase_price" name="purchase_price" step="0.0001" min="0" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="0.0000">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="selling_price" class="block text-sm font-medium text-gray-700 mb-1">Retail Price*</label>
+                    <input type="number" id="selling_price" name="selling_price" step="0.0001" min="0" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="0.0000">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="least_selling_price" class="block text-sm font-medium text-gray-700 mb-1">
+                        Least Selling Price* 
+                        <span class="text-xs text-gray-500">(Minimum allowed price)</span>
+                    </label>
+                    <input type="number" id="least_selling_price" name="least_selling_price" step="0.0001" min="0" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="0.0000">
+                </div>
+                
+                <!-- Wholesale Pricing Section -->
+                <div class="border-t border-gray-200 pt-4 mb-4">
+                    <h3 class="text-sm font-medium text-gray-700 mb-3">Wholesale Pricing</h3>
+                    
+                    <div class="mb-4">
+                        <label for="wholesale_price" class="block text-sm font-medium text-gray-700 mb-1">Wholesale Price*</label>
+                        <input type="number" id="wholesale_price" name="wholesale_price" step="0.0001" min="0" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="0.0000">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="wholesale_min_quantity" class="block text-sm font-medium text-gray-700 mb-1">Minimum Quantity*</label>
+                        <input type="number" id="wholesale_min_quantity" name="wholesale_min_quantity" step="0.000001" min="0" value="0" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="0.000000">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <div class="mb-4">
+                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">
+                        Quantity Adding *
+                        <span class="text-xs text-gray-500">(Supports up to 6 decimal places)</span>
+                    </label>
+                    <input type="number" id="quantity" name="quantity" step="0.000001" min="0" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="0.000000">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="reorder_level" class="block text-sm font-medium text-gray-700 mb-1">
+                        Reorder Level
+                        <span class="text-xs text-gray-500">(Supports up to 6 decimal places)</span>
+                    </label>
+                    <input type="number" id="reorder_level" name="reorder_level" step="0.000001" min="0" value="5.000000"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="5.000000">
+                </div>
+            </div>
+            
+            <div>
+                <div class="mb-4">
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="description" name="description" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <label for="image" class="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
+            <input type="file" id="image" name="image"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        
+        <div class="flex items-center mb-4">
+            <input type="checkbox" id="is_active" name="is_active" checked
+                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+            <label for="is_active" class="ml-2 block text-sm text-gray-700">Active Product</label>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+            <a href="{% url 'product_list' %}" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Cancel
+            </a>
+            <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Save Product
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Category Search Modal -->
+<div id="categorySearchModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Search Category</h3>
+            <input type="text" id="categorySearchInput" placeholder="Search categories..."
+                   class="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+        </div>
+        <div id="categorySearchResults" class="max-h-60 overflow-y-auto">
+            <!-- Search results will be populated here -->
+        </div>
+        <div class="mt-4 flex justify-end">
+            <button onclick="closeCategorySearch()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Supplier Search Modal -->
+<div id="supplierSearchModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Search Supplier</h3>
+            <input type="text" id="supplierSearchInput" placeholder="Search suppliers..."
+                   class="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+        </div>
+        <div id="supplierSearchResults" class="max-h-60 overflow-y-auto">
+            <!-- Search results will be populated here -->
+        </div>
+        <div class="mt-4 flex justify-end">
+            <button onclick="closeSupplierSearch()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-calculate least selling price as 80% of retail price by default
+    const sellingPriceInput = document.getElementById('selling_price');
+    const leastSellingPriceInput = document.getElementById('least_selling_price');
+    const wholesalePriceInput = document.getElementById('wholesale_price');
+    const purchasePriceInput = document.getElementById('purchase_price');
+    
+    // Calculate least selling price when selling price changes
+    sellingPriceInput.addEventListener('change', function() {
+        const retailPrice = parseFloat(sellingPriceInput.value) || 0;
+        const purchasePrice = parseFloat(purchasePriceInput.value) || 0;
+        
+        // Auto-calculate least selling price (80% of retail price, but not less than purchase price)
+        let leastPrice = retailPrice * 0.8;
+        if (leastPrice < purchasePrice) {
+            leastPrice = purchasePrice;
+        }
+        
+        if (!leastSellingPriceInput.value || leastSellingPriceInput.value == "0") {
+            leastSellingPriceInput.value = leastPrice.toFixed(4);
+        }
+        
+        // Auto-calculate wholesale price if not set
+        if (!wholesalePriceInput.value || wholesalePriceInput.value == "0") {
+            wholesalePriceInput.value = (retailPrice * 0.8).toFixed(4);
+        }
+    });
+    
+    // Validate least selling price when it's manually changed
+    leastSellingPriceInput.addEventListener('change', function() {
+        const sellingPrice = parseFloat(sellingPriceInput.value) || 0;
+        const leastPrice = parseFloat(leastSellingPriceInput.value) || 0;
+        const purchasePrice = parseFloat(purchasePriceInput.value) || 0;
+        
+        if (leastPrice > sellingPrice) {
+            alert('Least selling price cannot be higher than retail price');
+            leastSellingPriceInput.value = (sellingPrice * 0.8).toFixed(4);
+        }
+        
+        if (leastPrice < purchasePrice) {
+            alert('Least selling price cannot be less than purchase price');
+            leastSellingPriceInput.value = purchasePrice.toFixed(4);
+        }
+    });
+    
+    // Validate wholesale price
+    wholesalePriceInput.addEventListener('change', function() {
+        const wholesalePrice = parseFloat(wholesalePriceInput.value) || 0;
+        const sellingPrice = parseFloat(sellingPriceInput.value) || 0;
+        const purchasePrice = parseFloat(purchasePriceInput.value) || 0;
+        
+        if (wholesalePrice < purchasePrice) {
+            alert('Wholesale price cannot be less than purchase price');
+            wholesalePriceInput.value = purchasePrice.toFixed(4);
+        }
+        
+        if (wholesalePrice > sellingPrice) {
+            alert('Wholesale price cannot be higher than retail price');
+            wholesalePriceInput.value = sellingPrice.toFixed(4);
+        }
+    });
+    
+    // Initialize search modals
+    initSearchModals();
+});
+
+// Category Search Functions
+function openCategorySearch() {
+    document.getElementById('categorySearchModal').classList.remove('hidden');
+    searchCategories('');
+}
+
+function closeCategorySearch() {
+    document.getElementById('categorySearchModal').classList.add('hidden');
+}
+
+function searchCategories(query) {
+    const resultsDiv = document.getElementById('categorySearchResults');
+    resultsDiv.innerHTML = '<div class="text-center py-4">Loading...</div>';
+    
+    // In a real implementation, you would fetch from an API endpoint
+    const categories = Array.from(document.querySelectorAll('#category option'))
+        .filter(option => option.value !== "")
+        .map(option => ({
+            id: option.value,
+            name: option.textContent
+        }));
+    
+    const filtered = categories.filter(cat => 
+        cat.name.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    displayCategoryResults(filtered);
+}
+
+function displayCategoryResults(categories) {
+    const resultsDiv = document.getElementById('categorySearchResults');
+    
+    if (categories.length === 0) {
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-500">No categories found</div>';
+        return;
+    }
+    
+    let html = '';
+    categories.forEach(category => {
+        html += `
+            <div class="p-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                 onclick="selectCategory(${category.id}, '${category.name.replace(/'/g, "\\'")}')">
+                <div class="font-medium">${category.name}</div>
+            </div>
+        `;
+    });
+    
+    resultsDiv.innerHTML = html;
+}
+
+function selectCategory(id, name) {
+    document.getElementById('category').value = id;
+    closeCategorySearch();
+}
+
+// Supplier Search Functions
+function openSupplierSearch() {
+    document.getElementById('supplierSearchModal').classList.remove('hidden');
+    searchSuppliers('');
+}
+
+function closeSupplierSearch() {
+    document.getElementById('supplierSearchModal').classList.add('hidden');
+}
+
+function searchSuppliers(query) {
+    const resultsDiv = document.getElementById('supplierSearchResults');
+    resultsDiv.innerHTML = '<div class="text-center py-4">Loading...</div>';
+    
+    const suppliers = Array.from(document.querySelectorAll('#supplier option'))
+        .filter(option => option.value !== "")
+        .map(option => ({
+            id: option.value,
+            name: option.textContent
+        }));
+    
+    const filtered = suppliers.filter(supp => 
+        supp.name.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    displaySupplierResults(filtered);
+}
+
+function displaySupplierResults(suppliers) {
+    const resultsDiv = document.getElementById('supplierSearchResults');
+    
+    if (suppliers.length === 0) {
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-500">No suppliers found</div>';
+        return;
+    }
+    
+    let html = '';
+    suppliers.forEach(supplier => {
+        html += `
+            <div class="p-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                 onclick="selectSupplier(${supplier.id}, '${supplier.name.replace(/'/g, "\\'")}')">
+                <div class="font-medium">${supplier.name}</div>
+            </div>
+        `;
+    });
+    
+    resultsDiv.innerHTML = html;
+}
+
+function selectSupplier(id, name) {
+    document.getElementById('supplier').value = id;
+    closeSupplierSearch();
+}
+
+// Initialize search modals with event listeners
+function initSearchModals() {
+    // Category search input
+    const categorySearchInput = document.getElementById('categorySearchInput');
+    if (categorySearchInput) {
+        categorySearchInput.addEventListener('input', function(e) {
+            searchCategories(e.target.value);
+        });
+    }
+    
+    // Supplier search input
+    const supplierSearchInput = document.getElementById('supplierSearchInput');
+    if (supplierSearchInput) {
+        supplierSearchInput.addEventListener('input', function(e) {
+            searchSuppliers(e.target.value);
+        });
+    }
+    
+    // Close modals when clicking outside
+    window.addEventListener('click', function(event) {
+        const categoryModal = document.getElementById('categorySearchModal');
+        const supplierModal = document.getElementById('supplierSearchModal');
+        
+        if (event.target === categoryModal) {
+            closeCategorySearch();
+        }
+        if (event.target === supplierModal) {
+            closeSupplierSearch();
+        }
+    });
+}
+</script>
+{% endblock %}

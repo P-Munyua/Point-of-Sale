@@ -1,0 +1,163 @@
+<!-- templates/pos/reports/batch_profit_report.html -->
+{% extends 'pos/base.html' %}
+
+{% block title %}Batch Profit Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Batch Profit Report</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-primary" onclick="window.print()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <a href="?export=csv&start_date={{ start_date }}&end_date={{ end_date }}" class="btn btn-success">
+                            <i class="fas fa-file-csv"></i> Export CSV
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filter Form -->
+                    <form method="get" class="row mb-4">
+                        <div class="col-md-3">
+                            <label>Start Date</label>
+                            <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label>End Date</label>
+                            <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary form-control">Filter</button>
+                        </div>
+                    </form>
+
+                    <!-- Summary Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>{{ total_batches }}</h3>
+                                    <p>Total Batches</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-cubes"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>KES {{ total_revenue|floatformat:2 }}</h3>
+                                    <p>Total Revenue</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>KES {{ total_cost|floatformat:2 }}</h3>
+                                    <p>Total Cost</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small-box bg-danger">
+                                <div class="inner">
+                                    <h3>KES {{ total_profit|floatformat:2 }}</h3>
+                                    <p>Total Profit</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profit Margin Card -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card bg-gradient-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title">Overall Profit Margin</h5>
+                                    <h3>{{ overall_margin|floatformat:2 }}%</h3>
+                                    <p>Based on batch-level purchase prices</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Batch Data Table -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Batch #</th>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Supplier</th>
+                                    <th>Purchase Price</th>
+                                    <th>Selling Price</th>
+                                    <th>Qty Sold</th>
+                                    <th>Revenue</th>
+                                    <th>Cost</th>
+                                    <th>Profit</th>
+                                    <th>Margin %</th>
+                                    <th>Days in Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in batch_data %}
+                                <tr>
+                                    <td>{{ item.batch_number }}</td>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>{{ item.category }}</td>
+                                    <td>{{ item.supplier }}</td>
+                                    <td class="text-right">KES {{ item.purchase_price|floatformat:4 }}</td>
+                                    <td class="text-right">KES {{ item.selling_price|floatformat:2 }}</td>
+                                    <td class="text-right">{{ item.quantity_sold|floatformat:2 }}</td>
+                                    <td class="text-right">KES {{ item.revenue|floatformat:2 }}</td>
+                                    <td class="text-right">KES {{ item.cost|floatformat:2 }}</td>
+                                    <td class="text-right {% if item.profit < 0 %}text-danger{% endif %}">
+                                        KES {{ item.profit|floatformat:2 }}
+                                    </td>
+                                    <td class="text-right {% if item.profit_margin < 0 %}text-danger{% endif %}">
+                                        {{ item.profit_margin|floatformat:2 }}%
+                                    </td>
+                                    <td class="text-right">{{ item.days_in_stock }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="13" class="text-center">No batch data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-weight-bold">
+                                    <td colspan="6" class="text-right">Totals:</td>
+                                    <td class="text-right">{{ total_quantity_sold|floatformat:2 }}</td>
+                                    <td class="text-right">KES {{ total_revenue|floatformat:2 }}</td>
+                                    <td class="text-right">KES {{ total_cost|floatformat:2 }}</td>
+                                    <td class="text-right">KES {{ total_profit|floatformat:2 }}</td>
+                                    <td class="text-right">{{ overall_margin|floatformat:2 }}%</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

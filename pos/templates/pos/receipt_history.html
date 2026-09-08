@@ -1,0 +1,103 @@
+{% extends "pos/base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Receipt History</h2>
+    
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-3">
+                <label>Start Date</label>
+                <input type="date" name="start_date" class="form-control" 
+                       value="{{ start_date }}">
+            </div>
+            <div class="col-md-3">
+                <label>End Date</label>
+                <input type="date" name="end_date" class="form-control" 
+                       value="{{ end_date }}">
+            </div>
+            <div class="col-md-2">
+                <label>Type</label>
+                <select name="type" class="form-control">
+                    <option value="">All</option>
+                    <option value="sale" {% if selected_type == 'sale' %}selected{% endif %}>Sale</option>
+                    <option value="refund" {% if selected_type == 'refund' %}selected{% endif %}>Refund</option>
+                    <option value="credit" {% if selected_type == 'credit' %}selected{% endif %}>Credit</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label>Printed</label>
+                <select name="printed" class="form-control">
+                    <option value="">All</option>
+                    <option value="yes" {% if selected_printed == 'yes' %}selected{% endif %}>Printed</option>
+                    <option value="no" {% if selected_printed == 'no' %}selected{% endif %}>Not Printed</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-primary form-control">Filter</button>
+            </div>
+        </div>
+    </form>
+    
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Receipt #</th>
+                <th>Type</th>
+                <th>Sale #</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Printed</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for receipt in receipts %}
+            <tr>
+                <td>{{ receipt.receipt_number }}</td>
+                <td>{{ receipt.get_receipt_type_display }}</td>
+                <td>
+                    {% if receipt.sale %}
+                        {{ receipt.sale.sale_number }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if receipt.sale and receipt.sale.customer %}
+                        {{ receipt.sale.customer.name }}
+                    {% else %}
+                        Walk-in
+                    {% endif %}
+                </td>
+                <td>{{ receipt.content.total }}</td>
+                <td>{{ receipt.created_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    {% if receipt.is_printed %}
+                        <span class="badge badge-success">Yes</span>
+                    {% else %}
+                        <span class="badge badge-warning">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'view_receipt' receipt.id %}" class="btn btn-sm btn-info">
+                        View
+                    </a>
+                    <a href="{% url 'print_receipt' receipt.id %}" class="btn btn-sm btn-primary" target="_blank">
+                        Print
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8">No receipts found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% include 'pos/pagination.html' with page_obj=receipts %}
+</div>
+{% endblock %}

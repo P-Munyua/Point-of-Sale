@@ -1,0 +1,319 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Edit Sale #{{ sale.sale_number }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-semibold text-white">Edit Sale #{{ sale.sale_number }}</h2>
+                <p class="text-blue-100 text-sm">Simple Edit Mode</p>
+            </div>
+            <a href="{% url 'sale_detail' sale.id %}" class="text-white hover:text-gray-200">
+                <i class="fas fa-arrow-left mr-2"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <form method="post" class="p-6">
+        {% csrf_token %}
+        
+        <!-- Customer -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Customer</label>
+            <select name="customer" class="w-full p-2 border border-gray-300 rounded">
+                <option value="">Walk-in Customer</option>
+                {% for customer in customers %}
+                <option value="{{ customer.id }}" {% if sale.customer.id == customer.id %}selected{% endif %}>
+                    {{ customer.name }} - {{ customer.phone }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Sale Items -->
+        <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Sale Items</h3>
+            <div id="items-container">
+                {% for item in sale.items.all %}
+                <div class="item-row flex space-x-4 mb-3 p-3 border rounded">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                        <select name="item-{{ forloop.counter0 }}-product" class="w-full p-2 border rounded product-select">
+                            <option value="">Select Product</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}" 
+                                    data-price="{{ product.selling_price }}"
+                                    {% if item.product.id == product.id %}selected{% endif %}>
+                                {{ product.name }} - KSh {{ product.selling_price }} (Stock: {{ product.quantity }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                        <input type="number" step="0.01" min="0" 
+                               name="item-{{ forloop.counter0 }}-price" 
+                               value="{{ item.price }}" 
+                               class="item-price w-24 p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Qty</label>
+                        <input type="number" min="1" 
+                               name="item-{{ forloop.counter0 }}-quantity" 
+                               value="{{ item.quantity }}" 
+                               class="item-quantity w-20 p-2 border rounded">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="button" class="remove-item bg-red-500 text-white p-2 rounded hover:bg-red-600">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <button type="button" id="add-item" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                <i class="fas fa-plus mr-2"></i> Add Product
+            </button>
+        </div>
+
+        <!-- Totals -->
+        <div class="mb-6 p-4 bg-gray-50 rounded">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Subtotal</label>
+                    <input type="number" step="0.01" name="subtotal" id="subtotal" 
+                           value="{{ sale.subtotal }}" 
+                           class="w-full p-2 border rounded" readonly>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Discount</label>
+                    <input type="number" step="0.01" name="discount_amount" id="discount" 
+                           value="{{ sale.discount_amount }}" 
+                           class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total</label>
+                    <input type="number" step="0.01" name="total" id="total" 
+                           value="{{ sale.total }}" 
+                           class="w-full p-2 border rounded" readonly>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount Paid</label>
+                    <input type="number" step="0.01" name="amount_paid" id="amount_paid" 
+                           value="{{ sale.amount_paid }}" 
+                           class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Balance</label>
+                    <input type="number" step="0.01" name="balance" id="balance" 
+                           value="{{ sale.balance }}" 
+                           class="w-full p-2 border rounded" readonly>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                    <select name="payment_method" id="payment_method" class="w-full p-2 border rounded">
+                        <option value="cash" {% if sale.payment_method == 'cash' %}selected{% endif %}>Cash</option>
+                        <option value="mpesa" {% if sale.payment_method == 'mpesa' %}selected{% endif %}>M-Pesa</option>
+                        <option value="card" {% if sale.payment_method == 'card' %}selected{% endif %}>Card</option>
+                        <option value="cheque" {% if sale.payment_method == 'cheque' %}selected{% endif %}>Cheque</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Payment Details -->
+            <div id="mpesa_details" class="mt-4 {% if sale.payment_method != 'mpesa' %}hidden{% endif %}">
+                <label class="block text-sm font-medium text-gray-700 mb-1">M-Pesa Code</label>
+                <input type="text" name="mpesa_code" value="{{ sale.mpesa_code }}" 
+                       class="w-full p-2 border rounded">
+            </div>
+            
+            <div id="cheque_details" class="mt-4 {% if sale.payment_method != 'cheque' %}hidden{% endif %}">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Cheque Number</label>
+                <input type="text" name="cheque_number" value="{{ sale.cheque_number }}" 
+                       class="w-full p-2 border rounded">
+            </div>
+            
+            <!-- Credit Sale -->
+            <div class="mt-4 flex items-center">
+                <input type="checkbox" name="is_credit" id="is_credit" 
+                       {% if sale.is_credit %}checked{% endif %} class="mr-2">
+                <label for="is_credit" class="text-sm font-medium text-gray-700">Credit Sale</label>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+            <textarea name="notes" rows="3" class="w-full p-2 border rounded">{{ sale.notes }}</textarea>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-end space-x-4">
+            <a href="{% url 'sale_detail' sale.id %}" class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50">
+                Cancel
+            </a>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Update Sale
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let itemCount = {{ sale.items.count }};
+        
+        // Add item button
+        document.getElementById('add-item').addEventListener('click', function() {
+            const container = document.getElementById('items-container');
+            const newItem = document.createElement('div');
+            newItem.className = 'item-row flex space-x-4 mb-3 p-3 border rounded';
+            newItem.innerHTML = `
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                    <select name="item-${itemCount}-product" class="w-full p-2 border rounded product-select">
+                        <option value="">Select Product</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}" data-price="{{ product.selling_price }}">
+                            {{ product.name }} - KSh {{ product.selling_price }} (Stock: {{ product.quantity }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                    <input type="number" step="0.01" min="0" 
+                           name="item-${itemCount}-price" 
+                           class="item-price w-24 p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Qty</label>
+                    <input type="number" min="1" 
+                           name="item-${itemCount}-quantity" 
+                           value="1" 
+                           class="item-quantity w-20 p-2 border rounded">
+                </div>
+                <div class="flex items-end">
+                    <button type="button" class="remove-item bg-red-500 text-white p-2 rounded hover:bg-red-600">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(newItem);
+            itemCount++;
+            
+            // Add event listeners to new elements
+            addItemEventListeners(newItem);
+        });
+        
+        // Remove item
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-item')) {
+                e.target.closest('.item-row').remove();
+                calculateTotals();
+            }
+        });
+        
+        // Product select change
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('product-select')) {
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                const price = selectedOption.dataset.price;
+                if (price) {
+                    const priceInput = e.target.closest('.item-row').querySelector('.item-price');
+                    priceInput.value = price;
+                }
+                calculateTotals();
+            }
+        });
+        
+        // Price/quantity input changes
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('item-price') || e.target.classList.contains('item-quantity')) {
+                calculateTotals();
+            }
+        });
+        
+        // Discount change
+        document.getElementById('discount').addEventListener('input', calculateTotals);
+        
+        // Amount paid change
+        document.getElementById('amount_paid').addEventListener('input', calculateTotals);
+        
+        // Payment method change
+        document.getElementById('payment_method').addEventListener('change', function(e) {
+            const method = e.target.value;
+            document.getElementById('mpesa_details').classList.toggle('hidden', method !== 'mpesa');
+            document.getElementById('cheque_details').classList.toggle('hidden', method !== 'cheque');
+        });
+        
+        // Credit checkbox
+        document.getElementById('is_credit').addEventListener('change', calculateTotals);
+        
+        // Initial calculation
+        calculateTotals();
+        
+        // Helper function to add event listeners to item rows
+        function addItemEventListeners(itemRow) {
+            const productSelect = itemRow.querySelector('.product-select');
+            const priceInput = itemRow.querySelector('.item-price');
+            const quantityInput = itemRow.querySelector('.item-quantity');
+            
+            productSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const price = selectedOption.dataset.price;
+                if (price) {
+                    priceInput.value = price;
+                }
+                calculateTotals();
+            });
+            
+            priceInput.addEventListener('input', calculateTotals);
+            quantityInput.addEventListener('input', calculateTotals);
+        }
+        
+        // Add listeners to existing items
+        document.querySelectorAll('.item-row').forEach(itemRow => {
+            addItemEventListeners(itemRow);
+        });
+        
+        // Calculate totals
+        function calculateTotals() {
+            let subtotal = 0;
+            
+            // Calculate from all items
+            document.querySelectorAll('.item-row').forEach(row => {
+                const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+                subtotal += price * quantity;
+            });
+            
+            // Apply discount
+            const discount = parseFloat(document.getElementById('discount').value) || 0;
+            const total = Math.max(0, subtotal - discount);
+            
+            // Calculate balance
+            const amountPaid = parseFloat(document.getElementById('amount_paid').value) || 0;
+            const balance = Math.max(0, total - amountPaid);
+            
+            // Update fields
+            document.getElementById('subtotal').value = subtotal.toFixed(2);
+            document.getElementById('total').value = total.toFixed(2);
+            document.getElementById('balance').value = balance.toFixed(2);
+            
+            // Enable/disable credit checkbox
+            const creditCheckbox = document.getElementById('is_credit');
+            creditCheckbox.disabled = balance <= 0;
+            if (balance <= 0 && creditCheckbox.checked) {
+                creditCheckbox.checked = false;
+            }
+        }
+    });
+</script>
+{% endblock %}

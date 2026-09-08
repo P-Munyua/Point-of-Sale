@@ -1,0 +1,1006 @@
+{% extends 'pos/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}Edit User: {{ user.username }}{% endblock %}
+
+{% block page_title %}Edit User: {{ user.username }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'user_list' %}">Users</a></li>
+<li class="breadcrumb-item"><a href="{% url 'user_detail' user.id %}">{{ user.username }}</a></li>
+<li class="breadcrumb-item active">Edit</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center py-4 mb-4 border-bottom">
+        <div>
+            <h1 class="h2 mb-1 text-gray-900">Edit User</h1>
+            <p class="text-muted mb-0">Update information for {{ user.get_full_name }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'user_detail' user.id %}" class="btn btn-outline-primary d-flex align-items-center gap-2 px-4 py-2">
+                <i class="fas fa-eye fa-sm"></i>
+                <span>View Profile</span>
+            </a>
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2 px-4 py-2">
+                <i class="fas fa-arrow-left fa-sm"></i>
+                <span>Back to Users</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column - Edit Form -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-circle bg-primary bg-opacity-10 text-primary">
+                            <i class="fas fa-user-edit"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0 fw-semibold">Edit User Information</h5>
+                            <p class="text-muted small mb-0">Update user details and permissions</p>
+                        </div>
+                        <div class="ms-auto">
+                            <span class="badge bg-light text-primary border border-primary px-3 py-2 rounded-pill">
+                                <i class="fas fa-hashtag me-1"></i>ID: {{ user.id }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" id="userForm">
+                        {% csrf_token %}
+                        
+                        <!-- Account Information -->
+                        <div class="form-section mb-5">
+                            <div class="section-header d-flex align-items-center gap-2 mb-4">
+                                <div class="section-number bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
+                                    1
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold text-gray-800">Account Information</h6>
+                                    <p class="text-muted small mb-0">Basic account credentials</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ user_form.username.id_for_label }}" class="form-label fw-medium text-gray-700 mb-2">
+                                            Username <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 px-3">
+                                                <i class="fas fa-user-circle text-primary"></i>
+                                            </span>
+                                            {{ user_form.username }}
+                                        </div>
+                                        {% if user_form.username.errors %}
+                                            <div class="form-error text-danger small mt-2 d-flex align-items-center gap-1">
+                                                <i class="fas fa-exclamation-circle"></i>
+                                                {{ user_form.username.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ user_form.email.id_for_label }}" class="form-label fw-medium text-gray-700 mb-2">
+                                            Email Address <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 px-3">
+                                                <i class="fas fa-envelope text-primary"></i>
+                                            </span>
+                                            {{ user_form.email }}
+                                        </div>
+                                        {% if user_form.email.errors %}
+                                            <div class="form-error text-danger small mt-2 d-flex align-items-center gap-1">
+                                                <i class="fas fa-exclamation-circle"></i>
+                                                {{ user_form.email.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Personal Information -->
+                        <div class="form-section mb-5">
+                            <div class="section-header d-flex align-items-center gap-2 mb-4">
+                                <div class="section-number bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
+                                    2
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold text-gray-800">Personal Information</h6>
+                                    <p class="text-muted small mb-0">User's personal details</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ user_form.first_name.id_for_label }}" class="form-label fw-medium text-gray-700 mb-2">
+                                            First Name
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 px-3">
+                                                <i class="fas fa-user text-primary"></i>
+                                            </span>
+                                            {{ user_form.first_name }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ user_form.last_name.id_for_label }}" class="form-label fw-medium text-gray-700 mb-2">
+                                            Last Name
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 px-3">
+                                                <i class="fas fa-user text-primary"></i>
+                                            </span>
+                                            {{ user_form.last_name }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="divider my-5">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1 border-top"></div>
+                                <div class="px-3">
+                                    <i class="fas fa-ellipsis-h text-muted"></i>
+                                </div>
+                                <div class="flex-grow-1 border-top"></div>
+                            </div>
+                        </div>
+
+                        <!-- Profile Information -->
+                        <div class="form-section mb-5">
+                            <div class="section-header d-flex align-items-center gap-2 mb-4">
+                                <div class="section-number bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
+                                    3
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold text-gray-800">Profile Information</h6>
+                                    <p class="text-muted small mb-0">Role and contact details</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Role Selection - Enhanced -->
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ profile_form.role.id_for_label }}" class="form-label fw-medium text-gray-700 mb-2 d-flex align-items-center justify-content-between">
+                                            <span>Role Assignment <span class="text-danger">*</span></span>
+                                            <span class="badge bg-info bg-opacity-10 text-info px-2 py-1 rounded">Important</span>
+                                        </label>
+                                        <div class="role-select-container">
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-white border-end-0 px-3">
+                                                    <i class="fas fa-user-tag text-primary"></i>
+                                                </span>
+                                                {{ profile_form.role }}
+                                            </div>
+                                            <div class="role-help-text mt-2 d-flex align-items-start gap-2">
+                                                <i class="fas fa-info-circle text-primary mt-1"></i>
+                                                <small class="text-muted">Selecting a role will define all permissions for this user</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ profile_form.phone.id_for_label }}" class="form-label fw-medium text-gray-700 mb-2">
+                                            Phone Number
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 px-3">
+                                                <i class="fas fa-phone text-primary"></i>
+                                            </span>
+                                            {{ profile_form.phone }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Address -->
+                            <div class="row g-4 mb-4">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="{{ profile_form.address.id_for_label }}" class="form-label fw-medium text-gray-700 mb-2">
+                                            Address
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 px-3 align-items-start pt-3">
+                                                <i class="fas fa-map-marker-alt text-primary"></i>
+                                            </span>
+                                            {{ profile_form.address }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ID & Profile Picture -->
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ profile_form.id_number.id_for_label }}" class="form-label fw-medium text-gray-700 mb-2">
+                                            ID Number
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 px-3">
+                                                <i class="fas fa-id-card text-primary"></i>
+                                            </span>
+                                            {{ profile_form.id_number }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ profile_form.profile_picture.id_for_label }}" class="form-label fw-medium text-gray-700 mb-2">
+                                            Profile Picture
+                                        </label>
+                                        {% if profile.profile_picture %}
+                                            <div class="current-image mb-3 p-3 border rounded-3 bg-light">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="position-relative">
+                                                        <img src="{{ profile.profile_picture.url }}" 
+                                                             alt="Current profile picture" 
+                                                             class="img-thumbnail rounded-circle border border-3 border-primary" 
+                                                             width="80" height="80">
+                                                        <span class="position-absolute top-0 start-100 translate-middle badge bg-primary px-2 py-1">
+                                                            Current
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <small class="text-muted d-block mb-1">Current profile picture</small>
+                                                        <a href="{{ profile.profile_picture.url }}" 
+                                                           target="_blank" 
+                                                           class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                                            <i class="fas fa-expand-alt fa-xs"></i>
+                                                            <span>View Full</span>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-white border-end-0 px-3">
+                                                <i class="fas fa-image text-primary"></i>
+                                            </span>
+                                            {{ profile_form.profile_picture }}
+                                        </div>
+                                        <div class="form-text mt-2 d-flex align-items-center gap-2">
+                                            <i class="fas fa-info-circle text-primary"></i>
+                                            <small class="text-muted">Optional. Upload a new profile picture (Max: 5MB)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Settings -->
+                        <div class="form-section mb-5">
+                            <div class="section-header d-flex align-items-center gap-2 mb-4">
+                                <div class="section-number bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
+                                    4
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold text-gray-800">Account Settings</h6>
+                                    <p class="text-muted small mb-0">Account status and permissions</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-4">
+                                <div class="col-12">
+                                    <div class="settings-card bg-light border rounded-3 p-4">
+                                        <!-- Active Status -->
+                                        <div class="form-check form-switch mb-4 pb-3 border-bottom">
+                                            {{ user_form.is_active }}
+                                            <label class="form-check-label fw-medium d-flex align-items-center gap-3 w-100" for="{{ user_form.is_active.id_for_label }}">
+                                                <div class="icon-circle bg-success bg-opacity-10 text-success">
+                                                    <i class="fas fa-toggle-on"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">Account Status</h6>
+                                                    <small class="text-muted d-block">
+                                                        {% if user.is_active %}
+                                                            User can login and access the system
+                                                        {% else %}
+                                                            User account is currently disabled
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                                <div class="status-indicator ms-3">
+                                                    <span class="badge {% if user.is_active %}bg-success{% else %}bg-danger{% endif %} px-3 py-2 rounded-pill">
+                                                        {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                                                    </span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        
+                                        <!-- Permission Override -->
+                                        <div class="form-check form-switch">
+                                            {{ profile_form.can_override_role }}
+                                            <label class="form-check-label fw-medium d-flex align-items-center gap-3 w-100" for="{{ profile_form.can_override_role.id_for_label }}">
+                                                <div class="icon-circle bg-warning bg-opacity-10 text-warning">
+                                                    <i class="fas fa-user-shield"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">Custom Permissions</h6>
+                                                    <small class="text-muted d-block">
+                                                        Allow custom permissions that override role permissions
+                                                    </small>
+                                                </div>
+                                                <div class="status-indicator ms-3">
+                                                    <span class="badge {% if profile.can_override_role %}bg-warning{% else %}bg-secondary{% endif %} px-3 py-2 rounded-pill">
+                                                        {% if profile.can_override_role %}Enabled{% else %}Disabled{% endif %}
+                                                    </span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons pt-4 border-top">
+                            <div class="d-flex flex-column flex-md-row gap-3">
+                                <button type="submit" class="btn btn-primary px-5 py-3 d-flex align-items-center justify-content-center gap-2 flex-grow-1">
+                                    <i class="fas fa-save"></i>
+                                    <span class="fw-medium">Save Changes</span>
+                                </button>
+                                <div class="d-flex gap-3">
+                                    <a href="{% url 'user_detail' user.id %}" 
+                                       class="btn btn-outline-secondary px-4 py-3 d-flex align-items-center gap-2">
+                                        <i class="fas fa-times"></i>
+                                        <span>Cancel</span>
+                                    </a>
+                                    <a href="{% url 'reset_user_password' user.id %}" 
+                                       class="btn btn-warning px-4 py-3 d-flex align-items-center gap-2">
+                                        <i class="fas fa-key"></i>
+                                        <span>Reset Password</span>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <small class="text-muted d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fas fa-history"></i>
+                                    Last updated: {% now "Y-m-d H:i" %}
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- User Profile Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-circle bg-info bg-opacity-10 text-info">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0 fw-semibold">User Profile</h5>
+                            <p class="text-muted small mb-0">Current user information</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Profile Image -->
+                    <div class="text-center mb-4">
+                        {% if profile.profile_picture %}
+                            <img src="{{ profile.profile_picture.url }}" 
+                                 alt="{{ user.username }}" 
+                                 class="img-fluid rounded-circle border border-3 border-primary mb-3 profile-avatar"
+                                 width="140" height="140">
+                        {% else %}
+                            <div class="avatar-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center mx-auto mb-3"
+                                 style="width: 140px; height: 140px; border-radius: 50%; font-size: 3rem; border: 3px solid var(--primary-color);">
+                                {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                            </div>
+                        {% endif %}
+                        <h5 class="mt-3 mb-1">{{ user.get_full_name|default:user.username }}</h5>
+                        <p class="text-muted mb-2">@{{ user.username }}</p>
+                        <span class="badge 
+                            {% if user.is_active %}bg-success bg-opacity-10 text-success border border-success
+                            {% else %}bg-danger bg-opacity-10 text-danger border border-danger{% endif %} 
+                            px-3 py-2 rounded-pill">
+                            {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </div>
+                    
+                    <!-- User Stats -->
+                    <div class="vstack gap-3">
+                        <div class="stat-card d-flex align-items-center justify-content-between p-3 border rounded-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-circle bg-primary bg-opacity-10 text-primary">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold">Role</h6>
+                                    <small class="text-muted">Current assigned role</small>
+                                </div>
+                            </div>
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info px-3 py-2 rounded-pill">
+                                {{ profile.role.get_name_display|default:"No Role" }}
+                            </span>
+                        </div>
+                        
+                        <div class="stat-card d-flex align-items-center justify-content-between p-3 border rounded-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-circle bg-success bg-opacity-10 text-success">
+                                    <i class="fas fa-calendar-plus"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold">Joined</h6>
+                                    <small class="text-muted">Account creation date</small>
+                                </div>
+                            </div>
+                            <span class="fw-medium text-gray-800">{{ user.date_joined|date:"Y-m-d" }}</span>
+                        </div>
+                        
+                        <div class="stat-card d-flex align-items-center justify-content-between p-3 border rounded-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-circle bg-warning bg-opacity-10 text-warning">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold">Last Login</h6>
+                                    <small class="text-muted">Most recent login</small>
+                                </div>
+                            </div>
+                            <span class="fw-medium text-gray-800">
+                                {{ user.last_login|date:"Y-m-d H:i"|default:"Never" }}
+                            </span>
+                        </div>
+                        
+                        <div class="stat-card d-flex align-items-center justify-content-between p-3 border rounded-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-circle bg-info bg-opacity-10 text-info">
+                                    <i class="fas fa-user-shield"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold">Permissions</h6>
+                                    <small class="text-muted">Custom permission status</small>
+                                </div>
+                            </div>
+                            <span class="badge 
+                                {% if profile.can_override_role %}bg-warning bg-opacity-10 text-warning border border-warning
+                                {% else %}bg-secondary bg-opacity-10 text-secondary border border-secondary{% endif %} 
+                                px-3 py-2 rounded-pill">
+                                {% if profile.can_override_role %}Custom{% else %}Role-based{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danger Zone Card -->
+            <div class="card border-danger border-2 shadow-sm">
+                <div class="card-header bg-danger bg-opacity-5 py-3 border-danger">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-circle bg-danger text-white">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0 fw-semibold text-danger">Danger Zone</h5>
+                            <p class="text-muted small mb-0">Critical actions - irreversible</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-danger border-danger bg-danger bg-opacity-5 mb-4">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="fas fa-exclamation-circle mt-1"></i>
+                            <div>
+                                <small class="fw-semibold d-block">Warning:</small>
+                                <small>These actions are permanent and cannot be undone.</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="vstack gap-3">
+                        <!-- Toggle Status Button -->
+                        <button type="button" 
+                                class="danger-action-btn btn btn-outline-danger text-start p-3 border-2 rounded-3 d-flex align-items-center gap-3" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deactivateModal">
+                            <div class="icon-circle bg-danger bg-opacity-10 text-danger">
+                                {% if user.is_active %}
+                                <i class="fas fa-user-slash"></i>
+                                {% else %}
+                                <i class="fas fa-user-check"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-semibold">
+                                    {% if user.is_active %}
+                                    Deactivate User
+                                    {% else %}
+                                    Activate User
+                                    {% endif %}
+                                </h6>
+                                <small class="text-muted d-block">
+                                    {% if user.is_active %}
+                                    Disable user account and prevent login
+                                    {% else %}
+                                    Enable user account and allow login
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <i class="fas fa-chevron-right text-danger"></i>
+                        </button>
+                        
+                        <!-- Delete Button -->
+                        <button type="button" 
+                                class="danger-action-btn btn btn-danger text-start p-3 border-2 rounded-3 d-flex align-items-center gap-3" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteModal">
+                            <div class="icon-circle bg-white bg-opacity-25 text-white">
+                                <i class="fas fa-trash"></i>
+                            </div>
+                            <div class="flex-grow-1 text-white">
+                                <h6 class="mb-1 fw-semibold">Delete User</h6>
+                                <small class="text-white text-opacity-75 d-block">
+                                    Permanently delete user and all data
+                                </small>
+                            </div>
+                            <i class="fas fa-chevron-right text-white"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deactivate Modal -->
+<div class="modal fade" id="deactivateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-{% if user.is_active %}warning{% else %}success{% endif %} border-2">
+            <div class="modal-header bg-{% if user.is_active %}warning{% else %}success{% endif %} bg-opacity-5 border-{% if user.is_active %}warning{% else %}success{% endif %} py-3">
+                <h5 class="modal-title d-flex align-items-center gap-2 fw-semibold">
+                    <i class="fas fa-{% if user.is_active %}user-slash text-warning{% else %}user-check text-success{% endif %}"></i>
+                    {% if user.is_active %}Deactivate User{% else %}Activate User{% endif %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex align-items-start gap-3 mb-4">
+                    <div class="icon-circle bg-{% if user.is_active %}warning{% else %}success{% endif %} bg-opacity-10 text-{% if user.is_active %}warning{% else %}success{% endif %}">
+                        <i class="fas fa-{% if user.is_active %}exclamation-triangle{% else %}check-circle{% endif %}"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-semibold mb-2 text-gray-800">
+                            {% if user.is_active %}
+                            Deactivate {{ user.username }}?
+                            {% else %}
+                            Activate {{ user.username }}?
+                            {% endif %}
+                        </h6>
+                        <p class="mb-0 text-gray-600">
+                            Are you sure you want to 
+                            {% if user.is_active %}deactivate{% else %}activate{% endif %} 
+                            user <strong>{{ user.username }}</strong>?
+                        </p>
+                    </div>
+                </div>
+                
+                {% if user.is_active %}
+                <div class="alert alert-warning border-warning bg-warning bg-opacity-5 mb-4">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="fas fa-exclamation-triangle text-warning mt-1"></i>
+                        <div>
+                            <small class="fw-semibold d-block text-gray-800">Important:</small>
+                            <small class="text-gray-600">Deactivated users cannot log in to the system and will lose access to all features.</small>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-success border-success bg-success bg-opacity-5 mb-4">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="fas fa-check-circle text-success mt-1"></i>
+                        <div>
+                            <small class="fw-semibold d-block text-gray-800">Note:</small>
+                            <small class="text-gray-600">Activated users will be able to log in immediately with their current permissions.</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer border-top py-3">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancel
+                </button>
+                <form method="post" action="{% url 'toggle_user_status' user.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="btn btn-{% if user.is_active %}warning{% else %}success{% endif %} px-4 d-flex align-items-center gap-2">
+                        <i class="fas fa-{% if user.is_active %}user-slash{% else %}user-check{% endif %}"></i>
+                        {% if user.is_active %}Deactivate User{% else %}Activate User{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger border-2">
+            <div class="modal-header bg-danger bg-opacity-5 border-danger py-3">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-semibold">
+                    <i class="fas fa-trash"></i>
+                    Delete User Permanently
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="icon-circle bg-danger text-white d-inline-flex mb-3">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <h5 class="text-danger mb-3 fw-semibold">This action cannot be undone!</h5>
+                </div>
+                
+                <div class="alert alert-danger border-danger bg-danger bg-opacity-5 mb-4">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="fas fa-skull-crossbones mt-1"></i>
+                        <div>
+                            <h6 class="alert-heading mb-2 text-gray-800">Warning: Permanent Deletion</h6>
+                            <p class="mb-2 text-gray-600">You are about to permanently delete user <strong>{{ user.username }}</strong> and all associated data.</p>
+                            <p class="mb-0 text-gray-600">This action will:</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <ul class="list-group list-group-flush mb-4">
+                    <li class="list-group-item d-flex align-items-center gap-3">
+                        <div class="icon-circle-sm bg-danger bg-opacity-10 text-danger">
+                            <i class="fas fa-user-times"></i>
+                        </div>
+                        <span class="text-gray-700">Delete the user account permanently</span>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center gap-3">
+                        <div class="icon-circle-sm bg-danger bg-opacity-10 text-danger">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <span class="text-gray-700">Remove all user data and records</span>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center gap-3">
+                        <div class="icon-circle-sm bg-danger bg-opacity-10 text-danger">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <span class="text-gray-700">Erase login history and activity logs</span>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center gap-3">
+                        <div class="icon-circle-sm bg-danger bg-opacity-10 text-danger">
+                            <i class="fas fa-undo"></i>
+                        </div>
+                        <span class="text-gray-700">Cannot be recovered or restored</span>
+                    </li>
+                </ul>
+                
+                <div class="form-check mb-4 p-3 border rounded-3">
+                    <input class="form-check-input" type="checkbox" id="confirmDelete">
+                    <label class="form-check-label text-danger fw-medium" for="confirmDelete">
+                        I understand this action is permanent and cannot be undone
+                    </label>
+                </div>
+                
+                <div class="text-center">
+                    <p class="text-muted small mb-0">Are you absolutely sure you want to proceed?</p>
+                </div>
+            </div>
+            <div class="modal-footer border-top py-3">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancel
+                </button>
+                <button type="button" id="deleteUserBtn" class="btn btn-danger px-4" disabled>
+                    <i class="fas fa-trash me-1"></i> Delete User Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize form elements
+    $('select, input[type="text"], input[type="email"], textarea').addClass('form-control');
+    $('input[type="checkbox"]').addClass('form-check-input');
+    $('#{{ user_form.is_active.id_for_label }}').addClass('form-check-input');
+    $('#{{ profile_form.can_override_role.id_for_label }}').addClass('form-check-input');
+    
+    // Enhanced Role Select Styling
+    const roleSelect = $('#{{ profile_form.role.id_for_label }}');
+    if (roleSelect.length) {
+        roleSelect.addClass('form-select-lg');
+        
+        // Custom styling for the select dropdown
+        roleSelect.css({
+            'border': '2px solid #dee2e6',
+            'border-left': 'none',
+            'border-radius': '0 0.375rem 0.375rem 0',
+            'height': '48px'
+        });
+        
+        // Add focus effects
+        roleSelect.on('focus', function() {
+            $(this).css('border-color', '#4e73df');
+            $(this).closest('.input-group').find('.input-group-text').css('border-color', '#4e73df');
+        });
+        
+        roleSelect.on('blur', function() {
+            $(this).css('border-color', '#dee2e6');
+            $(this).closest('.input-group').find('.input-group-text').css('border-color', '#dee2e6');
+        });
+    }
+    
+    // Delete confirmation toggle
+    $('#confirmDelete').on('change', function() {
+        $('#deleteUserBtn').prop('disabled', !$(this).is(':checked'));
+    });
+    
+    // Form validation
+    $('#userForm').on('submit', function(e) {
+        const email = $('#{{ user_form.email.id_for_label }}').val();
+        const username = $('#{{ user_form.username.id_for_label }}').val();
+        
+        if (!email || !username) {
+            e.preventDefault();
+            return false;
+        }
+        
+        return true;
+    });
+});
+</script>
+
+<style>
+/* Custom Styles */
+.container-fluid {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Card Styling */
+.card {
+    border: none;
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Icon Circles */
+.icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icon-circle-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Section Number */
+.section-number {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Form Sections */
+.form-section {
+    padding: 1.5rem;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.section-header {
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+/* Enhanced Role Select Styling */
+.role-select-container {
+    position: relative;
+}
+
+.role-select-container .input-group-text {
+    border: 2px solid #dee2e6;
+    border-right: none;
+    border-radius: 0.375rem 0 0 0.375rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    height: 48px;
+}
+
+.role-help-text {
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #4e73df;
+}
+
+/* Input Group Styling */
+.input-group-lg .form-control,
+.input-group-lg .form-select {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    border: 2px solid #dee2e6;
+    border-left: none;
+}
+
+.input-group-lg .form-control:focus,
+.input-group-lg .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.15);
+    border-color: #4e73df;
+}
+
+/* Profile Avatar */
+.profile-avatar {
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.profile-avatar:hover {
+    transform: scale(1.05);
+}
+
+/* Stat Cards */
+.stat-card {
+    transition: all 0.2s ease;
+    border: 1px solid #e9ecef !important;
+}
+
+.stat-card:hover {
+    border-color: #4e73df !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(78, 115, 223, 0.1);
+}
+
+/* Danger Zone */
+.danger-action-btn {
+    transition: all 0.2s ease;
+}
+
+.danger-action-btn:hover {
+    transform: translateX(5px);
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Form Switch */
+.form-switch .form-check-input {
+    width: 3.5em;
+    height: 1.75em;
+    margin-right: 1rem;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.form-switch .form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+/* Settings Card */
+.settings-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid #e9ecef;
+}
+
+/* Current Image */
+.current-image {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 2px dashed #dee2e6;
+}
+
+.current-image .badge {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+}
+
+/* Action Buttons */
+.action-buttons .btn {
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4e73df 0%, #3a56c4 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #3a56c4 0%, #2e49a8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+}
+
+/* Modal Styling */
+.modal-content {
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    border-radius: 12px 12px 0 0;
+}
+
+/* List Group */
+.list-group-item {
+    border: none;
+    padding: 1rem 0;
+    background: transparent;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .form-section {
+        padding: 1rem;
+    }
+    
+    .icon-circle {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .action-buttons .d-flex {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

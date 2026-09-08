@@ -1,0 +1,114 @@
+{% extends 'pos/base.html' %}
+
+{% block title %}Receipt - {{ sale.sale_number }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto mt-4" style="width: 300px;">
+    <div class="text-center mb-4">
+        <button onclick="printReceipt()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Print Receipt
+        </button>
+        <a href="{% url 'pos' %}" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 ml-2">
+            New Sale
+        </a>
+    </div>
+
+    <!-- Preview of receipt -->{% extends "pos/base.html" %}
+
+{% block content %}
+<div class="container receipt-container">
+    <div class="receipt-header">
+        <h2>{{ company.name }}</h2>
+        <p>{{ company.address }}</p>
+        <p>Phone: {{ company.phone }}</p>
+        <p>Email: {{ company.email }}</p>
+        <p>VAT: {{ company.vat_number }}</p>
+    </div>
+    
+    <div class="receipt-info">
+        <h3>RECEIPT: {{ receipt.receipt_number }}</h3>
+        <p>Date: {{ receipt.content.date }}</p>
+        <p>Customer: {{ receipt.content.customer }}</p>
+        <p>Original Sale: {{ receipt.sale.sale_number }}</p>
+    </div>
+    
+    <table class="receipt-items">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in receipt.content.items %}
+            <tr>
+                <td>{{ item.name }}{% if item.batch %} ({{ item.batch }}){% endif %}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="receipt-totals">
+        <p>Subtotal: {{ receipt.content.subtotal }}</p>
+        <p>Discount: {{ receipt.content.discount }}</p>
+        <p>Total: {{ receipt.content.total }}</p>
+        <p>Payment Method: {{ receipt.content.payment_method }}</p>
+        
+        <h4>Payment Details:</h4>
+        <ul>
+            {% for method, amount in receipt.content.payment_details.items %}
+                {% if amount != "0.00" %}
+                <li>{{ method|title }}: {{ amount }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+        
+        <p>Amount Paid: {{ receipt.content.amount_paid }}</p>
+        {% if receipt.content.change != "0.00" %}
+            <p>Change: {{ receipt.content.change }}</p>
+        {% endif %}
+        {% if receipt.content.balance != "0.00" %}
+            <p>Balance Due: {{ receipt.content.balance }}</p>
+        {% endif %}
+    </div>
+    
+    <div class="receipt-footer">
+        <p>Thank you for your business!</p>
+        <p>Generated on: {{ receipt.created_at }}</p>
+        <p>Cashier: {{ receipt.created_by.get_full_name }}</p>
+    </div>
+    
+    <div class="receipt-actions">
+        <a href="{% url 'print_receipt' receipt.id %}" class="btn btn-primary" target="_blank">
+            Print Receipt
+        </a>
+        <a href="{% url 'receipt_history' %}" class="btn btn-secondary">
+            Back to History
+        </a>
+    </div>
+</div>
+{% endblock %}
+    {% include 'pos/receipt_print.html' %}
+</div>
+
+<script>
+function printReceipt() {
+    // Open print version in new window and print immediately
+    const printWindow = window.open("{% url 'receipt' sale.pk %}?print=direct", '_blank');
+    
+    // Ensure the window is loaded before printing
+    printWindow.onload = function() {
+        setTimeout(function() {
+            printWindow.print();
+            // Optional: close the window after printing
+            // printWindow.close();
+        }, 200);
+    };
+}
+</script>
+{% endblock %}

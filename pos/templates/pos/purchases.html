@@ -1,0 +1,168 @@
+{% extends 'pos/base.html' %}
+
+{% block title %}Purchases Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2>Purchase Management</h2>
+        </div>
+        <div class="col-md-6 text-right">
+            <a href="{% url 'add_purchase' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Purchase
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-2">
+                    <label for="start_date" class="mr-2">From:</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+                </div>
+                <div class="form-group mr-2">
+                    <label for="end_date" class="mr-2">To:</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+                </div>
+                <div class="form-group mr-2">
+                    <select name="supplier" class="form-control">
+                        <option value="">All Suppliers</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" {% if request.GET.supplier == supplier.id|stringformat:"i" %}selected{% endif %}>
+                            {{ supplier.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-outline-primary">Filter</button>
+                {% if request.GET.start_date or request.GET.end_date or request.GET.supplier %}
+                <a href="{% url 'purchase_list' %}" class="btn btn-outline-secondary ml-2">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="purchasesTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Date</th>
+                            <th>Supplier</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Recorded By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for purchase in purchases %}
+                        <tr>
+                            <td>{{ purchase.invoice_number }}</td>
+                            <td>{{ purchase.date|date:"d/m/Y H:i" }}</td>
+                            <td>{{ purchase.supplier.name }}</td>
+                            <td>{{ purchase.items.count }}</td>
+                            <td>{{ purchase.total }}</td>
+                            <td>{{ purchase.user.username }}</td>
+                            <td>
+                                <a href="{% url 'view_purchase' purchase.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-sm btn-danger delete-btn" data-id="{{ purchase.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No purchases found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if purchases.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if purchases.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ purchases.previous_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.supplier %}&supplier={{ request.GET.supplier }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in purchases.paginator.page_range %}
+                    {% if purchases.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.supplier %}&supplier={{ request.GET.supplier }}{% endif %}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if purchases.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ purchases.next_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.supplier %}&supplier={{ request.GET.supplier }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this purchase? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#purchasesTable').DataTable({
+        "paging": false,
+        "searching": false,
+        "info": false,
+        "ordering": true,
+        "order": [[1, "desc"]] // Sort by date descending
+    });
+
+    // Delete button click handler
+    $('.delete-btn').click(function() {
+        var purchaseId = $(this).data('id');
+        var deleteUrl = "{% url 'delete_purchase' 0 %}".replace('0', purchaseId);
+        $('#deleteForm').attr('action', deleteUrl);
+        $('#deleteModal').modal('show');
+    });
+});
+</script>
+{% endblock %}

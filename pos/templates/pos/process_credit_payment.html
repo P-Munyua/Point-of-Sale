@@ -1,0 +1,152 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Process Credit Payment{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <!-- Header -->
+    <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700">
+        <div class="flex items-center space-x-4">
+            <div class="p-2 rounded-lg bg-white bg-opacity-20">
+                <i class="fas fa-money-bill-wave text-white text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-semibold text-white">Record Payment for Sale #{{ sale.sale_number }}</h2>
+                <p class="text-blue-100 text-sm">Complete outstanding balance payment</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Info -->
+    <div class="px-6 py-4 border-b border-gray-200 bg-blue-50">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Customer</p>
+                <p class="font-medium">{{ sale.customer.name|default:"Walk-in" }}</p>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Amount</p>
+                <p class="font-medium">{{ sale.total }}</p>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-600">Amount Paid</p>
+                <p class="font-medium">{{ sale.amount_paid }}</p>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-600">Outstanding Balance</p>
+                <p class="font-bold {% if sale.balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                    {{ sale.balance }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Form -->
+    <div class="px-6 py-4">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if messages %}
+                {% for message in messages %}
+                <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-red-50 text-red-800{% else %}bg-blue-50 text-blue-800{% endif %}">
+                    <div class="flex items-center">
+                        <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                        {{ message }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Amount Field -->
+            <div class="mb-4">
+                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount to Pay</label>
+                <div class="relative rounded-md shadow-sm">
+                    <input type="number" id="amount" name="amount" 
+                           step="0.01" min="0.01" max="{{ sale.balance }}"
+                           class="block w-full pr-12 pl-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           required>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span class="text-gray-500">KSh</span>
+                    </div>
+                </div>
+                <p class="mt-1 text-sm text-gray-500">Maximum: {{ sale.balance }}</p>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="mb-4">
+                <label for="payment_method" class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                <select id="payment_method" name="payment_method" 
+                        class="block w-full pl-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                    <option value="cash">Cash</option>
+                    <option value="mpesa">M-Pesa</option>
+                    <option value="card">Card</option>
+                    <option value="cheque">Cheque</option>
+                </select>
+            </div>
+
+            <!-- M-Pesa Fields (hidden by default) -->
+            <div id="mpesaFields" class="hidden mb-4">
+                <label for="mpesa_code" class="block text-sm font-medium text-gray-700 mb-1">M-Pesa Transaction Code</label>
+                <input type="text" id="mpesa_code" name="mpesa_code"
+                       class="block w-full pl-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <!-- Cheque Fields (hidden by default) -->
+            <div id="chequeFields" class="hidden mb-4">
+                <label for="cheque_number" class="block text-sm font-medium text-gray-700 mb-1">Cheque Number</label>
+                <input type="text" id="cheque_number" name="cheque_number"
+                       class="block w-full pl-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <!-- Form Actions -->
+            <div class="mt-6 flex justify-end space-x-3">
+                <a href="{% url 'credit_payments' %}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-times mr-2"></i> Cancel
+                </a>
+                <button type="submit" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-check mr-2"></i> Record Payment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show/hide additional fields based on payment method
+    const paymentMethod = document.getElementById('payment_method');
+    const mpesaFields = document.getElementById('mpesaFields');
+    const chequeFields = document.getElementById('chequeFields');
+    
+    paymentMethod.addEventListener('change', function() {
+        const method = this.value;
+        
+        // Hide all fields first
+        mpesaFields.classList.add('hidden');
+        chequeFields.classList.add('hidden');
+        
+        // Show relevant fields
+        if (method === 'mpesa') {
+            mpesaFields.classList.remove('hidden');
+        } else if (method === 'cheque') {
+            chequeFields.classList.remove('hidden');
+        }
+    });
+
+    // Trigger change event to set initial state
+    paymentMethod.dispatchEvent(new Event('change'));
+    
+    // Set max amount to balance
+    const amountInput = document.getElementById('amount');
+    amountInput.max = '{{ sale.balance }}';
+    
+    // Set initial amount to full balance
+    amountInput.value = '{{ sale.balance }}';
+});
+</script>
+{% endblock %}

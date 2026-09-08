@@ -1,0 +1,815 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-800">Create New Purchase</h2>
+        <a href="{% url 'purchase_list' %}" class="text-blue-600 hover:text-blue-800 text-sm">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Purchases
+        </a>
+    </div>
+
+    <form method="post" id="purchase-form" action="{% url 'add_purchase' %}" class="px-6 py-4">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Supplier *</label>
+                <select name="supplier" id="supplier-select" class="hidden" required>
+                    {% if selected_supplier %}
+                    <option value="{{ selected_supplier.id }}" selected>{{ selected_supplier }}</option>
+                    {% endif %}
+                </select>
+                <div class="relative">
+                    <input type="text" id="supplier-search" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Search supplier..." value="{% if selected_supplier %}{{ selected_supplier }}{% endif %}" required
+                           data-search-url="{% url 'search_suppliers' %}">
+                    <div id="supplier-results" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 hidden max-h-60 overflow-auto"></div>
+                </div>
+                {% if form.supplier.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.supplier.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
+                <input type="text" name="invoice_number" id="invoice-number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                       value="{% if form.invoice_number.value %}{{ form.invoice_number.value }}{% else %}{{ invoice_number }}{% endif %}">
+                {% if form.invoice_number.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.invoice_number.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-700 mb-3">Purchase Items</h3>
+            <div class="mb-3">
+                <div class="relative">
+                    <input type="text" id="product-search" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Search products by name or barcode..." autocomplete="off"
+                           data-search-url="{% url 'search_products' %}">
+                    <div id="product-results" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 hidden max-h-60 overflow-auto"></div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Number</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity (5 decimals)</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase Price</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selling Price (Optional)</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-container" class="bg-white divide-y divide-gray-200">
+                        <!-- Items will be added dynamically -->
+                    </tbody>
+                    <tfoot class="bg-gray-50">
+                        <tr>
+                            <td colspan="6" class="px-4 py-3 text-right font-medium">Grand Total:</td>
+                            <td class="px-4 py-3 font-bold" id="grand-total">0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <div class="mt-3 flex justify-between items-center">
+                <button type="button" id="add-manual-item" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-plus mr-1"></i> Add Manual Item
+                </button>
+                <span id="item-count" class="text-sm text-gray-500">0 items</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Subtotal (Rounded)</h4>
+                <p class="text-xl font-semibold" id="subtotal-display">KSh 0</p>
+            </div>
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <h4 class="text-sm font-medium text-blue-700 mb-2">Total Amount (Rounded)</h4>
+                <p class="text-2xl font-bold text-blue-600" id="total-display">KSh 0</p>
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-2">
+            <button type="button" id="save-as-pending" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                    data-save-pending-url="{% url 'save_purchase_as_pending' %}">
+                <i class="fas fa-save mr-1"></i> Save as Pending
+            </button>
+            <button type="submit" id="save-purchase" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <i class="fas fa-save mr-1"></i> Save Purchase
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Price Entry Modal -->
+<div id="price-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-2" id="modal-product-name">Enter Purchase Details</h3>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Purchase Price (4 decimals) *</label>
+                <input type="number" id="custom-price-input" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                       step="0.0001" min="0.0001">
+                <p class="text-xs text-gray-500 mt-1" id="modal-default-price">Default: 0.0000</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price (Optional)</label>
+                <input type="number" id="custom-selling-price-input" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                       step="0.01" min="0.01">
+                <p class="text-xs text-gray-500 mt-1" id="modal-default-selling-price">Leave empty to use product default</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Quantity (5 decimals) *</label>
+                <input type="number" id="custom-quantity-input" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                       value="1.00000" min="0.00001" step="0.00001">
+                <p class="text-xs text-gray-500 mt-1">Enter quantity with up to 5 decimal places</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number (Optional)</label>
+                <input type="text" id="custom-batch-input" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                       placeholder="Auto-generated if empty">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date (Optional)</label>
+                <input type="date" id="custom-expiry-input" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+        <div class="flex justify-end space-x-2">
+            <button type="button" id="cancel-price" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button type="button" id="confirm-price" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add Item</button>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="success-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+        <div class="text-center">
+            <div class="text-green-500 text-5xl mb-4">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Purchase Saved Successfully!</h3>
+            <p class="text-sm text-gray-500 mb-4" id="success-message">Your purchase has been recorded and inventory updated.</p>
+            <div class="flex justify-center">
+                <a href="#" id="view-invoice-btn" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium text-sm mr-2">
+                    View Invoice
+                </a>
+                <button id="new-purchase" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md font-medium text-sm">
+                    New Purchase
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div id="error-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+        <div class="text-center">
+            <div class="text-red-500 text-5xl mb-4">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2" id="error-title">Error</h3>
+            <p class="text-sm text-gray-500 mb-4" id="error-message"></p>
+            <div class="flex justify-center">
+                <button id="close-error" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium text-sm">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM elements
+    const supplierSearch = document.getElementById('supplier-search');
+    const supplierResults = document.getElementById('supplier-results');
+    const supplierSelect = document.getElementById('supplier-select');
+    const productSearch = document.getElementById('product-search');
+    const productResults = document.getElementById('product-results');
+    const itemsContainer = document.getElementById('items-container');
+    const itemCount = document.getElementById('item-count');
+    const subtotalDisplay = document.getElementById('subtotal-display');
+    const totalDisplay = document.getElementById('total-display');
+    const grandTotalEl = document.getElementById('grand-total');
+    const savePurchaseBtn = document.getElementById('save-purchase');
+    const saveAsPendingBtn = document.getElementById('save-as-pending');
+    const purchaseForm = document.getElementById('purchase-form');
+    const priceModal = document.getElementById('price-modal');
+    const modalProductName = document.getElementById('modal-product-name');
+    const modalDefaultPrice = document.getElementById('modal-default-price');
+    const modalDefaultSellingPrice = document.getElementById('modal-default-selling-price');
+    const customPriceInput = document.getElementById('custom-price-input');
+    const customSellingPriceInput = document.getElementById('custom-selling-price-input');
+    const customQuantityInput = document.getElementById('custom-quantity-input');
+    const customBatchInput = document.getElementById('custom-batch-input');
+    const customExpiryInput = document.getElementById('custom-expiry-input');
+    const confirmPriceBtn = document.getElementById('confirm-price');
+    const cancelPriceBtn = document.getElementById('cancel-price');
+    const successModal = document.getElementById('success-modal');
+    const errorModal = document.getElementById('error-modal');
+    const errorMessage = document.getElementById('error-message');
+    const newPurchaseBtn = document.getElementById('new-purchase');
+    const closeErrorBtn = document.getElementById('close-error');
+    const addManualItemBtn = document.getElementById('add-manual-item');
+    
+    let supplierSearchTimeout;
+    let productSearchTimeout;
+    let items = [];
+    let currentProduct = null;
+    
+    // Helper function to generate unique ID
+    function generateItemId() {
+        return Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    // Helper function to round to nearest whole number
+    function roundToNearest(value) {
+        return Math.round(value);
+    }
+    
+    // Supplier search functionality
+    supplierSearch.addEventListener('input', function() {
+        clearTimeout(supplierSearchTimeout);
+        const query = this.value.trim();
+        const searchUrl = this.dataset.searchUrl;
+        
+        if (query.length < 2) {
+            supplierResults.classList.add('hidden');
+            return;
+        }
+        
+        supplierSearchTimeout = setTimeout(() => {
+            fetch(`${searchUrl}?search=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    supplierResults.innerHTML = '';
+                    
+                    if (data.length > 0) {
+                        data.forEach(supplier => {
+                            const div = document.createElement('div');
+                            div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer';
+                            div.textContent = supplier.text;
+                            div.addEventListener('click', function() {
+                                supplierSelect.innerHTML = `<option value="${supplier.id}" selected>${supplier.text}</option>`;
+                                supplierSearch.value = supplier.text;
+                                supplierResults.classList.add('hidden');
+                                updateSaveButtonState();
+                            });
+                            supplierResults.appendChild(div);
+                        });
+                        supplierResults.classList.remove('hidden');
+                    } else {
+                        const noResults = document.createElement('div');
+                        noResults.className = 'px-4 py-2 text-gray-500';
+                        noResults.textContent = 'No suppliers found';
+                        supplierResults.appendChild(noResults);
+                        supplierResults.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Supplier search error:', error);
+                    supplierResults.innerHTML = '';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'px-4 py-2 text-red-500';
+                    errorDiv.textContent = 'Search failed. Please try again.';
+                    supplierResults.appendChild(errorDiv);
+                    supplierResults.classList.remove('hidden');
+                });
+        }, 300);
+    });
+
+    // Product search functionality
+    productSearch.addEventListener('input', function() {
+        clearTimeout(productSearchTimeout);
+        const query = this.value.trim();
+        const searchUrl = this.dataset.searchUrl;
+        
+        if (query.length < 2) {
+            productResults.classList.add('hidden');
+            return;
+        }
+        
+        productSearchTimeout = setTimeout(() => {
+            fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    productResults.innerHTML = '';
+                    
+                    if (data.length > 0) {
+                        data.forEach(product => {
+                            const div = document.createElement('div');
+                            div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer product-search-item';
+                            div.innerHTML = `
+                                <div class="font-medium">${product.name}</div>
+                                <div class="text-sm text-gray-600">Purchase: KSh ${parseFloat(product.purchase_price).toFixed(4)} | Sell: KSh ${parseFloat(product.selling_price).toFixed(2)}</div>
+                                ${product.barcode ? `<div class="text-xs text-gray-500">Barcode: ${product.barcode}</div>` : ''}
+                                <input type="hidden" class="product-data" value='${JSON.stringify(product)}'>
+                            `;
+                            div.addEventListener('click', function() {
+                                const productData = JSON.parse(this.querySelector('.product-data').value);
+                                currentProduct = productData;
+                                showPriceModal(productData);
+                                productSearch.value = '';
+                                productResults.classList.add('hidden');
+                            });
+                            productResults.appendChild(div);
+                        });
+                        productResults.classList.remove('hidden');
+                    } else {
+                        const noResults = document.createElement('div');
+                        noResults.className = 'px-4 py-2 text-gray-500';
+                        noResults.textContent = 'No products found';
+                        productResults.appendChild(noResults);
+                        productResults.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Product search error:', error);
+                    productResults.innerHTML = '';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'px-4 py-2 text-red-500';
+                    errorDiv.textContent = 'Search failed. Please try again.';
+                    productResults.appendChild(errorDiv);
+                    productResults.classList.remove('hidden');
+                });
+        }, 300);
+    });
+
+    function showPriceModal(product) {
+        modalProductName.textContent = `Add ${product.name}`;
+        
+        // Set default values from database
+        const defaultPurchasePrice = parseFloat(product.purchase_price);
+        const defaultSellingPrice = parseFloat(product.selling_price);
+        
+        modalDefaultPrice.textContent = `Default Purchase Price: KSh ${defaultPurchasePrice.toFixed(4)}`;
+        modalDefaultSellingPrice.textContent = `Default Selling Price: KSh ${defaultSellingPrice.toFixed(2)} (leave empty to use this)`;
+        
+        // Pre-fill with database values
+        customPriceInput.value = defaultPurchasePrice.toFixed(4);
+        customSellingPriceInput.value = defaultSellingPrice.toFixed(2);
+        customQuantityInput.value = '1.00000';
+        customBatchInput.value = '';
+        customExpiryInput.value = '';
+        
+        priceModal.classList.remove('hidden');
+    }
+
+    function hidePriceModal() {
+        priceModal.classList.add('hidden');
+        currentProduct = null;
+    }
+
+    // Price modal event listeners
+    confirmPriceBtn.addEventListener('click', function() {
+        if (!currentProduct) return;
+        
+        // Get values from modal
+        const purchasePrice = parseFloat(customPriceInput.value);
+        const sellingPrice = customSellingPriceInput.value ? parseFloat(customSellingPriceInput.value) : parseFloat(currentProduct.selling_price);
+        const quantity = parseFloat(customQuantityInput.value) || 1.00000;
+        const batchNumber = customBatchInput.value.trim() || '';
+        const expiryDate = customExpiryInput.value || '';
+        
+        // Validate inputs
+        if (isNaN(purchasePrice) || purchasePrice <= 0) {
+            alert('Please enter a valid purchase price greater than 0');
+            return;
+        }
+        
+        if (isNaN(quantity) || quantity <= 0) {
+            alert('Please enter a valid quantity greater than 0');
+            return;
+        }
+        
+        // Validate quantity decimal places
+        const quantityStr = quantity.toString();
+        const decimalPlaces = quantityStr.split('.')[1]?.length || 0;
+        if (decimalPlaces > 5) {
+            alert('Quantity can have maximum 5 decimal places');
+            return;
+        }
+        
+        // Validate purchase price decimal places
+        const priceStr = purchasePrice.toString();
+        const priceDecimalPlaces = priceStr.split('.')[1]?.length || 0;
+        if (priceDecimalPlaces > 4) {
+            alert('Purchase price can have maximum 4 decimal places');
+            return;
+        }
+        
+        addProductToPurchase({
+            id: currentProduct.id,
+            name: currentProduct.name,
+            purchase_price: purchasePrice,
+            selling_price: sellingPrice,
+            default_selling_price: parseFloat(currentProduct.selling_price)
+        }, quantity, batchNumber, expiryDate, sellingPrice);
+        
+        hidePriceModal();
+    });
+
+    cancelPriceBtn.addEventListener('click', hidePriceModal);
+
+    function addProductToPurchase(product, quantity = 1.00000, batchNumber = '', expiryDate = '', customSellingPrice = null) {
+        const itemId = generateItemId();
+        const rawTotal = quantity * product.purchase_price;
+        const roundedTotal = roundToNearest(rawTotal);
+        
+        // Use custom selling price if provided, otherwise use product's selling price
+        const finalSellingPrice = customSellingPrice || product.selling_price;
+        
+        items.push({
+            id: itemId,
+            product_id: product.id,
+            product_name: product.name,
+            quantity: quantity,
+            purchase_price: product.purchase_price,
+            selling_price: finalSellingPrice,
+            default_selling_price: product.default_selling_price,
+            custom_selling_price: !!customSellingPrice,
+            raw_total: rawTotal,
+            rounded_total: roundedTotal,
+            batch_number: batchNumber,
+            expiry_date: expiryDate
+        });
+        
+        updateItemsDisplay();
+    }
+
+    function updateItemsDisplay() {
+        itemsContainer.innerHTML = '';
+        let raw_subtotal = 0;
+        let rounded_subtotal = 0;
+        
+        items.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.className = 'item-row';
+            row.dataset.itemId = item.id;
+            
+            // Format quantity with 5 decimal places
+            const quantityFormatted = item.quantity.toFixed(5);
+            const purchasePriceFormatted = item.purchase_price.toFixed(4);
+            const sellingPriceFormatted = item.selling_price ? item.selling_price.toFixed(2) : '';
+            
+            row.innerHTML = `
+                <td class="px-4 py-3">
+                    <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
+                    <div class="font-medium">${escapeHtml(item.product_name)}</div>
+                    <div class="text-xs text-gray-500">ID: ${item.product_id}</div>
+                </td>
+                <td class="px-4 py-3">
+                    <input type="text" class="item-batch w-full px-2 py-1 border rounded text-sm" 
+                           name="items[${index}][batch_number]" value="${escapeHtml(item.batch_number)}" 
+                           placeholder="Batch # (auto)">
+                </td>
+                <td class="px-4 py-3">
+                    <input type="date" class="item-expiry w-full px-2 py-1 border rounded text-sm" 
+                           name="items[${index}][expiry_date]" value="${item.expiry_date}">
+                </td>
+                <td class="px-4 py-3">
+                    <input type="number" class="item-quantity w-full px-2 py-1 border rounded text-sm" 
+                           name="items[${index}][quantity]" value="${quantityFormatted}" min="0.00001" step="0.00001" 
+                           data-item-id="${item.id}">
+                </td>
+                <td class="px-4 py-3">
+                    <input type="number" class="item-purchase-price w-full px-2 py-1 border rounded text-sm" 
+                           name="items[${index}][purchase_price]" value="${purchasePriceFormatted}" 
+                           min="0.0001" step="0.0001" 
+                           data-item-id="${item.id}">
+                </td>
+                <td class="px-4 py-3">
+                    <input type="number" class="item-selling-price w-full px-2 py-1 border rounded text-sm" 
+                           name="items[${index}][selling_price]" value="${sellingPriceFormatted}" 
+                           min="0.01" step="0.01" 
+                           data-item-id="${item.id}"
+                           placeholder="Default">
+                    <div class="text-xs text-gray-500 mt-1">Default: KSh ${item.default_selling_price.toFixed(2)}</div>
+                 </td>
+                <td class="px-4 py-3">
+                    <div class="text-sm">
+                        <div class="text-gray-900 font-medium">${item.rounded_total.toFixed(0)}</div>
+                        <div class="text-xs text-gray-500">Exact: ${item.raw_total.toFixed(4)}</div>
+                    </div>
+                 </td>
+                <td class="px-4 py-3">
+                    <div class="flex space-x-2">
+                        <button type="button" class="clone-item text-blue-600 hover:text-blue-800" data-item-id="${item.id}" title="Clone item">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button type="button" class="remove-item text-red-600 hover:text-red-800" data-item-id="${item.id}" title="Remove item">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                 </td>
+            `;
+            itemsContainer.appendChild(row);
+            
+            raw_subtotal += item.raw_total;
+            rounded_subtotal += item.rounded_total;
+        });
+        
+        itemCount.textContent = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
+        
+        // Update displays
+        subtotalDisplay.textContent = `KSh ${rounded_subtotal.toFixed(0)}`;
+        totalDisplay.textContent = `KSh ${rounded_subtotal.toFixed(0)}`;
+        grandTotalEl.textContent = rounded_subtotal.toFixed(0);
+        
+        updateSaveButtonState();
+    }
+    
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Handle item changes
+    itemsContainer.addEventListener('change', function(e) {
+        const itemId = e.target.dataset.itemId;
+        if (!itemId) return;
+        
+        const itemIndex = items.findIndex(item => item.id === itemId);
+        if (itemIndex === -1) return;
+        
+        const item = items[itemIndex];
+        
+        if (e.target.classList.contains('item-quantity')) {
+            const newQuantity = parseFloat(e.target.value);
+            if (!isNaN(newQuantity) && newQuantity > 0) {
+                item.quantity = parseFloat(newQuantity.toFixed(5));
+                item.raw_total = item.quantity * item.purchase_price;
+                item.rounded_total = roundToNearest(item.raw_total);
+            } else {
+                e.target.value = item.quantity.toFixed(5);
+            }
+        } 
+        else if (e.target.classList.contains('item-purchase-price')) {
+            const newPrice = parseFloat(e.target.value);
+            if (!isNaN(newPrice) && newPrice > 0) {
+                item.purchase_price = newPrice;
+                item.raw_total = item.quantity * item.purchase_price;
+                item.rounded_total = roundToNearest(item.raw_total);
+            } else {
+                e.target.value = item.purchase_price.toFixed(4);
+            }
+        }
+        else if (e.target.classList.contains('item-selling-price')) {
+            const newPrice = e.target.value ? parseFloat(e.target.value) : null;
+            item.selling_price = newPrice || item.default_selling_price;
+            item.custom_selling_price = !!newPrice;
+        }
+        else if (e.target.classList.contains('item-batch')) {
+            item.batch_number = e.target.value;
+        }
+        else if (e.target.classList.contains('item-expiry')) {
+            item.expiry_date = e.target.value;
+        }
+        
+        // Recalculate totals
+        let raw_subtotal = 0;
+        let rounded_subtotal = 0;
+        items.forEach(i => {
+            raw_subtotal += i.raw_total;
+            rounded_subtotal += i.rounded_total;
+        });
+        
+        subtotalDisplay.textContent = `KSh ${rounded_subtotal.toFixed(0)}`;
+        totalDisplay.textContent = `KSh ${rounded_subtotal.toFixed(0)}`;
+        grandTotalEl.textContent = rounded_subtotal.toFixed(0);
+    });
+
+    // Handle item actions
+    itemsContainer.addEventListener('click', function(e) {
+        const cloneBtn = e.target.closest('.clone-item');
+        const removeBtn = e.target.closest('.remove-item');
+        
+        if (cloneBtn) {
+            const itemId = cloneBtn.dataset.itemId;
+            cloneItem(itemId);
+        }
+        
+        if (removeBtn) {
+            const itemId = removeBtn.dataset.itemId;
+            items = items.filter(item => item.id !== itemId);
+            updateItemsDisplay();
+        }
+    });
+
+    function cloneItem(itemId) {
+        const originalItem = items.find(item => item.id === itemId);
+        if (!originalItem) return;
+        
+        const clonedItem = {
+            ...originalItem,
+            id: generateItemId(),
+            quantity: originalItem.quantity,
+            raw_total: originalItem.raw_total,
+            rounded_total: originalItem.rounded_total,
+            batch_number: originalItem.batch_number,
+            expiry_date: originalItem.expiry_date
+        };
+        
+        items.push(clonedItem);
+        updateItemsDisplay();
+    }
+
+    // Add manual item (non-product)
+    addManualItemBtn.addEventListener('click', function() {
+        const itemId = generateItemId();
+        
+        items.push({
+            id: itemId,
+            product_id: null,
+            product_name: 'Manual Entry',
+            quantity: 1.00000,
+            purchase_price: 0.0000,
+            selling_price: null,
+            default_selling_price: 0,
+            custom_selling_price: false,
+            raw_total: 0.0000,
+            rounded_total: 0,
+            batch_number: '',
+            expiry_date: ''
+        });
+        
+        updateItemsDisplay();
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (supplierSearch && !supplierSearch.contains(e.target) && !supplierResults.contains(e.target)) {
+            supplierResults.classList.add('hidden');
+        }
+        if (productSearch && !productSearch.contains(e.target) && !productResults.contains(e.target)) {
+            productResults.classList.add('hidden');
+        }
+    });
+
+    function updateSaveButtonState() {
+        const hasItems = items.length > 0;
+        const hasSupplier = supplierSelect.value;
+        if (savePurchaseBtn) savePurchaseBtn.disabled = !hasItems || !hasSupplier;
+        if (saveAsPendingBtn) saveAsPendingBtn.disabled = !hasItems || !hasSupplier;
+    }
+
+    // Form submission
+    purchaseForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (items.length === 0) {
+            showError('Please add at least one item to the purchase');
+            return;
+        }
+        
+        if (!supplierSelect.value) {
+            showError('Please select a supplier');
+            return;
+        }
+        
+        savePurchaseBtn.disabled = true;
+        savePurchaseBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Processing...';
+        
+        const formData = new FormData(purchaseForm);
+        
+        fetch(purchaseForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.success) {
+                document.getElementById('success-message').textContent = data.message;
+                const viewInvoiceBtn = document.getElementById('view-invoice-btn');
+                if (viewInvoiceBtn) {
+                    viewInvoiceBtn.href = `/pos/purchases/${data.purchase_id}/invoice/`;
+                }
+                successModal.classList.remove('hidden');
+            } else if (data && !data.success) {
+                showError(data.message || 'Error saving purchase');
+            }
+        })
+        .catch(error => {
+            console.error('Form submission error:', error);
+            showError('An error occurred while saving the purchase');
+        })
+        .finally(() => {
+            savePurchaseBtn.disabled = false;
+            savePurchaseBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save Purchase';
+        });
+    });
+
+    // Save as Pending functionality
+    if (saveAsPendingBtn) {
+        saveAsPendingBtn.addEventListener('click', async function() {
+            if (items.length === 0) {
+                showError('Please add at least one item to the purchase');
+                return;
+            }
+            
+            if (!supplierSelect.value) {
+                showError('Please select a supplier');
+                return;
+            }
+
+            saveAsPendingBtn.disabled = true;
+            saveAsPendingBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Saving...';
+
+            try {
+                const requestData = {
+                    supplier: supplierSelect.value,
+                    invoice_number: document.getElementById('invoice-number').value,
+                    items: items.map(item => ({
+                        product_id: item.product_id,
+                        quantity: parseFloat(item.quantity.toFixed(5)),
+                        price: item.purchase_price,
+                        selling_price: item.selling_price,
+                        batch_number: item.batch_number || '',
+                        expiry_date: item.expiry_date || ''
+                    })),
+                    csrfmiddlewaretoken: document.querySelector('[name=csrfmiddlewaretoken]').value
+                };
+
+                const saveUrl = saveAsPendingBtn.dataset.savePendingUrl;
+                const response = await fetch(saveUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(requestData),
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = data.redirect_url || "{% url 'pending_purchases' %}";
+                } else {
+                    throw new Error(data.message || 'Failed to save as pending');
+                }
+            } catch (error) {
+                console.error('Save as pending error:', error);
+                showError(error.message);
+            } finally {
+                saveAsPendingBtn.disabled = false;
+                saveAsPendingBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save as Pending';
+            }
+        });
+    }
+
+    // New purchase button
+    if (newPurchaseBtn) {
+        newPurchaseBtn.addEventListener('click', function() {
+            successModal.classList.add('hidden');
+            window.location.reload();
+        });
+    }
+
+    // Close error modal
+    if (closeErrorBtn) {
+        closeErrorBtn.addEventListener('click', function() {
+            errorModal.classList.add('hidden');
+        });
+    }
+
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorModal.classList.remove('hidden');
+        if (savePurchaseBtn) {
+            savePurchaseBtn.disabled = false;
+            savePurchaseBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save Purchase';
+        }
+        if (saveAsPendingBtn) {
+            saveAsPendingBtn.disabled = false;
+            saveAsPendingBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Save as Pending';
+        }
+    }
+
+    // Initialize
+    updateSaveButtonState();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Import Products{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <!-- Header -->
+    <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="p-2 rounded-lg bg-white bg-opacity-20">
+                    <i class="fas fa-file-import text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-white">Import Products</h2>
+                    <p class="text-blue-100 text-sm">Upload an Excel file to import products</p>
+                </div>
+            </div>
+            <div>
+                <a href="{% static 'pos/product_import_template.xlsx' %}" 
+                   class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-download mr-1"></i> Download Template
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Form -->
+    <div class="px-6 py-4">
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Excel File</label>
+                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                    <div class="space-y-1 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <div class="flex text-sm text-gray-600">
+                            <label for="file" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                <span>Upload a file</span>
+                                <input id="file" name="file" type="file" class="sr-only" accept=".xlsx,.xls">
+                            </label>
+                            <p class="pl-1">or drag and drop</p>
+                        </div>
+                        <p class="text-xs text-gray-500">
+                            Excel files only (.xlsx, .xls)
+                        </p>
+                    </div>
+                </div>
+                {% if form.file.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.file.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="flex items-center">
+                {{ form.update_existing }}
+                <label for="{{ form.update_existing.id_for_label }}" class="ml-2 block text-sm text-gray-700">
+                    Update existing products if they already exist
+                </label>
+            </div>
+            
+            <div class="border-t border-gray-200 pt-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Excel File Format</h3>
+                <p class="text-sm text-gray-500 mb-3">
+                    Your Excel file should have the following columns (case sensitive):
+                </p>
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Column</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Required</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Name</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">Yes</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Product name</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Category</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">No</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Category name (will be created if doesn't exist)</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Supplier</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">No</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Supplier name (will be created if doesn't exist)</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Barcode</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">No</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Product barcode</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Purchase Price</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">Yes</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Purchase price (numeric)</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Selling Price</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">Yes</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Retail selling price (numeric)</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Wholesale Price</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">No</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Wholesale price (numeric)</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Wholesale Min Quantity</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">No</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Minimum quantity for wholesale price</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Quantity</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">No</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Current stock quantity (default 0)</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Reorder Level</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">No</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Reorder threshold (default 5)</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Is Active</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">No</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">Active status (TRUE/FALSE, default TRUE)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4">
+                <a href="{% url 'product_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-file-import mr-1"></i> Import Products
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

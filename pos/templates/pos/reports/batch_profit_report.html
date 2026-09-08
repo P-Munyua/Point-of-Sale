@@ -1,0 +1,432 @@
+<!-- templates/pos/reports/batch_profit_report.html -->
+{% extends 'pos/reports/base_report.html' %}
+{% load static humanize %}
+
+{% block title %}Batch Profit Report{% endblock %}
+
+{% block content %}
+{% with report_title="Batch Profit Report" report_icon="fa-cubes" report_color="blue" %}
+{{ block.super }}
+{% endwith %}
+{% endblock %}
+
+{% block filters %}
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">
+            <i class="fas fa-filter me-2"></i>Filter Report
+        </h3>
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" 
+                           value="{{ start_date|date:'Y-m-d' }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" name="end_date" id="end_date" 
+                           value="{{ end_date|date:'Y-m-d' }}" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+                    <select name="category" id="category" 
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"i" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="supplier" class="block text-sm font-medium text-gray-700">Supplier</label>
+                    <select name="supplier" id="supplier" 
+                            class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Suppliers</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" {% if selected_supplier == supplier.id|stringformat:"i" %}selected{% endif %}>
+                            {{ supplier.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit" 
+                        class="bg-blue-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-filter mr-2"></i> Apply Filters
+                </button>
+                <a href="{% url 'batch_profit_report' %}" class="ml-2 bg-gray-200 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    <i class="fas fa-undo mr-2"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- Date Range Info -->
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            <i class="fas fa-calendar-alt text-blue-600 text-lg"></i>
+        </div>
+        <div class="ml-4">
+            <h4 class="text-sm font-medium text-blue-800">Report Period</h4>
+            <div class="mt-1">
+                <span class="text-lg font-semibold text-gray-900">{{ start_date|date:"M d, Y" }} to {{ end_date|date:"M d, Y" }}</span>
+            </div>
+        </div>
+        <div class="ml-auto">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                <i class="fas fa-calendar-check mr-1"></i>
+                Generated: {% now "M d, Y" %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-cubes text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="ml-5">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Batches
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        {{ total_batches|default:0|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-money-bill-wave text-green-600"></i>
+                    </div>
+                </div>
+                <div class="ml-5">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Revenue
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ total_revenue|default:0|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                        <i class="fas fa-shopping-cart text-orange-600"></i>
+                    </div>
+                </div>
+                <div class="ml-5">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Cost
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ total_cost|default:0|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                        <i class="fas fa-chart-line text-purple-600"></i>
+                    </div>
+                </div>
+                <div class="ml-5">
+                    <div class="text-sm font-medium text-gray-500 truncate">
+                        Total Profit
+                    </div>
+                    <div class="mt-1 text-2xl font-semibold text-gray-900">
+                        KSh {{ total_profit|default:0|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Profit Margin Card -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg font-medium text-gray-900">
+            <i class="fas fa-percent me-2"></i>Profit Analysis
+        </h3>
+        <p class="mt-1 text-sm text-gray-500">Overall profit margin and performance metrics</p>
+    </div>
+    <div class="px-4 py-5 sm:p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-medium text-gray-500">Overall Profit Margin</div>
+                        <div class="mt-1 text-2xl font-semibold {% if overall_margin < 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                            {{ overall_margin|default:0|floatformat:2 }}%
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-500">Average return per batch</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-medium text-gray-500">Avg. Profit per Batch</div>
+                        <div class="mt-1 text-2xl font-semibold {% if avg_profit_per_batch < 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                            KSh {{ avg_profit_per_batch|default:0|floatformat:2|intcomma }}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-500">From {{ total_batches }} batches</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-medium text-gray-500">Avg. Days in Stock</div>
+                        <div class="mt-1 text-2xl font-semibold text-gray-900">
+                            {{ avg_days_in_stock|default:0|floatformat:1 }} days
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-500">Inventory turnover</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Data Table -->
+<div class="bg-white shadow rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900">
+                    <i class="fas fa-table me-2"></i>Detailed Batch Profit Records
+                </h3>
+                <p class="mt-1 text-sm text-gray-500">Profit analysis by batch number</p>
+            </div>
+            <div class="flex space-x-2">
+                <button type="button" onclick="window.print()" 
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-print mr-2"></i> Print
+                </button>
+                <a href="?export=csv&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" 
+                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-file-csv mr-2"></i> Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Batch #
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Supplier
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Purchase Price
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Selling Price
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Qty Sold
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Revenue
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Cost
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Profit
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Margin %
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Days in Stock
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for item in batch_data %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ item.batch_number }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ item.product.name }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            {{ item.category }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ item.supplier|default:"-" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                        KSh {{ item.purchase_price|floatformat:4 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                        KSh {{ item.selling_price|floatformat:2 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                        {{ item.quantity_sold|floatformat:2 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                        KSh {{ item.revenue|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                        KSh {{ item.cost|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right {% if item.profit < 0 %}text-red-600 font-semibold{% else %}text-gray-900{% endif %}">
+                        KSh {{ item.profit|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right {% if item.profit_margin < 0 %}text-red-600 font-semibold{% else %}text-gray-900{% endif %}">
+                        {{ item.profit_margin|floatformat:2 }}%
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                        {{ item.days_in_stock }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="px-6 py-12 text-center">
+                        <div class="text-gray-400">
+                            <i class="fas fa-cubes fa-4x mb-4"></i>
+                            <p class="mt-2 text-lg font-medium text-gray-900">No batch data found</p>
+                            <p class="text-gray-500">Try adjusting your filters or date range</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            
+            {% if batch_data %}
+            <tfoot class="bg-gray-50">
+                <tr>
+                    <td colspan="6" class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
+                        Totals:
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
+                        {{ total_quantity_sold|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
+                        KSh {{ total_revenue|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium text-gray-900 text-right">
+                        KSh {{ total_cost|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium {% if total_profit < 0 %}text-red-600{% else %}text-gray-900{% endif %} text-right">
+                        KSh {{ total_profit|floatformat:2|intcomma }}
+                    </td>
+                    <td class="px-6 py-3 text-sm font-medium {% if overall_margin < 0 %}text-red-600{% else %}text-gray-900{% endif %} text-right">
+                        {{ overall_margin|floatformat:2 }}%
+                    </td>
+                    <td class="px-6 py-3 text-sm text-gray-500"></td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+    
+    <div class="px-4 py-3 bg-gray-50 sm:px-6">
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                Showing {{ batch_data|length }} batch records
+            </div>
+            <div class="text-sm text-gray-500">
+                Generated on {% now "F d, Y H:i" %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set today's date as default if not set
+    const today = new Date().toISOString().split('T')[0];
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (!startDateInput.value) {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+    }
+    
+    if (!endDateInput.value) {
+        endDateInput.value = today;
+    }
+    
+    // Initialize DataTable if jQuery is available
+    if (typeof jQuery !== 'undefined' && $.fn.DataTable) {
+        $('table').DataTable({
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            order: [[0, 'asc']], // Sort by batch number ascending
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search batches...",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)"
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

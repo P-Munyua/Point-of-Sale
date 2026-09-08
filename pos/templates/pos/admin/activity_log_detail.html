@@ -1,0 +1,422 @@
+{% extends 'pos/admin/base_admin.html' %}
+{% load static %}
+{% load permission_tags %}
+
+{% block title %}Log Detail - {{ log_entry.timestamp|date:"Y-m-d H:i:s" }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'activity_logs_view' %}">Activity Logs</a></li>
+                    <li class="breadcrumb-item active">Log Detail</li>
+                </ol>
+            </nav>
+            
+            <!-- Main Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">
+                            <i class="fas fa-info-circle"></i> 
+                            Log Detail - {{ log_entry.timestamp|date:"Y-m-d H:i:s" }}
+                        </h3>
+                        <div>
+                            <a href="{% url 'activity_logs_view' %}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-arrow-left"></i> Back to Logs
+                            </a>
+                            <button onclick="window.print()" class="btn btn-primary btn-sm">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Log Header -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="alert 
+                                {% if log_entry.action_type == 'create' %}alert-success
+                                {% elif log_entry.action_type == 'update' %}alert-warning
+                                {% elif log_entry.action_type == 'delete' %}alert-danger
+                                {% elif log_entry.action_type == 'login' %}alert-info
+                                {% elif log_entry.action_type == 'logout' %}alert-secondary
+                                {% elif log_entry.action_type == 'error' %}alert-dark
+                                {% else %}alert-primary{% endif %}">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-3">
+                                        <i class="fas 
+                                            {% if log_entry.action_type == 'create' %}fa-plus-circle fa-2x
+                                            {% elif log_entry.action_type == 'update' %}fa-edit fa-2x
+                                            {% elif log_entry.action_type == 'delete' %}fa-trash-alt fa-2x
+                                            {% elif log_entry.action_type == 'login' %}fa-sign-in-alt fa-2x
+                                            {% elif log_entry.action_type == 'logout' %}fa-sign-out-alt fa-2x
+                                            {% elif log_entry.action_type == 'error' %}fa-exclamation-circle fa-2x
+                                            {% else %}fa-info-circle fa-2x{% endif %}">
+                                        </i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0">
+                                            <span class="badge 
+                                                {% if log_entry.action_type == 'create' %}badge-success
+                                                {% elif log_entry.action_type == 'update' %}badge-warning
+                                                {% elif log_entry.action_type == 'delete' %}badge-danger
+                                                {% elif log_entry.action_type == 'login' %}badge-info
+                                                {% elif log_entry.action_type == 'logout' %}badge-secondary
+                                                {% elif log_entry.action_type == 'error' %}badge-dark
+                                                {% else %}badge-primary{% endif %}">
+                                                {{ log_entry.get_action_type_display }}
+                                            </span>
+                                            <span class="ml-2">{{ log_entry.model_name }}</span>
+                                            {% if log_entry.object_id %}
+                                            <span class="text-muted">#{{ log_entry.object_id }}</span>
+                                            {% endif %}
+                                        </h5>
+                                        <p class="mb-0 mt-1">{{ log_entry.description }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Two Column Layout -->
+                    <div class="row">
+                        <!-- Left Column: Log Details -->
+                        <div class="col-md-6">
+                            <div class="card card-primary">
+                                <div class="card-header">
+                                    <h5 class="card-title"><i class="fas fa-file-alt"></i> Log Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered table-sm">
+                                        <tr>
+                                            <td style="width: 40%;"><strong>ID</strong></td>
+                                            <td>#{{ log_entry.id }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Timestamp</strong></td>
+                                            <td>{{ log_entry.timestamp|date:"Y-m-d H:i:s" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Date</strong></td>
+                                            <td>{{ log_entry.timestamp|date:"l, F j, Y" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Time</strong></td>
+                                            <td>{{ log_entry.timestamp|date:"H:i:s" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>User</strong></td>
+                                            <td>
+                                                {% if log_entry.user %}
+                                                <span class="badge badge-info">
+                                                    <i class="fas fa-user"></i> {{ log_entry.user.username }}
+                                                </span>
+                                                {% if log_entry.user.first_name or log_entry.user.last_name %}
+                                                <small class="text-muted">({{ log_entry.user.get_full_name }})</small>
+                                                {% endif %}
+                                                {% else %}
+                                                <span class="badge badge-secondary">System</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Action Type</strong></td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if log_entry.action_type == 'create' %}badge-success
+                                                    {% elif log_entry.action_type == 'update' %}badge-warning
+                                                    {% elif log_entry.action_type == 'delete' %}badge-danger
+                                                    {% elif log_entry.action_type == 'login' %}badge-info
+                                                    {% elif log_entry.action_type == 'logout' %}badge-secondary
+                                                    {% elif log_entry.action_type == 'error' %}badge-dark
+                                                    {% else %}badge-primary{% endif %}">
+                                                    {{ log_entry.get_action_type_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Model</strong></td>
+                                            <td><span class="badge badge-dark">{{ log_entry.model_name }}</span></td>
+                                        </tr>
+                                        {% if log_entry.object_id %}
+                                        <tr>
+                                            <td><strong>Object ID</strong></td>
+                                            <td><code>{{ log_entry.object_id }}</code></td>
+                                        </tr>
+                                        {% endif %}
+                                        <tr>
+                                            <td><strong>IP Address</strong></td>
+                                            <td>
+                                                <code>{{ log_entry.ip_address|default:"—" }}</code>
+                                                {% if log_entry.ip_address %}
+                                                <a href="https://whatismyipaddress.com/ip/{{ log_entry.ip_address }}" 
+                                                   target="_blank" class="ml-2">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>User Agent</strong></td>
+                                            <td><small class="text-muted">{{ log_entry.user_agent|default:"—"|truncatechars:50 }}</small></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Description</strong></td>
+                                            <td>{{ log_entry.description }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column: Related Data -->
+                        <div class="col-md-6">
+                            {% if related_data %}
+                            <div class="card card-success">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-database"></i> 
+                                        {{ related_model }} Details
+                                        {% if related_object %}
+                                        <span class="badge badge-light ml-2">#{{ related_object.id }}</span>
+                                        {% endif %}
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if related_data.error %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> {{ related_data.error }}
+                                    </div>
+                                    {% else %}
+                                    <table class="table table-bordered table-sm">
+                                        {% for key, value in related_data.items %}
+                                        <tr>
+                                            <td style="width: 40%;"><strong>{{ key|title|cut:"_" }}</strong></td>
+                                            <td>
+                                                {% if value is True %}
+                                                <span class="badge badge-success">Yes</span>
+                                                {% elif value is False %}
+                                                <span class="badge badge-danger">No</span>
+                                                {% elif value is None or value == 'N/A' or value == '' %}
+                                                <span class="text-muted">—</span>
+                                                {% elif value is iterable and value is not string %}
+                                                <span class="badge badge-info">{{ value|join:", " }}</span>
+                                                {% else %}
+                                                {{ value }}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </table>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Parsed Data if any -->
+                            {% if parsed_data %}
+                            <div class="card card-info mt-3">
+                                <div class="card-header">
+                                    <h5 class="card-title"><i class="fas fa-code"></i> Additional Data</h5>
+                                </div>
+                                <div class="card-body">
+                                    <pre class="bg-light p-2 rounded" style="max-height: 200px; overflow: auto;">
+                                        {% if parsed_data|length > 1000 %}
+                                        {{ parsed_data|truncatechars:1000 }}
+                                        <br><span class="text-muted">... (data truncated)</span>
+                                        {% else %}
+                                        {{ parsed_data|pprint }}
+                                        {% endif %}
+                                    </pre>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- User Activity Summary -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card card-info">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-chart-bar"></i> 
+                                        User Activity Summary - {{ log_entry.user.username|default:"System" }}
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="small-box bg-info">
+                                                <div class="inner">
+                                                    <h3>{{ user_summary.total_actions|default:0 }}</h3>
+                                                    <p>Total Actions</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="small-box bg-success">
+                                                <div class="inner">
+                                                    <h3>{{ user_summary.unique_models|default:0 }}</h3>
+                                                    <p>Unique Models Accessed</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="small-box bg-warning">
+                                                <div class="inner">
+                                                    <h3>
+                                                        {% if user_summary.last_action %}
+                                                        {{ user_summary.last_action|timesince }} ago
+                                                        {% else %}
+                                                        Never
+                                                        {% endif %}
+                                                    </h3>
+                                                    <p>Last Activity</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="small-box bg-danger">
+                                                <div class="inner">
+                                                    <h3>
+                                                        {% for type in user_action_types|slice:":1" %}
+                                                        {{ type.count }}
+                                                        {% empty %}
+                                                        0
+                                                        {% endfor %}
+                                                    </h3>
+                                                    <p>Most Common Action</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Type Distribution -->
+                                    <div class="mt-3">
+                                        <h6>Action Distribution</h6>
+                                        <div class="progress-group">
+                                            {% for type in user_action_types %}
+                                            <div class="progress-group-item mb-2">
+                                                <span class="progress-group-label">
+                                                    {{ type.action_type|title }}
+                                                    <span class="badge badge-light float-right">{{ type.count }}</span>
+                                                </span>
+                                                <div class="progress">
+                                                    <div class="progress-bar 
+                                                        {% if type.action_type == 'create' %}bg-success
+                                                        {% elif type.action_type == 'update' %}bg-warning
+                                                        {% elif type.action_type == 'delete' %}bg-danger
+                                                        {% elif type.action_type == 'login' %}bg-info
+                                                        {% elif type.action_type == 'logout' %}bg-secondary
+                                                        {% elif type.action_type == 'error' %}bg-dark
+                                                        {% else %}bg-primary{% endif %}" 
+                                                         role="progressbar" 
+                                                         style="width: {% widthratio type.count user_summary.total_actions 100 %}%"
+                                                         aria-valuenow="{% widthratio type.count user_summary.total_actions 100 %}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                        {% widthratio type.count user_summary.total_actions 100 %}%
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% empty %}
+                                            <p class="text-muted">No action types recorded.</p>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Related Logs -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card card-secondary">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-history"></i> 
+                                        Related Logs
+                                        <span class="badge badge-light ml-2">{{ related_logs|length }}</span>
+                                    </h5>
+                                </div>
+                                <div class="card-body table-responsive p-0">
+                                    <table class="table table-hover table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Action</th>
+                                                <th>Model</th>
+                                                <th>Description</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for log in related_logs %}
+                                            <tr>
+                                                <td><small>{{ log.timestamp|date:"Y-m-d H:i:s" }}</small></td>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if log.action_type == 'create' %}badge-success
+                                                        {% elif log.action_type == 'update' %}badge-warning
+                                                        {% elif log.action_type == 'delete' %}badge-danger
+                                                        {% elif log.action_type == 'login' %}badge-info
+                                                        {% elif log.action_type == 'logout' %}badge-secondary
+                                                        {% elif log.action_type == 'error' %}badge-dark
+                                                        {% else %}badge-primary{% endif %}">
+                                                        {{ log.get_action_type_display }}
+                                                    </span>
+                                                </td>
+                                                <td><span class="badge badge-dark">{{ log.model_name }}</span></td>
+                                                <td><small>{{ log.description|truncatechars:50 }}</small></td>
+                                                <td>
+                                                    <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-xs btn-info">
+                                                        <i class="fas fa-eye"></i> View
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="text-center py-3 text-muted">
+                                                    <i class="fas fa-inbox"></i> No related logs found
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .breadcrumb, .no-print {
+        display: none !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .card-header {
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #dee2e6 !important;
+    }
+    body {
+        padding: 20px !important;
+    }
+}
+</style>
+{% endblock %}

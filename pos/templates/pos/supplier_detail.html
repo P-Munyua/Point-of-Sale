@@ -1,0 +1,381 @@
+<!-- supplier_detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Supplier Details - {{ supplier.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h2>Supplier: {{ supplier.name }}</h2>
+        </div>
+        <div class="col-md-6 text-right">
+            <a href="{% url 'edit_supplier' supplier.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit Supplier
+            </a>
+            <a href="{% url 'supplier_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Supplier Information</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th width="30%">Name</th>
+                            <td>{{ supplier.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Contact Person</th>
+                            <td>{{ supplier.contact_person }}</td>
+                        </tr>
+                        <tr>
+                            <th>Phone</th>
+                            <td>{{ supplier.phone }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email</th>
+                            <td>{{ supplier.email|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Address</th>
+                            <td>{{ supplier.address|default:"-"|linebreaks }}</td>
+                        </tr>
+                        <tr>
+                            <th>Current Balance</th>
+                            <td class="{% if supplier.balance > 0 %}text-danger{% endif %}">
+                                {{ supplier.balance|floatformat:2 }}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Quick Actions</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <a href="{% url 'add_purchase' %}?supplier={{ supplier.pk }}" class="btn btn-success btn-block">
+                                <i class="fas fa-cart-plus"></i> New Purchase
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button class="btn btn-info btn-block" data-toggle="modal" data-target="#paymentModal">
+                                <i class="fas fa-money-bill-wave"></i> Record Payment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <ul class="nav nav-tabs" id="supplierTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="purchases-tab" data-toggle="tab" href="#purchases" role="tab">
+                        Purchases ({{ purchases.paginator.count }})
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="payments-tab" data-toggle="tab" href="#payments" role="tab">
+                        Payments ({{ payments.paginator.count }})
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="supplierTabsContent">
+                <div class="tab-pane fade show active" id="purchases" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Invoice #</th>
+                                            <th>Date</th>
+                                            <th>Items</th>
+                                            <th>Total</th>
+                                            <th>Paid</th>
+                                            <th>Balance</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for purchase in purchases %}
+                                        <tr>
+                                            <td>{{ purchase.invoice_number }}</td>
+                                            <td>{{ purchase.date|date:"d/m/Y" }}</td>
+                                            <td>{{ purchase.items.aggregate(total=Sum('quantity'))['total']|default:0 }}</td>
+                                            <td>{{ purchase.total|floatformat:2 }}</td>
+                                            <td>{{ purchase.total|floatformat:2 }}</td>
+                                            <td>{{ purchase.total|floatformat:2 }}</td>
+                                            <td>
+                                                {% if purchase.is_paid %}
+                                                <span class="badge badge-success">Paid</span>
+                                                {% else %}
+                                                <span class="badge badge-warning">Unpaid</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'view_purchase' purchase.pk %}" class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="8" class="text-center">No purchases found</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            {% if purchases.has_other_pages %}
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center">
+                                    {% if purchases.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?purchase_page={{ purchases.previous_page_number }}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">&laquo;</span>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for i in purchases.paginator.page_range %}
+                                    {% if purchases.number == i %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ i }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?purchase_page={{ i }}">{{ i }}</a>
+                                    </li>
+                                    {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if purchases.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?purchase_page={{ purchases.next_page_number }}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">&raquo;</span>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane fade" id="payments" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Method</th>
+                                            <th>Reference</th>
+                                            <th>Purchase</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for payment in payments %}
+                                        <tr>
+                                            <td>{{ payment.date|date:"d/m/Y" }}</td>
+                                            <td>{{ payment.amount|floatformat:2 }}</td>
+                                            <td>{{ payment.get_payment_method_display }}</td>
+                                            <td>{{ payment.reference|default:"-" }}</td>
+                                            <td>
+                                                {% if payment.purchase %}
+                                                <a href="{% url 'view_purchase' payment.purchase.pk %}">
+                                                    {{ payment.purchase.invoice_number }}
+                                                </a>
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-center">No payments found</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            {% if payments.has_other_pages %}
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center">
+                                    {% if payments.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?payment_page={{ payments.previous_page_number }}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">&laquo;</span>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for i in payments.paginator.page_range %}
+                                    {% if payments.number == i %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ i }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?payment_page={{ i }}">{{ i }}</a>
+                                    </li>
+                                    {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if payments.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?payment_page={{ payments.next_page_number }}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">&raquo;</span>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentModalLabel">Record Payment</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'record_payment' supplier.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="amount">Amount *</label>
+                        <input type="number" class="form-control" id="amount" name="amount" required step="0.01" min="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_method">Payment Method *</label>
+                        <select class="form-control" id="payment_method" name="payment_method" required>
+                            <option value="">Select Method</option>
+                            <option value="cash">Cash</option>
+                            <option value="mpesa">M-Pesa</option>
+                            <option value="bank">Bank Transfer</option>
+                            <option value="cheque">Cheque</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reference">Reference (Optional)</label>
+                        <input type="text" class="form-control" id="reference" name="reference">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Record Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize tabs
+    $('#supplierTabs a').on('click', function (e) {
+        e.preventDefault();
+        $(this).tab('show');
+    });
+    
+    // Store the active tab in localStorage
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        localStorage.setItem('supplierTab', $(e.target).attr('href'));
+    });
+    
+    // Retrieve the active tab from localStorage
+    var activeTab = localStorage.getItem('supplierTab');
+    if (activeTab) {
+        $('#supplierTabs a[href="' + activeTab + '"]').tab('show');
+    }
+    
+    // Initialize payment form validation
+    $('#paymentModal form').validate({
+        rules: {
+            amount: {
+                required: true,
+                min: 0.01
+            },
+            payment_method: "required"
+        },
+        messages: {
+            amount: {
+                required: "Please enter amount",
+                min: "Amount must be greater than 0"
+            },
+            payment_method: "Please select payment method"
+        },
+        errorElement: 'span',
+        errorPlacement: function (error, element) {
+            error.addClass('invalid-feedback');
+            element.closest('.form-group').append(error);
+        },
+        highlight: function (element, errorClass, validClass) {
+            $(element).addClass('is-invalid');
+        },
+        unhighlight: function (element, errorClass, validClass) {
+            $(element).removeClass('is-invalid');
+        }
+    });
+});
+</script>
+{% endblock %}

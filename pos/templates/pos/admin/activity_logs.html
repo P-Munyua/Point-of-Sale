@@ -1,0 +1,609 @@
+{% extends 'pos/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}Activity Logs{% endblock %}
+
+{% block page_title %}Activity Logs{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Activity Logs</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Activity Logs</h1>
+            <p class="text-muted mb-0">Track system activities and user actions</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#filterModal">
+                <i class="fas fa-filter"></i>
+                <span class="d-none d-md-inline">Filter Logs</span>
+            </button>
+            {% if logs.has_other_pages or request.GET %}
+            <a href="{% url 'activity_logs' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <i class="fas fa-redo"></i>
+                <span class="d-none d-md-inline">Reset Filters</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card shadow-md mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-semibold">Action Type</label>
+                    <select name="action_type" class="form-select form-select-sm">
+                        <option value="">All Actions</option>
+                        {% for value, label in action_types %}
+                        <option value="{{ value }}" {% if selected_action == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-semibold">User</label>
+                    <select name="user" class="form-select form-select-sm">
+                        <option value="">All Users</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if selected_user == user.id|stringformat:"s" %}selected{% endif %}>
+                            {{ user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-semibold">Start Date</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                        <input type="date" name="start_date" class="form-control" 
+                               value="{{ start_date|default:'' }}">
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-semibold">End Date</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                        <input type="date" name="end_date" class="form-control" 
+                               value="{{ end_date|default:'' }}">
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center gap-2">
+                        <i class="fas fa-search"></i>
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="stats-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="stats-value">{{ logs.paginator.count|default:0 }}</div>
+                <div class="stats-label">Total Logs</div>
+                <div class="stats-trend text-success">
+                    <i class="fas fa-arrow-up"></i> 12% from last week
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="stats-icon bg-success bg-opacity-10 text-success">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="stats-value">{{ today_count|default:0 }}</div>
+                <div class="stats-label">Today's Activities</div>
+                <div class="stats-trend text-danger">
+                    <i class="fas fa-arrow-down"></i> 5% from yesterday
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="stats-icon bg-info bg-opacity-10 text-info">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stats-value">{{ unique_users|default:0 }}</div>
+                <div class="stats-label">Active Users</div>
+                <div class="stats-trend text-success">
+                    <i class="fas fa-arrow-up"></i> 8% this month
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="stats-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stats-value">{{ error_count|default:0 }}</div>
+                <div class="stats-label">Error Logs</div>
+                <div class="stats-trend text-success">
+                    <i class="fas fa-arrow-down"></i> 20% from last month
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Logs Table -->
+    <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center py-3">
+            <div>
+                <h5 class="card-title mb-0 d-flex align-items-center gap-2">
+                    <i class="fas fa-clipboard-list text-primary"></i>
+                    Recent Activities
+                </h5>
+                <p class="card-subtitle text-muted mb-0">Showing {{ logs.start_index }} - {{ logs.end_index }} of {{ logs.paginator.count }} logs</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="?export=csv{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                   class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2">
+                    <i class="fas fa-file-csv"></i>
+                    Export CSV
+                </a>
+                <a href="?export=pdf{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                   class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2">
+                    <i class="fas fa-file-pdf"></i>
+                    Export PDF
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Timestamp</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Model</th>
+                            <th>Description</th>
+                            <th class="pe-4">IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr class="align-middle">
+                            <td class="ps-4">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-semibold text-dark">{{ log.timestamp|date:"Y-m-d" }}</span>
+                                    <span class="text-muted small">{{ log.timestamp|date:"H:i:s" }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if log.user %}
+                                    <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center">
+                                        {{ log.user.username|first|upper }}
+                                    </div>
+                                    <div>
+                                        <a href="{% url 'user_detail' log.user.pk %}" class="text-decoration-none">
+                                            <span class="fw-semibold">{{ log.user.username }}</span>
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">{{ log.user.email|default:"No email" }}</small>
+                                    </div>
+                                    {% else %}
+                                    <div class="avatar-sm bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <div>
+                                        <span class="fw-semibold">System</span>
+                                        <br>
+                                        <small class="text-muted">Automated Process</small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if log.action_type == 'login' %}bg-success bg-opacity-10 text-success border border-success
+                                    {% elif log.action_type == 'error' %}bg-danger bg-opacity-10 text-danger border border-danger
+                                    {% elif log.action_type == 'delete' %}bg-warning bg-opacity-10 text-warning border border-warning
+                                    {% elif log.action_type == 'create' %}bg-info bg-opacity-10 text-info border border-info
+                                    {% else %}bg-primary bg-opacity-10 text-primary border border-primary{% endif %}
+                                    px-3 py-2 rounded-pill d-inline-flex align-items-center gap-1">
+                                    <i class="fas 
+                                        {% if log.action_type == 'login' %}fa-sign-in-alt
+                                        {% elif log.action_type == 'error' %}fa-exclamation-circle
+                                        {% elif log.action_type == 'delete' %}fa-trash-alt
+                                        {% elif log.action_type == 'create' %}fa-plus-circle
+                                        {% elif log.action_type == 'update' %}fa-edit
+                                        {% else %}fa-bullseye{% endif %} fa-xs"></i>
+                                    {{ log.get_action_type_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <code class="bg-light px-2 py-1 rounded">{{ log.model_name|default:"N/A" }}</code>
+                                    {% if log.object_id %}
+                                    <small class="text-muted mt-1">ID: <strong>{{ log.object_id }}</strong></small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="activity-description">
+                                    <span class="d-inline-block text-truncate" style="max-width: 250px;"
+                                          data-bs-toggle="tooltip" 
+                                          title="{{ log.description }}">
+                                        {{ log.description|default:"No description" }}
+                                    </span>
+                                    {% if log.additional_data %}
+                                    <a href="#" class="badge bg-light text-dark border ms-2" 
+                                       data-bs-toggle="popover" 
+                                       data-bs-title="Additional Data"
+                                       data-bs-content="{{ log.additional_data }}">
+                                        + Details
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="pe-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-network-wired text-muted"></i>
+                                    <span class="font-monospace small">{{ log.ip_address|default:"N/A" }}</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if logs.has_other_pages %}
+            <div class="card-footer border-top-0 pt-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted">Showing {{ logs.start_index }} - {{ logs.end_index }} of {{ logs.paginator.count }} logs</span>
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if logs.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ logs.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                            </li>
+                            {% endif %}
+
+                            {% for num in logs.paginator.page_range %}
+                                {% if logs.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > logs.number|add:'-3' and num < logs.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if logs.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ logs.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ logs.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-clipboard-list fa-4x text-light bg-primary bg-opacity-10 p-4 rounded-circle"></i>
+                </div>
+                <h4 class="mb-2">No activity logs found</h4>
+                <p class="text-muted mb-4">Try adjusting your filters or check back later for new activities</p>
+                {% if request.GET %}
+                <a href="{% url 'activity_logs' %}" class="btn btn-primary">
+                    <i class="fas fa-redo me-2"></i>Clear All Filters
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    <i class="fas fa-sliders-h text-primary"></i>
+                    Advanced Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="get" id="advancedFilterForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Date Range</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                <input type="date" name="start_date" class="form-control" 
+                                       value="{{ start_date|default:'' }}">
+                                <span class="input-group-text">to</span>
+                                <input type="date" name="end_date" class="form-control" 
+                                       value="{{ end_date|default:'' }}">
+                            </div>
+                            <div class="form-text">Leave empty for all dates</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Model Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-database"></i></span>
+                                <input type="text" name="model" class="form-control" 
+                                       placeholder="e.g., User, Product, Sale"
+                                       value="{{ request.GET.model|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">IP Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-network-wired"></i></span>
+                                <input type="text" name="ip" class="form-control" 
+                                       placeholder="e.g., 192.168.1.1"
+                                       value="{{ request.GET.ip|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Contains Text</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="Search in description"
+                                       value="{{ request.GET.search|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Severity Level</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="severity" value="info" id="severityInfo">
+                                    <label class="form-check-label badge bg-info bg-opacity-10 text-info px-3 py-2" for="severityInfo">
+                                        <i class="fas fa-info-circle me-1"></i> Info
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="severity" value="warning" id="severityWarning">
+                                    <label class="form-check-label badge bg-warning bg-opacity-10 text-warning px-3 py-2" for="severityWarning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i> Warning
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="severity" value="error" id="severityError">
+                                    <label class="form-check-label badge bg-danger bg-opacity-10 text-danger px-3 py-2" for="severityError">
+                                        <i class="fas fa-times-circle me-1"></i> Error
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="submit" form="advancedFilterForm" class="btn btn-primary">
+                    <i class="fas fa-filter me-2"></i>Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    
+    // Initialize popovers
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl)
+    });
+    
+    // Date validation
+    $('input[type="date"]').on('change', function() {
+        const startDate = $('input[name="start_date"]').val();
+        const endDate = $('input[name="end_date"]').val();
+        
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+            alert('Start date cannot be after end date');
+            $(this).val('');
+        }
+    });
+    
+    // Export confirmation
+    $('a[href*="export=csv"], a[href*="export=pdf"]').on('click', function(e) {
+        const count = {{ logs.paginator.count|default:0 }};
+        if (count > 1000) {
+            if (!confirm(`Exporting ${count.toLocaleString()} records may take a while. Continue?`)) {
+                e.preventDefault();
+            }
+        }
+    });
+    
+    // Quick date filters
+    $('#quickFilters a').on('click', function(e) {
+        e.preventDefault();
+        const days = $(this).data('days');
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - days);
+        
+        $('input[name="start_date"]').val(start.toISOString().split('T')[0]);
+        $('input[name="end_date"]').val(end.toISOString().split('T')[0]);
+        $('#advancedFilterForm').submit();
+    });
+    
+    // Real-time updates indicator
+    {% if logs.number == 1 %}
+    function checkForUpdates() {
+        $.ajax({
+            url: '{% url "activity_logs" %}?check_updates=1',
+            type: 'GET',
+            success: function(data) {
+                if (data.new_entries > 0) {
+                    // Show notification badge
+                    if (!$('#updateBadge').length) {
+                        $('.card-header').append(
+                            '<span id="updateBadge" class="badge bg-danger position-absolute top-0 start-100 translate-middle">' +
+                            data.new_entries + ' new</span>'
+                        );
+                    }
+                }
+            }
+        });
+    }
+    
+    // Check every 30 seconds
+    setInterval(checkForUpdates, 30000);
+    {% endif %}
+    
+    // Table row click for details
+    $('tbody tr').on('click', function() {
+        const logId = $(this).data('log-id');
+        if (logId) {
+            // Show log details modal
+            $('#logDetailsModal').modal('show');
+        }
+    });
+    
+    // Preserve filters in pagination
+    $('.page-link').on('click', function(e) {
+        const url = $(this).attr('href');
+        if (url) {
+            e.preventDefault();
+            window.location.href = url;
+        }
+    });
+});
+</script>
+
+<style>
+.avatar-sm {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.activity-description {
+    line-height: 1.4;
+    max-width: 300px;
+}
+
+.table tbody tr {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.03) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.table tbody tr:active {
+    transform: translateY(0);
+}
+
+.badge.border {
+    border-width: 1px !important;
+}
+
+.form-check .badge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.form-check .badge:hover {
+    transform: translateY(-2px);
+}
+
+.form-check-input:checked + .badge {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
+}
+
+.card-footer {
+    background-color: transparent;
+}
+
+@media (max-width: 768px) {
+    .stats-card .stats-value {
+        font-size: 1.5rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

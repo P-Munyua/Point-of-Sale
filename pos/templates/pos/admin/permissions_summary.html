@@ -1,0 +1,983 @@
+<!-- pos/templates/pos/admin/user_permissions_summary.html -->
+{% extends 'pos/admin/base_admin.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Permissions Summary - Admin Dashboard{% endblock %}
+
+{% block page_title %}Permissions Summary{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'role_list' %}">Role Management</a></li>
+<li class="breadcrumb-item active">Permissions Summary</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 gradient-text">Permissions Summary</h1>
+            <p class="text-muted mb-0">Comprehensive overview of all system permissions and role assignments</p>
+        </div>
+        <div class="btn-group" role="group">
+            <a href="{% url 'role_list' %}" class="btn btn-outline-primary d-flex align-items-center gap-2">
+                <i class="fas fa-user-tag"></i>
+                Manage Roles
+            </a>
+            <a href="{% url 'user_list' %}" class="btn btn-outline-info d-flex align-items-center gap-2">
+                <i class="fas fa-users"></i>
+                Manage Users
+            </a>
+            <button class="btn btn-outline-success d-flex align-items-center gap-2" onclick="window.print()">
+                <i class="fas fa-print"></i>
+                Print Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Statistics Cards -->
+    <div class="row mb-5">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="text-uppercase text-muted small fw-bold mb-1">Total Roles</h6>
+                            <h2 class="mb-0 fw-bold gradient-text">{{ total_roles }}</h2>
+                        </div>
+                        <div class="icon-wrapper bg-primary bg-opacity-10 text-primary p-3 rounded-circle">
+                            <i class="fas fa-user-tag fa-2x"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-arrow-up text-success me-1"></i>
+                        Active roles in system
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="text-uppercase text-muted small fw-bold mb-1">Total Permissions</h6>
+                            <h2 class="mb-0 fw-bold gradient-text">{{ permission_fields|length }}</h2>
+                        </div>
+                        <div class="icon-wrapper bg-success bg-opacity-10 text-success p-3 rounded-circle">
+                            <i class="fas fa-key fa-2x"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-list-check me-1 text-info"></i>
+                        Available permissions
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="text-uppercase text-muted small fw-bold mb-1">Most Permitted Role</h6>
+                            <h3 class="mb-0 fw-bold">{{ most_permissions.role.get_name_display|default:"N/A" }}</h3>
+                        </div>
+                        <div class="icon-wrapper bg-warning bg-opacity-10 text-warning p-3 rounded-circle">
+                            <i class="fas fa-crown fa-2x"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-chart-line text-success me-1"></i>
+                        {{ most_permissions.count|default:"0" }} permissions
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="text-uppercase text-muted small fw-bold mb-1">Least Permitted Role</h6>
+                            <h3 class="mb-0 fw-bold">{{ least_permissions.role.get_name_display|default:"N/A" }}</h3>
+                        </div>
+                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger p-3 rounded-circle">
+                            <i class="fas fa-lock fa-2x"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-chart-line text-danger me-1"></i>
+                        {{ least_permissions.count|default:"0" }} permissions
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permissions Matrix -->
+    <div class="card shadow-lg border-0 mb-5">
+        <div class="card-header d-flex align-items-center justify-content-between py-3 gradient-primary">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrapper bg-white text-primary p-2 rounded-circle shadow-sm">
+                    <i class="fas fa-th fa-lg"></i>
+                </div>
+                <div>
+                    <h5 class="card-title mb-0 text-white">Permissions Matrix</h5>
+                    <p class="card-subtitle text-white-50 mb-0">Cross-reference roles with permissions</p>
+                </div>
+            </div>
+            <div class="btn-group" role="group">
+                <button class="btn btn-sm btn-outline-light d-flex align-items-center gap-2" id="toggleInactive">
+                    <i class="fas fa-eye-slash"></i>
+                    Toggle Inactive
+                </button>
+                <button class="btn btn-sm btn-outline-light d-flex align-items-center gap-2" id="exportMatrix">
+                    <i class="fas fa-download"></i>
+                    Export CSV
+                </button>
+                <button class="btn btn-sm btn-outline-light d-flex align-items-center gap-2" id="printMatrix">
+                    <i class="fas fa-print"></i>
+                    Print
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover datatable" id="permissionsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="border-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-key text-primary"></i>
+                                    <span>Permission</span>
+                                </div>
+                            </th>
+                            <th class="border-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-folder text-primary"></i>
+                                    <span>Category</span>
+                                </div>
+                            </th>
+                            {% for item in permission_matrix %}
+                            <th class="text-center border-0">
+                                <div class="d-flex flex-column align-items-center gap-1">
+                                    <a href="{% url 'role_detail' item.role.pk %}" class="text-decoration-none">
+                                        <strong>{{ item.role.get_name_display }}</strong>
+                                    </a>
+                                    <div>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill">
+                                            <i class="fas fa-users me-1"></i>
+                                            {{ item.user_count }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </th>
+                            {% endfor %}
+                            <th class="text-center border-0">
+                                <div class="d-flex flex-column align-items-center gap-1">
+                                    <i class="fas fa-chart-pie text-primary"></i>
+                                    <span>Total</span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field in permission_fields %}
+                        <tr class="permission-row">
+                            <td class="align-middle">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-key text-muted"></i>
+                                    <div>
+                                        <small class="fw-medium">{{ field|slice:"4:"|title }}</small>
+                                        <div class="text-muted extra-small">
+                                            {{ field }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="align-middle">
+                                {% get_permission_categories as categories %}
+                                {% for category_name, fields in categories.items %}
+                                    {% for field_name, field_label in fields %}
+                                        {% if field_name == field %}
+                                            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                                                <i class="fas fa-folder me-1"></i>
+                                                {{ category_name }}
+                                            </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            </td>
+                            {% for item in permission_matrix %}
+                            <td class="text-center align-middle">
+                                {% with has_perm=item.role|has_permission:field %}
+                                    {% if has_perm %}
+                                    <div class="permission-indicator granted">
+                                        <i class="fas fa-check-circle fa-lg text-success"></i>
+                                        <small class="text-muted d-block">Granted</small>
+                                    </div>
+                                    {% else %}
+                                    <div class="permission-indicator denied">
+                                        <i class="fas fa-times-circle fa-lg text-danger"></i>
+                                        <small class="text-muted d-block">Denied</small>
+                                    </div>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            {% endfor %}
+                            <td class="text-center align-middle">
+                                {% with count=field|permission_count:permission_matrix %}
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="permission-count-circle mb-1">
+                                        {{ count }}
+                                    </div>
+                                    <small class="text-muted">of {{ total_roles }}</small>
+                                </div>
+                                {% endwith %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="2" class="text-end border-0">
+                                <strong class="d-flex align-items-center gap-2 justify-content-end">
+                                    <i class="fas fa-chart-bar text-primary"></i>
+                                    <span>Total Enabled Permissions:</span>
+                                </strong>
+                            </td>
+                            {% for item in permission_matrix %}
+                            <td class="text-center border-0">
+                                <div class="total-count-box">
+                                    <h5 class="mb-0 fw-bold">{{ item.enabled_count }}</h5>
+                                    <small class="text-muted">permissions</small>
+                                </div>
+                            </td>
+                            {% endfor %}
+                            <td class="text-center border-0">
+                                <div class="total-count-box bg-primary bg-opacity-10">
+                                    <h5 class="mb-0 fw-bold gradient-text">{{ total_permissions }}</h5>
+                                    <small class="text-muted">total granted</small>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="legend-box p-3 border rounded">
+                        <h6 class="fw-semibold mb-3"><i class="fas fa-key me-2"></i>Permission Status Legend</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <div class="legend-dot bg-success"></div>
+                                    <span class="small">Granted</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="legend-dot bg-danger"></div>
+                                    <span class="small">Denied</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <div class="legend-dot bg-primary"></div>
+                                    <span class="small">High Coverage (>75%)</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="legend-dot bg-warning"></div>
+                                    <span class="small">Medium Coverage (25-75%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-box p-3 border rounded">
+                        <h6 class="fw-semibold mb-3"><i class="fas fa-info-circle me-2"></i>Matrix Information</h6>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-users text-primary me-2"></i>
+                                <small>{{ total_roles }} roles analyzed</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-key text-success me-2"></i>
+                                <small>{{ permission_fields|length }} total permissions</small>
+                            </li>
+                            <li>
+                                <i class="fas fa-chart-bar text-warning me-2"></i>
+                                <small>Click role headers to view details</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts & Analysis -->
+    <div class="row mb-5">
+        <!-- Permissions Distribution Chart -->
+        <div class="col-lg-6">
+            <div class="card shadow-lg border-0 h-100">
+                <div class="card-header d-flex align-items-center gap-3 py-3 gradient-info">
+                    <div class="icon-wrapper bg-white text-info p-2 rounded-circle shadow-sm">
+                        <i class="fas fa-chart-bar fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0 text-white">Permissions Distribution</h5>
+                        <p class="card-subtitle text-white-50 mb-0">Permissions per role visualization</p>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="permissionsChart" height="250"></canvas>
+                    <div class="mt-4">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="stat-box p-2">
+                                    <h4 class="fw-bold text-primary mb-1">{{ max_permissions }}</h4>
+                                    <small class="text-muted">Max Permissions</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-box p-2">
+                                    <h4 class="fw-bold text-success mb-1">{{ avg_permissions|floatformat:1 }}</h4>
+                                    <small class="text-muted">Average</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-box p-2">
+                                    <h4 class="fw-bold text-danger mb-1">{{ min_permissions }}</h4>
+                                    <small class="text-muted">Min Permissions</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Permission Coverage -->
+        <div class="col-lg-6">
+            <div class="card shadow-lg border-0 h-100">
+                <div class="card-header d-flex align-items-center gap-3 py-3 gradient-success">
+                    <div class="icon-wrapper bg-white text-success p-2 rounded-circle shadow-sm">
+                        <i class="fas fa-percentage fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0 text-white">Permission Coverage</h5>
+                        <p class="card-subtitle text-white-50 mb-0">Role permission coverage analysis</p>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="table-responsive">
+                        <table class="table table-borderless table-hover">
+                            <thead>
+                                <tr>
+                                    <th class="border-0">
+                                        <i class="fas fa-user-tag text-primary"></i>
+                                        Role
+                                    </th>
+                                    <th class="border-0 text-center">
+                                        <i class="fas fa-users text-info"></i>
+                                        Users
+                                    </th>
+                                    <th class="border-0 text-center">
+                                        <i class="fas fa-key text-success"></i>
+                                        Permissions
+                                    </th>
+                                    <th class="border-0">
+                                        <i class="fas fa-chart-line text-warning"></i>
+                                        Coverage
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in permission_matrix %}
+                                <tr class="hover-lift">
+                                    <td>
+                                        <a href="{% url 'role_detail' item.role.pk %}" class="text-decoration-none">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="role-icon-wrapper bg-primary bg-opacity-10 text-primary p-2 rounded-circle">
+                                                    <i class="fas fa-user-tag"></i>
+                                                </div>
+                                                <div>
+                                                    <strong class="d-block">{{ item.role.get_name_display }}</strong>
+                                                    <small class="text-muted">{{ item.role.description|default:"No description"|truncatechars:30 }}</small>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <span class="user-count-badge">
+                                            {{ item.user_count }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <span class="permission-count-badge">
+                                            {{ item.enabled_count }}
+                                        </span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="flex-grow-1">
+                                                <div class="progress" style="height: 8px;">
+                                                    {% with coverage=item.enabled_count|divide:permission_fields|length|multiply:100 %}
+                                                    <div class="progress-bar" role="progressbar" 
+                                                         style="width: {{ coverage }}%;
+                                                                {% if coverage > 75 %}background: var(--gradient-success);
+                                                                {% elif coverage > 25 %}background: var(--gradient-warning);
+                                                                {% else %}background: var(--gradient-danger);{% endif %}">
+                                                    </div>
+                                                    {% endwith %}
+                                                </div>
+                                            </div>
+                                            <div class="coverage-text">
+                                                {% with coverage=item.enabled_count|divide:permission_fields|length|multiply:100 %}
+                                                <strong>{{ coverage|floatformat:1 }}%</strong>
+                                                {% endwith %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permission Analysis -->
+    <div class="card shadow-lg border-0">
+        <div class="card-header d-flex align-items-center gap-3 py-3 gradient-warning">
+            <div class="icon-wrapper bg-white text-warning p-2 rounded-circle shadow-sm">
+                <i class="fas fa-search fa-lg"></i>
+            </div>
+            <div>
+                <h5 class="card-title mb-0 text-white">Permission Analysis</h5>
+                <p class="card-subtitle text-white-50 mb-0">Detailed permission usage statistics</p>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row">
+                <!-- Most Common Permissions -->
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-success bg-opacity-10 border-0">
+                            <h6 class="mb-0 fw-semibold text-success">
+                                <i class="fas fa-star me-2"></i>Most Common Permissions
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="vstack gap-2">
+                                {% for perm in most_common_permissions %}
+                                <div class="d-flex align-items-center justify-content-between p-3 border rounded hover-lift">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="icon-wrapper bg-success bg-opacity-10 text-success p-2 rounded-circle">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">{{ perm.name|slice:"4:"|title }}</h6>
+                                            <small class="text-muted">
+                                                {% get_permission_categories as categories %}
+                                                {% for category_name, fields in categories.items %}
+                                                    {% for field_name, field_label in fields %}
+                                                        {% if field_name == perm.name %}
+                                                            <i class="fas fa-folder me-1"></i>{{ category_name }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <h5 class="mb-0 fw-bold">{{ perm.count }}</h5>
+                                        <small class="text-muted">
+                                            {% widthratio perm.count total_roles 100 %}% of roles
+                                        </small>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-3"></i>
+                                    <p class="mb-0">No data available</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Least Common Permissions -->
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-danger bg-opacity-10 border-0">
+                            <h6 class="mb-0 fw-semibold text-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Least Common Permissions
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="vstack gap-2">
+                                {% for perm in least_common_permissions %}
+                                <div class="d-flex align-items-center justify-content-between p-3 border rounded hover-lift">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger p-2 rounded-circle">
+                                            <i class="fas fa-times"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">{{ perm.name|slice:"4:"|title }}</h6>
+                                            <small class="text-muted">
+                                                {% get_permission_categories as categories %}
+                                                {% for category_name, fields in categories.items %}
+                                                    {% for field_name, field_label in fields %}
+                                                        {% if field_name == perm.name %}
+                                                            <i class="fas fa-folder me-1"></i>{{ category_name }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <h5 class="mb-0 fw-bold">{{ perm.count }}</h5>
+                                        <small class="text-muted">
+                                            {% widthratio perm.count total_roles 100 %}% of roles
+                                        </small>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-3"></i>
+                                    <p class="mb-0">No data available</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summary Statistics -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="stat-card p-3 border rounded text-center">
+                        <h3 class="fw-bold gradient-text mb-2">{{ most_common_permissions.0.count|default:"0" }}</h3>
+                        <p class="text-muted mb-0">Most granted permission</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card p-3 border rounded text-center">
+                        <h3 class="fw-bold gradient-text mb-2">{{ least_common_permissions.0.count|default:"0" }}</h3>
+                        <p class="text-muted mb-0">Least granted permission</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card p-3 border rounded text-center">
+                        <h3 class="fw-bold gradient-text mb-2">{{ avg_coverage|floatformat:1 }}%</h3>
+                        <p class="text-muted mb-0">Average permission coverage</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+<script>
+$(document).ready(function() {
+    // Initialize variables
+    const totalRoles = {{ total_roles }};
+    const totalPermissions = {{ permission_fields|length }};
+    
+    // Toggle inactive roles
+    $('#toggleInactive').on('click', function() {
+        $('.permission-row').toggle();
+        const icon = $(this).find('i');
+        if (icon.hasClass('fa-eye-slash')) {
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            $(this).find('span').text('Show All');
+        } else {
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            $(this).find('span').text('Toggle Inactive');
+        }
+    });
+    
+    // Export to CSV
+    $('#exportMatrix').on('click', function() {
+        const table = $('#permissionsTable');
+        const headers = [];
+        const rows = [];
+        
+        // Get headers
+        table.find('thead th').each(function() {
+            headers.push($(this).text().trim());
+        });
+        
+        // Get rows
+        table.find('tbody tr').each(function() {
+            const row = [];
+            $(this).find('td').each(function() {
+                row.push($(this).text().trim());
+            });
+            rows.push(row);
+        });
+        
+        // Create CSV content
+        let csvContent = headers.join(',') + '\n';
+        rows.forEach(function(row) {
+            csvContent += row.join(',') + '\n';
+        });
+        
+        // Create and download file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `permissions_matrix_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+    
+    // Print matrix
+    $('#printMatrix').on('click', function() {
+        const printContent = $('#permissionsTable').parent().html();
+        const originalContent = document.body.innerHTML;
+        document.body.innerHTML = `
+            <html>
+                <head>
+                    <title>Permissions Matrix - ${new Date().toLocaleDateString()}</title>
+                    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+                    <style>
+                        body { padding: 20px; }
+                        .no-print { display: none; }
+                        table { font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <h3>Permissions Matrix</h3>
+                    <p>Generated: ${new Date().toLocaleString()}</p>
+                    ${printContent}
+                </body>
+            </html>
+        `;
+        window.print();
+        document.body.innerHTML = originalContent;
+        location.reload();
+    });
+    
+    // Initialize chart with gradient
+    const ctx = document.getElementById('permissionsChart').getContext('2d');
+    
+    // Create gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(78, 84, 200, 0.8)');
+    gradient.addColorStop(1, 'rgba(143, 148, 251, 0.2)');
+    
+    const labels = [
+        {% for item in permission_matrix %}
+        '{{ item.role.get_name_display|truncatechars:15 }}',
+        {% endfor %}
+    ];
+    
+    const data = {
+        labels: labels,
+        datasets: [{
+            label: 'Permissions Count',
+            data: [
+                {% for item in permission_matrix %}
+                {{ item.enabled_count }},
+                {% endfor %}
+            ],
+            backgroundColor: gradient,
+            borderColor: '#4e54c8',
+            borderWidth: 2,
+            borderRadius: 8,
+            hoverBackgroundColor: '#8f94fb',
+        }]
+    };
+    
+    const config = {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const percentage = ((value / totalPermissions) * 100).toFixed(1);
+                            return `${value} permissions (${percentage}% coverage)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: totalPermissions,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            const percentage = ((value / totalPermissions) * 100).toFixed(0);
+                            return `${value} (${percentage}%)`;
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Permissions',
+                        color: '#666'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            }
+        }
+    };
+    
+    new Chart(ctx, config);
+    
+    // Add hover effects to table rows
+    $('.permission-row').hover(
+        function() {
+            $(this).addClass('table-active');
+            const index = $(this).index();
+            $('#permissionsTable tbody tr').eq(index).addClass('table-active');
+        },
+        function() {
+            $(this).removeClass('table-active');
+            const index = $(this).index();
+            $('#permissionsTable tbody tr').eq(index).removeClass('table-active');
+        }
+    );
+    
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    
+    // Calculate and display statistics
+    function updateStatistics() {
+        const grantedPermissions = $('.permission-indicator.granted').length;
+        const totalCells = $('.permission-indicator').length;
+        const grantPercentage = ((grantedPermissions / totalCells) * 100).toFixed(1);
+        
+        console.log(`Permission Grant Rate: ${grantPercentage}%`);
+    }
+    
+    updateStatistics();
+});
+</script>
+
+<style>
+/* Custom CSS for enhanced permissions summary */
+:root {
+    --primary-color: #4e54c8;
+    --secondary-color: #8f94fb;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --gradient-primary: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+    --gradient-success: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    --gradient-warning: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    --gradient-danger: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%);
+    --gradient-info: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+}
+
+.gradient-primary {
+    background: var(--gradient-primary);
+}
+
+.gradient-info {
+    background: var(--gradient-info);
+}
+
+.gradient-success {
+    background: var(--gradient-success);
+}
+
+.gradient-warning {
+    background: var(--gradient-warning);
+}
+
+.gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.icon-wrapper {
+    transition: all 0.3s ease;
+}
+
+.permission-indicator {
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.permission-indicator.granted {
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.permission-indicator.denied {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.permission-count-circle {
+    width: 36px;
+    height: 36px;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.total-count-box {
+    padding: 12px;
+    border-radius: 12px;
+    border: 2px solid rgba(0,0,0,0.05);
+    background: white;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.role-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-count-badge,
+.permission-count-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.user-count-badge {
+    background: rgba(23, 162, 184, 0.1);
+    color: var(--info-color);
+}
+
+.permission-count-badge {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--success-color);
+}
+
+.coverage-text {
+    min-width: 60px;
+    text-align: right;
+}
+
+.stat-card {
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.stat-card:hover {
+    background: white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.extra-small {
+    font-size: 11px;
+}
+
+.table-active {
+    background-color: rgba(78, 84, 200, 0.05) !important;
+}
+
+@media (max-width: 768px) {
+    .permission-indicator {
+        padding: 4px;
+    }
+    
+    .permission-count-circle {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+    
+    .coverage-text {
+        min-width: 50px;
+    }
+    
+    .icon-wrapper {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .icon-wrapper i {
+        font-size: 14px;
+    }
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .hover-lift:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .permission-indicator {
+        border: 1px solid #dee2e6;
+    }
+}
+</style>
+{% endblock %}

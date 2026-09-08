@@ -1,0 +1,118 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Edit Sale #{{ sale.sale_number }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white rounded-lg shadow overflow-hidden">
+    <!-- Header Section -->
+    <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="p-2 rounded-lg bg-white bg-opacity-20">
+                    <i class="fas fa-edit text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-white">Edit Sale #{{ sale.sale_number }}</h2>
+                    <p class="text-blue-100 text-sm">Edit this sale in the POS interface</p>
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <a href="{% url 'sale_detail' sale.id %}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Sale
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sale Summary -->
+    <div class="p-6">
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Sale Details</h3>
+                    <p class="mt-1 text-sm text-gray-900">
+                        <strong>Date:</strong> {{ sale.date|date:"d/m/Y H:i" }}<br>
+                        <strong>Customer:</strong> {{ sale.customer.name|default:"Walk-in" }}<br>
+                        <strong>Items:</strong> {{ sale.items.count }}
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Totals</h3>
+                    <p class="mt-1 text-sm text-gray-900">
+                        <strong>Subtotal:</strong> KSh {{ sale.subtotal }}<br>
+                        <strong>Discount:</strong> KSh {{ sale.discount_amount }}<br>
+                        <strong>Total:</strong> KSh {{ sale.total }}
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Payment</h3>
+                    <p class="mt-1 text-sm text-gray-900">
+                        <strong>Method:</strong> {{ sale.get_payment_method_display }}<br>
+                        <strong>Paid:</strong> KSh {{ sale.amount_paid }}<br>
+                        <strong>Balance:</strong> KSh {{ sale.balance }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sale Items -->
+        <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-3">Sale Items</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qty</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for item in sale.items.all %}
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="text-sm font-medium text-gray-900">{{ item.product.name }}</div>
+                                {% if item.batch %}
+                                <div class="text-xs text-gray-500">Batch: {{ item.batch.batch_number }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-right text-sm text-gray-900">
+                                KSh {{ item.price }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-sm text-gray-900">
+                                {{ item.quantity }}
+                            </td>
+                            <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                                KSh {{ item.total }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-center space-x-4 pt-6 border-t">
+            <a href="{% url 'sale_detail' sale.id %}" 
+               class="px-6 py-3 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Cancel
+            </a>
+            <a href="{% url 'load_sale_to_pos' sale.id %}" 
+               class="px-6 py-3 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 flex items-center">
+                <i class="fas fa-shopping-cart mr-2"></i>
+                Edit in POS
+            </a>
+        </div>
+        
+        <div class="mt-4 text-sm text-gray-600 text-center">
+            <p><i class="fas fa-info-circle mr-1"></i> 
+            Editing will load this sale into the POS interface where you can modify items, 
+            change quantities, update payment details, and complete the sale as a new transaction.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
