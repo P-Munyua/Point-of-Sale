@@ -294,62 +294,170 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300);
     });
 
-    // Product search functionality
-    productSearch.addEventListener('input', function() {
-        clearTimeout(productSearchTimeout);
-        const query = this.value.trim();
-        const searchUrl = this.dataset.searchUrl;
+// Product search functionality - Updated for better search
+productSearch.addEventListener('input', function() {
+    clearTimeout(productSearchTimeout);
+    const query = this.value.trim();
+    const searchUrl = this.dataset.searchUrl;
+    
+    // Show loading indicator
+    if (query.length >= 1) {
+        productResults.innerHTML = '<div class="px-4 py-2 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Searching...</div>';
+        productResults.classList.remove('hidden');
+    } else {
+        productResults.classList.add('hidden');
+        return;
+    }
+    
+    productSearchTimeout = setTimeout(() => {
+        // Add a random parameter to prevent caching
+        const cacheBuster = Date.now();
         
-        if (query.length < 2) {
-            productResults.classList.add('hidden');
-            return;
-        }
-        
-        productSearchTimeout = setTimeout(() => {
-            fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    productResults.innerHTML = '';
-                    
-                    if (data.length > 0) {
-                        data.forEach(product => {
-                            const div = document.createElement('div');
-                            div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer product-search-item';
-                            div.innerHTML = `
-                                <div class="font-medium">${product.name}</div>
-                                <div class="text-sm text-gray-600">Purchase: KSh ${parseFloat(product.purchase_price).toFixed(4)} | Sell: KSh ${parseFloat(product.selling_price).toFixed(2)}</div>
-                                ${product.barcode ? `<div class="text-xs text-gray-500">Barcode: ${product.barcode}</div>` : ''}
-                                <input type="hidden" class="product-data" value='${JSON.stringify(product)}'>
-                            `;
-                            div.addEventListener('click', function() {
-                                const productData = JSON.parse(this.querySelector('.product-data').value);
-                                currentProduct = productData;
-                                showPriceModal(productData);
-                                productSearch.value = '';
-                                productResults.classList.add('hidden');
-                            });
-                            productResults.appendChild(div);
+        fetch(`${searchUrl}?q=${encodeURIComponent(query)}&_=${cacheBuster}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                productResults.innerHTML = '';
+                
+                if (data.length > 0) {
+                    data.forEach(product => {
+                        const div = document.createElement('div');
+                        div.className = 'px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 transition-colors duration-150 product-search-item';
+                        div.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-medium text-gray-900">${escapeHtml(product.name)}</div>
+                                    <div class="text-sm text-gray-600">
+                                        Purchase: KSh <span class="font-medium">${parseFloat(product.purchase_price).toFixed(4)}</span> 
+                                        | Sell: KSh <span class="font-medium">${parseFloat(product.selling_price).toFixed(2)}</span>
+                                    </div>
+                                    ${product.barcode ? `<div class="text-xs text-gray-500">Barcode: ${escapeHtml(product.barcode)}</div>` : ''}
+                                    <div class="text-xs text-gray-400">Stock: ${parseFloat(product.quantity).toFixed(2)}</div>
+                                </div>
+                                <div>
+                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">${escapeHtml(product.category_name || 'Uncategorized')}</span>
+                                </div>
+                            </div>
+                            <input type="hidden" class="product-data" value='${JSON.stringify(product)}'>
+                        `;
+                        div.addEventListener('click', function() {
+                            const productData = JSON.parse(this.querySelector('.product-data').value);
+                            currentProduct = productData;
+                            showPriceModal(productData);
+                            productSearch.value = '';
+                            productResults.classList.add('hidden');
+                            // Focus back on search for next item
+                            setTimeout(() => productSearch.focus(), 100);
                         });
-                        productResults.classList.remove('hidden');
-                    } else {
-                        const noResults = document.createElement('div');
-                        noResults.className = 'px-4 py-2 text-gray-500';
-                        noResults.textContent = 'No products found';
-                        productResults.appendChild(noResults);
-                        productResults.classList.remove('hidden');
-                    }
-                })
-                .catch(error => {
-                    console.error('Product search error:', error);
-                    productResults.innerHTML = '';
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'px-4 py-2 text-red-500';
-                    errorDiv.textContent = 'Search failed. Please try again.';
-                    productResults.appendChild(errorDiv);
+                        productResults.appendChild(div);
+                    });
+                    
+                    // Show count of results
+                    const countDiv = document.createElement('div');
+                    countDiv.className = 'px-4 py-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-200';
+                    countDiv.textContent = `Showing ${data.length} result${data.length > 1 ? 's' : ''}`;
+                    productResults.appendChild(countDiv);
+                    
                     productResults.classList.remove('hidden');
-                });
-        }, 300);
-    });
+                } else {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'px-4 py-6 text-center text-gray-500';
+                    noResults.innerHTML = `
+                        <i class="fas fa-search text-2xl text-gray-300 mb-2 block"></i>
+                        <p>No products found matching "<strong>${escapeHtml(query)}</strong>"</p>
+                        <p class="text-xs mt-1">Try searching by name, barcode, or part of the product name</p>
+                        <button type="button" id="add-manual-from-search" class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            <i class="fas fa-plus-circle mr-1"></i> Add manual item instead
+                        </button>
+                    `;
+                    productResults.appendChild(noResults);
+                    productResults.classList.remove('hidden');
+                    
+                    // Add manual item button from search results
+                    document.getElementById('add-manual-from-search')?.addEventListener('click', function() {
+                        addManualItemBtn.click();
+                        productResults.classList.add('hidden');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Product search error:', error);
+                productResults.innerHTML = '';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'px-4 py-4 text-center text-red-500';
+                errorDiv.innerHTML = `
+                    <i class="fas fa-exclamation-circle text-2xl mb-2 block"></i>
+                    <p>Search failed. Please try again.</p>
+                    <button class="mt-2 text-blue-600 hover:text-blue-800 text-sm" onclick="this.closest('.search-error').remove(); productSearch.dispatchEvent(new Event('input'));">
+                        <i class="fas fa-redo mr-1"></i> Retry
+                    </button>
+                `;
+                errorDiv.className += ' search-error';
+                productResults.appendChild(errorDiv);
+                productResults.classList.remove('hidden');
+            });
+    }, 300);
+});
+
+    // Keyboard shortcuts for product search
+productSearch.addEventListener('keydown', function(e) {
+    // Down arrow - navigate results
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const firstItem = productResults.querySelector('.product-search-item');
+        if (firstItem) {
+            firstItem.focus();
+            firstItem.classList.add('bg-blue-50');
+        }
+    }
+    
+    // Escape - close results
+    if (e.key === 'Escape') {
+        productResults.classList.add('hidden');
+        this.blur();
+    }
+});
+
+// Navigate search results with keyboard
+productResults.addEventListener('keydown', function(e) {
+    const items = this.querySelectorAll('.product-search-item');
+    const currentIndex = Array.from(items).indexOf(document.activeElement);
+    
+    if (e.key === 'ArrowDown' && currentIndex < items.length - 1) {
+        e.preventDefault();
+        items[currentIndex + 1]?.focus();
+        items[currentIndex + 1]?.classList.add('bg-blue-50');
+        items[currentIndex]?.classList.remove('bg-blue-50');
+    }
+    
+    if (e.key === 'ArrowUp' && currentIndex > 0) {
+        e.preventDefault();
+        items[currentIndex - 1]?.focus();
+        items[currentIndex - 1]?.classList.add('bg-blue-50');
+        items[currentIndex]?.classList.remove('bg-blue-50');
+    }
+    
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const activeItem = this.querySelector('.product-search-item:focus');
+        if (activeItem) {
+            activeItem.click();
+        }
+    }
+});
+
+// Focus on search results items for keyboard navigation
+productResults.addEventListener('mouseover', function(e) {
+    const item = e.target.closest('.product-search-item');
+    if (item) {
+        productResults.querySelectorAll('.product-search-item').forEach(el => el.classList.remove('bg-blue-50'));
+        item.classList.add('bg-blue-50');
+    }
+});
 
     function showPriceModal(product) {
         modalProductName.textContent = `Add ${product.name}`;

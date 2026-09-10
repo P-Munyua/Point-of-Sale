@@ -240,6 +240,7 @@
         font-size: 0.8rem;
         background: white;
         cursor: pointer;
+        flex: 1;
     }
 
     .customer-select:focus {
@@ -256,6 +257,98 @@
         font-size: 0.8rem;
         color: #92400e;
         display: none;
+    }
+
+    /* Temporary Customer Styles */
+    #add-temp-customer-btn {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 0.6rem 0.8rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    #add-temp-customer-btn:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+    }
+
+    #temp-customer-container {
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    #temp-customer-display {
+        animation: slideDown 0.3s ease-out;
+    }
+
+    .pending-sale-customer {
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+        color: #374151;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .pending-sale-item {
+        padding: 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+        background: white;
+        transition: all 0.2s;
+    }
+
+    .pending-sale-item:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .pending-sale-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+
+    .pending-sale-date {
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+
+    .pending-sale-total {
+        font-weight: 700;
+        color: #059669;
+    }
+
+    .pending-sale-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+
+    .pending-sale-actions {
+        display: flex;
+        gap: 0.3rem;
     }
 
     /* Right Panel - Cart (Reduced size to accommodate payment options) */
@@ -938,6 +1031,36 @@
     .pos-left-panel {
         overflow-x: visible;
     }
+
+    /* Center Alert Animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes scaleIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    /* Alert overlay styling */
+    .pos-alert {
+        z-index: 9999;
+    }
+
+    .pos-alert .relative {
+        animation: scaleIn 0.3s ease-out;
+    }
 </style>
 {% endblock %}
 
@@ -978,12 +1101,63 @@
                
                 <div class="mt-2">
                     <label class="text-sm font-medium text-gray-700 mb-1">Selected Customer</label>
-                    <select id="customer-select" class="customer-select">
-                        <option value="">Walk-in Customer</option>
-                        {% for customer in customers %}
-                        <option value="{{ customer.id }}" data-balance="{{ customer.balance }}">{{ customer.name }}</option>
-                        {% endfor %}
-                    </select>
+                    <div class="flex gap-2">
+                        <select id="customer-select" class="customer-select">
+                            <option value="">Walk-in Customer</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.id }}" data-balance="{{ customer.balance }}">{{ customer.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" id="add-temp-customer-btn" class="btn btn-primary btn-sm whitespace-nowrap" title="Add temporary customer name for walk-in">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Temp
+                        </button>
+                    </div>
+                    
+                    <!-- Temporary Customer Name Input (hidden by default) -->
+                    <div id="temp-customer-container" class="mt-2 hidden">
+                        <div class="flex gap-2">
+                            <input type="text" id="temp-customer-name" class="search-input flex-1" 
+                                   placeholder="Enter temporary customer name..." maxlength="100">
+                            <button type="button" id="save-temp-customer-btn" class="btn btn-success btn-sm whitespace-nowrap">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Save
+                            </button>
+                            <button type="button" id="cancel-temp-customer-btn" class="btn btn-danger btn-sm whitespace-nowrap">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">
+                            <span id="temp-customer-hint">⚠️ This customer will NOT be saved to the database. It's only for identification.</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Display temporary customer name when set -->
+                    <div id="temp-customer-display" class="mt-2 hidden">
+                        <div class="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
+                            <div class="flex items-center gap-2">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+                                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <span class="font-medium text-blue-700">Temporary Customer:</span>
+                                <span id="temp-customer-name-display" class="font-bold text-blue-800"></span>
+                            </div>
+                            <button type="button" id="remove-temp-customer-btn" class="text-red-500 hover:text-red-700" title="Remove temporary customer">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div id="customer-balance" class="customer-balance">
                         Balance: <span class="font-bold">KSh 0.00</span>
                     </div>
@@ -1366,6 +1540,82 @@ document.addEventListener('DOMContentLoaded', function() {
     const cardAmount = document.getElementById('card-amount');
     const bankAmount = document.getElementById('bank-amount');
 
+    // ==================== TEMPORARY CUSTOMER ELEMENTS ====================
+    const tempCustomerContainer = document.getElementById('temp-customer-container');
+    const tempCustomerName = document.getElementById('temp-customer-name');
+    const tempCustomerDisplay = document.getElementById('temp-customer-display');
+    const tempCustomerNameDisplay = document.getElementById('temp-customer-name-display');
+    const addTempCustomerBtn = document.getElementById('add-temp-customer-btn');
+    const saveTempCustomerBtn = document.getElementById('save-temp-customer-btn');
+    const cancelTempCustomerBtn = document.getElementById('cancel-temp-customer-btn');
+    const removeTempCustomerBtn = document.getElementById('remove-temp-customer-btn');
+
+    // Variable to store temporary customer name
+    let tempCustomerNameValue = '';
+
+    // ==================== TEMPORARY CUSTOMER FUNCTIONS ====================
+    // Show temporary customer input
+    addTempCustomerBtn.addEventListener('click', function() {
+        tempCustomerContainer.classList.remove('hidden');
+        tempCustomerName.value = '';
+        tempCustomerName.focus();
+        tempCustomerDisplay.classList.add('hidden');
+    });
+
+    // Save temporary customer name
+    saveTempCustomerBtn.addEventListener('click', function() {
+        const name = tempCustomerName.value.trim();
+        if (!name) {
+            showAlert('Please enter a customer name', 'warning');
+            return;
+        }
+       
+        tempCustomerNameValue = name;
+        tempCustomerNameDisplay.textContent = name;
+        tempCustomerDisplay.classList.remove('hidden');
+        tempCustomerContainer.classList.add('hidden');
+       
+        customerSelect.value = '';
+        customerBalanceEl.classList.add('hidden');
+       
+        showAlert(`Temporary customer "${name}" set successfully`, 'success');
+    });
+
+    // Cancel adding temporary customer
+    cancelTempCustomerBtn.addEventListener('click', function() {
+        tempCustomerContainer.classList.add('hidden');
+        tempCustomerName.value = '';
+    });
+
+    // Remove temporary customer
+    removeTempCustomerBtn.addEventListener('click', function() {
+        tempCustomerNameValue = '';
+        tempCustomerDisplay.classList.add('hidden');
+        tempCustomerNameDisplay.textContent = '';
+        showAlert('Temporary customer removed', 'info');
+    });
+
+    // Handle Enter key in temp customer input
+    tempCustomerName.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveTempCustomerBtn.click();
+        }
+        if (e.key === 'Escape') {
+            cancelTempCustomerBtn.click();
+        }
+    });
+
+    // When selecting a real customer from dropdown, clear temporary customer
+    customerSelect.addEventListener('change', function() {
+        if (this.value) {
+            tempCustomerNameValue = '';
+            tempCustomerDisplay.classList.add('hidden');
+            tempCustomerContainer.classList.add('hidden');
+            tempCustomerName.value = '';
+        }
+    });
+
     // Cart state - each item stores its own price based on sale type at time of addition
     let cart = [];
     let subtotal = 0;
@@ -1390,11 +1640,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Credit Checkbox Sync
     if (leftCreditCheckbox && hiddenCreditCheckbox) {
-        // When left checkbox changes, update hidden checkbox
         leftCreditCheckbox.addEventListener('change', function() {
             hiddenCreditCheckbox.checked = this.checked;
            
-            // Visual feedback
             const creditCard = this.closest('.card');
             if (this.checked) {
                 creditCard.style.background = 'linear-gradient(135deg, #fde68a 0%, #fcd34d 100%)';
@@ -1419,7 +1667,6 @@ document.addEventListener('DOMContentLoaded', function() {
             creditWarningLeft.style.display = 'none';
         }
 
-        // Update customer balance display
         if (selectedOption.value && parseFloat(balance) > 0) {
             customerBalanceAmount.textContent = 'KSh ' + parseFloat(balance).toFixed(2);
             customerBalanceEl.classList.remove('hidden');
@@ -1432,13 +1679,13 @@ document.addEventListener('DOMContentLoaded', function() {
     leftCreditCheckbox.addEventListener('change', function() {
         if (this.checked) {
             const selectedOption = customerSelect.options[customerSelect.selectedIndex];
-            if (!selectedOption.value) {
-                alert('Please select a customer for credit sales');
+            if (!selectedOption.value && !tempCustomerNameValue) {
+                alert('Please select a customer or add a temporary customer name for credit sales');
                 this.checked = false;
                 hiddenCreditCheckbox.checked = false;
             } else {
                 const balance = parseFloat(selectedOption.dataset.balance || '0');
-                if (balance > 0) {
+                if (selectedOption.value && balance > 0) {
                     if (!confirm(`This customer has an outstanding balance of KSh ${balance.toFixed(2)}. Are you sure you want to add more credit?`)) {
                         this.checked = false;
                         hiddenCreditCheckbox.checked = false;
@@ -1466,14 +1713,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success && data.sale_data) {
                 console.log('Loading edit sale data:', data.sale_data);
                
-                // Clear current cart
                 cart = [];
                
-                // Load customer if exists
                 if (data.sale_data.customer_id) {
                     customerSelect.value = data.sale_data.customer_id;
                    
-                    // Update customer balance display
                     const selectedOption = customerSelect.options[customerSelect.selectedIndex];
                     if (selectedOption.dataset.balance) {
                         customerBalanceEl.classList.remove('hidden');
@@ -1481,9 +1725,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         customerBalanceEl.classList.add('hidden');
                     }
+                    tempCustomerNameValue = '';
+                    tempCustomerDisplay.classList.add('hidden');
+                } else if (data.sale_data.temp_customer_name) {
+                    tempCustomerNameValue = data.sale_data.temp_customer_name;
+                    tempCustomerNameDisplay.textContent = tempCustomerNameValue;
+                    tempCustomerDisplay.classList.remove('hidden');
+                    customerSelect.value = '';
+                    customerBalanceEl.classList.add('hidden');
                 }
                
-                // Set sale type
                 saleType = data.sale_data.sale_type || 'retail';
                 document.querySelectorAll('.sale-type-btn').forEach(btn => {
                     btn.classList.remove('active');
@@ -1492,7 +1743,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
 
-                // Load items into cart - each item retains its own price
                 if (data.sale_data.items && Array.isArray(data.sale_data.items)) {
                     data.sale_data.items.forEach(item => {
                         const cartItem = {
@@ -1510,24 +1760,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             wholesale_price: parseFloat(item.wholesale_price) || 0,
                             retail_price: parseFloat(item.retail_price) || parseFloat(item.price) || 0,
                             min_quantity: parseFloat(item.min_quantity) || 1.0,
-                            sale_type_at_addition: item.sale_type || 'retail' // Store which sale type was used when added
+                            sale_type_at_addition: item.sale_type || 'retail'
                         };
                        
                         cart.push(cartItem);
                     });
                 }
                
-                // Set discount values
                 discountPercent = parseFloat(data.sale_data.discount_percent) || 0;
                 discountCash = parseFloat(data.sale_data.discount_amount) || 0;
                
                 document.getElementById('discount-percent-input').value = discountPercent;
                 document.getElementById('discount-cash-input').value = discountCash;
                
-                // Set payment method
-                const paymentMethod = data.sale_data.payment_method || 'cash';
-               
-                // Set payment amounts from payment_details
                 if (data.sale_data.payment_details) {
                     cashAmount.value = data.sale_data.payment_details.cash || 0;
                     mpesaAmount.value = data.sale_data.payment_details.mpesa || 0;
@@ -1535,20 +1780,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     bankAmount.value = data.sale_data.payment_details.cheque || 0;
                 }
                
-                // Set credit checkbox
                 leftCreditCheckbox.checked = data.sale_data.is_credit || false;
                 hiddenCreditCheckbox.checked = data.sale_data.is_credit || false;
                
-                // Update cart display
                 updateCart();
                
-                // Update header to show edit mode
                 if (data.sale_data.original_sale_number) {
                     posTitle.textContent = `Editing Sale #${data.sale_data.original_sale_number}`;
                     completeSaleText.textContent = 'Update Sale';
                 }
                
-                // Focus on first quantity input for easy editing
                 if (cart.length > 0) {
                     setTimeout(() => {
                         const firstQtyInput = document.querySelector('.quantity-input');
@@ -1559,7 +1800,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 100);
                 }
                
-                // Show notification
                 showAlert(`Sale #${data.sale_data.original_sale_number || editSaleIdInput.value} loaded for editing`, 'success');
             }
         } catch (error) {
@@ -1570,17 +1810,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
    
-    // Load edit sale data on page load
     loadEditSaleData();
 
-    // Set up sale type buttons - Now only affects NEW items added to cart
+    // Set up sale type buttons
     saleTypeBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             saleTypeBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             saleType = this.dataset.type;
-            // Do NOT update existing cart items - each item keeps its own price
-            // Just show a notification
             showAlert(`Switched to ${saleType} mode. New items will use ${saleType} pricing.`, 'info');
         });
     });
@@ -1594,14 +1831,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
        
-        // Disable submit button to prevent double submission
         const submitBtn = this.querySelector('.complete-sale-btn');
         const originalText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Processing...';
         submitBtn.disabled = true;
        
         try {
-            // Get payment amounts
             const cash = parseFloat(cashAmount.value) || 0;
             const mpesa = parseFloat(mpesaAmount.value) || 0;
             const card = parseFloat(cardAmount.value) || 0;
@@ -1609,7 +1844,6 @@ document.addEventListener('DOMContentLoaded', function() {
            
             const amountPaid = cash + mpesa + card + bank;
            
-            // Validate payment for non-credit sales
             if (!hiddenCreditCheckbox.checked && amountPaid < total) {
                 showAlert(`Payment amount (KSh ${amountPaid.toFixed(2)}) is less than total (KSh ${total.toFixed(2)})`, 'danger');
                 submitBtn.innerHTML = originalText;
@@ -1617,7 +1851,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
            
-            // Determine payment method
             let paymentMethod = 'cash';
             const paymentCount = [cash, mpesa, card, bank].filter(a => a > 0).length;
            
@@ -1633,7 +1866,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 paymentMethod = 'credit';
             }
            
-            // Prepare payment details
             const paymentDetails = {
                 cash: cash,
                 mpesa: mpesa,
@@ -1641,22 +1873,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 cheque: bank
             };
            
-            // Get pending sale ID if this is a loaded pending sale
             const pendingSaleId = document.getElementById('pending-sale-id').value || null;
-           
-            // Get edit sale ID if we're editing
             const editSaleId = document.getElementById('edit-sale-id').value || null;
            
-            // Prepare sale data - each item sends its own price
+            // Get customer display name
+            let customerDisplayName = 'Walk-in Customer';
+            let customerId = customerSelect.value || null;
+           
+            if (customerId) {
+                const selectedOption = customerSelect.options[customerSelect.selectedIndex];
+                customerDisplayName = selectedOption.textContent;
+            } else if (tempCustomerNameValue) {
+                customerDisplayName = `TEMP: ${tempCustomerNameValue}`;
+            }
+           
             const saleDataObj = {
-                customer_id: customerSelect.value || null,
+                customer_id: customerId,
+                customer_name: customerDisplayName,
+                temp_customer_name: tempCustomerNameValue || null,
                 sale_type: saleType,
                 items: cart.map(item => ({
                     id: item.id,
                     name: item.name,
                     batch_id: item.batch_id || null,
                     quantity: parseFloat(item.quantity.toFixed(5)),
-                    price: item.price, // Use the item's stored price
+                    price: item.price,
                     discount_amount: item.discount_amount || 0,
                     discount_percent: item.discount_percent || 0,
                     total: Math.round(item.total),
@@ -1677,10 +1918,8 @@ document.addEventListener('DOMContentLoaded', function() {
            
             console.log('Sending sale data:', saleDataObj);
            
-            // Set the hidden input values
             saleData.value = JSON.stringify(saleDataObj);
            
-            // Submit the form via AJAX
             const response = await fetch('{% url "process_sale" %}', {
                 method: 'POST',
                 headers: {
@@ -1693,7 +1932,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Server response:', data);
            
             if (data.success) {
-                // Store sale ID
                 if (data.sale_id) {
                     currentSaleId = data.sale_id;
                 } else if (data.receipt?.sale_id) {
@@ -1702,23 +1940,19 @@ document.addEventListener('DOMContentLoaded', function() {
                
                 console.log('Final currentSaleId:', currentSaleId);
                
-                // Show receipt
                 if (data.receipt) {
                     showReceipt(data.receipt);
                 } else {
                     const message = data.is_edit ? 'Sale updated successfully!' : 'Sale completed successfully!';
                     showAlert(message, 'success');
                    
-                    // Clear cart for new sale
                     cart = [];
                     updateCart();
                     resetPaymentInputs();
                     productSearch.focus();
                 }
                
-                // Clear pending sale ID if it was completed
                 document.getElementById('pending-sale-id').value = '';
-                // Clear edit sale ID after successful update
                 document.getElementById('edit-sale-id').value = '';
                
             } else {
@@ -1729,7 +1963,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             showAlert(`Error: ${error.message}`, 'danger');
         } finally {
-            // Re-enable submit button
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         }
@@ -1744,14 +1977,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
        
-        // Debounce search to avoid too many requests
         clearTimeout(window.customerSearchTimeout);
         window.customerSearchTimeout = setTimeout(() => {
             searchCustomers(query);
         }, 300);
     });
 
-    // Function to search customers
     async function searchCustomers(query) {
         try {
             const response = await fetch('{% url "search_customers" %}', {
@@ -1798,12 +2029,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Function to select a customer from search results
     function selectCustomer(customer) {
-        // Update the select dropdown
         const select = document.getElementById('customer-select');
        
-        // Check if customer already exists in options
         let optionExists = false;
         for (let i = 0; i < select.options.length; i++) {
             if (select.options[i].value == customer.id) {
@@ -1813,7 +2041,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
        
-        // If customer doesn't exist in options, add it
         if (!optionExists) {
             const option = document.createElement('option');
             option.value = customer.id;
@@ -1823,22 +2050,18 @@ document.addEventListener('DOMContentLoaded', function() {
             select.selectedIndex = select.options.length - 1;
         }
        
-        // Update balance display
         customerBalanceEl.classList.remove('hidden');
         customerBalanceAmount.textContent = 'KSh ' + parseFloat(customer.balance).toFixed(2);
        
-        // Focus back on product search
         productSearch.focus();
     }
 
-    // Close customer search results when clicking outside
     document.addEventListener('click', function(e) {
         if (!customerSearch.contains(e.target) && !customerSearchResults.contains(e.target)) {
             customerSearchResults.style.display = 'none';
         }
     });
 
-    // Handle Enter key in customer search
     customerSearch.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -1848,47 +2071,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
        
-        // Handle escape key
         if (e.key === 'Escape') {
             customerSearchResults.style.display = 'none';
         }
     });
 
-    // Enhanced Product search with barcode scanning
+    // Product search with barcode scanning
     productSearch.addEventListener('input', function() {
         const query = this.value;
         const currentTime = Date.now();
         const timeDiff = currentTime - lastScanTime;
        
-        // Check if this is likely a barcode scan (fast input)
         if (timeDiff < 100) {
             scanBuffer += query;
            
-            // Clear any existing timeout
             if (scanTimeout) {
                 clearTimeout(scanTimeout);
             }
            
-            // Set timeout to process the scanned code
             scanTimeout = setTimeout(() => {
                 processScannedCode(scanBuffer);
                 scanBuffer = '';
             }, 200);
            
-            // Show scanning indicator
             productSearch.closest('.product-search-container').classList.add('scanning-active');
             productSearch.classList.add('scanning');
         } else {
-            // Regular typing, show search results
             scanBuffer = query;
            
             if (query.length >= 2) {
-                // Clear any existing timeout
                 if (searchTimeout) {
                     clearTimeout(searchTimeout);
                 }
                
-                // Debounce search to avoid too many requests
                 searchTimeout = setTimeout(() => {
                     searchProducts(query);
                 }, 300);
@@ -1896,7 +2111,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 searchResults.style.display = 'none';
             }
            
-            // Remove scanning indicator
             productSearch.closest('.product-search-container').classList.remove('scanning-active');
             productSearch.classList.remove('scanning');
         }
@@ -1904,7 +2118,6 @@ document.addEventListener('DOMContentLoaded', function() {
         lastScanTime = currentTime;
     });
 
-    // Function to search products via AJAX
     async function searchProducts(query) {
         try {
             const response = await fetch('{% url "search_products" %}', {
@@ -1965,17 +2178,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Handle keydown for direct scanning (Enter key)
     productSearch.addEventListener('keydown', function(e) {
-        // If Enter is pressed with a value, try to find product by barcode
         if (e.key === 'Enter' && this.value.trim()) {
             e.preventDefault();
-           
             const scannedCode = this.value.trim();
             processScannedCode(scannedCode);
         }
        
-        // Handle Escape key
         if (e.key === 'Escape') {
             searchResults.style.display = 'none';
             this.value = '';
@@ -1984,14 +2193,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Function to process scanned barcode/QR code
     async function processScannedCode(scannedCode) {
         console.log('Processing scanned code:', scannedCode);
        
-        // Clear the search input
         productSearch.value = '';
        
-        // Search for product by barcode
         try {
             const response = await fetch('{% url "search_products" %}', {
                 method: 'POST',
@@ -2009,7 +2215,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const products = await response.json();
            
             if (products.length === 1) {
-                // Exactly one product found
                 const product = products[0];
                 await addToCart({
                     id: product.id,
@@ -2024,7 +2229,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 productSearch.closest('.product-search-container').classList.remove('scanning-active');
                 productSearch.classList.remove('scanning');
             } else if (products.length > 1) {
-                // Multiple products found, show search results
                 searchResults.innerHTML = '';
                 products.forEach(product => {
                     const div = document.createElement('div');
@@ -2053,10 +2257,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 searchResults.style.display = 'block';
                 productSearch.value = scannedCode;
             } else {
-                // No product found
                 showAlert(`No product found with barcode: ${scannedCode}`, 'danger');
-               
-                // Keep the code in the search field for manual selection
                 productSearch.value = scannedCode;
                 productSearch.focus();
                 productSearch.closest('.product-search-container').classList.remove('scanning-active');
@@ -2067,11 +2268,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('Error searching for product: ' + error.message, 'danger');
         }
        
-        // Clear the scan buffer
         scanBuffer = '';
     }
 
-    // Function to fetch product batches
     async function fetchProductBatches(productId) {
         try {
             const response = await fetch(`/get-product-batches/${productId}/?sale_type=${saleType}`);
@@ -2084,7 +2283,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function addToCart(product) {
-        // Determine price based on current sale type - store it with the item
         let itemPrice;
         if (saleType === 'wholesale' && product.wholesale_price && product.wholesale_price > 0) {
             itemPrice = product.wholesale_price;
@@ -2095,32 +2293,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const initialQuantity = (saleType === 'wholesale' && product.min_quantity) ?
                      Math.max(1.0, product.min_quantity) : 1.0;
        
-        // Fetch available batches for this product
         const batchData = await fetchProductBatches(product.id);
        
-        // If product has multiple batches, show batch selection modal
         if (batchData && batchData.batches && batchData.batches.length > 0) {
             if (batchData.batches.length === 1) {
-                // Only one batch, use it automatically
                 const batch = batchData.batches[0];
                 addToCartWithBatch(product, batch, itemPrice, initialQuantity);
             } else {
-                // Multiple batches, show selection modal
                 showBatchSelection(product, batchData, itemPrice, initialQuantity);
             }
         } else {
-            // No batches found, use default product price
             addToCartWithBatch(product, null, itemPrice, initialQuantity);
         }
     }
 
     function addToCartWithBatch(product, batch, price, quantity) {
-        // If batch has custom selling price, use that instead
         if (batch && batch.selling_price) {
             price = batch.selling_price;
         }
        
-        // Generate a unique ID for this specific cart item
         const uniqueId = Date.now() + Math.random();
        
         cart.push({
@@ -2138,7 +2329,7 @@ document.addEventListener('DOMContentLoaded', function() {
             wholesale_price: product.wholesale_price || 0,
             retail_price: product.retail_price || price,
             min_quantity: product.min_quantity || 1.0,
-            sale_type_at_addition: saleType, // Store which sale type was used
+            sale_type_at_addition: saleType,
             cartItemId: uniqueId
         });
        
@@ -2179,7 +2370,6 @@ document.addEventListener('DOMContentLoaded', function() {
         batchModalContent.innerHTML = batchContent;
         batchModal.style.display = 'flex';
        
-        // Add event listeners to batch items
         batchModalContent.querySelectorAll('.batch-item').forEach(item => {
             item.addEventListener('click', function() {
                 const batch = {
@@ -2192,14 +2382,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
        
-        // Add event listener for default price button
         document.getElementById('use-default-price-btn').addEventListener('click', function() {
             addToCartWithBatch(product, null, basePrice, quantity);
             batchModal.style.display = 'none';
         });
     }
 
-    // Update cart display - each item shows its own price
     function updateCart() {
         cartItemsBody.innerHTML = '';
        
@@ -2211,7 +2399,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const itemTotal = Math.round(itemSubtotal - (item.discount_amount || 0));
             totalItemDiscounts += item.discount_amount || 0;
            
-            // Format quantity with 5 decimal places
             const quantityFormatted = item.quantity.toFixed(5);
            
             const row = document.createElement('tr');
@@ -2264,15 +2451,11 @@ document.addEventListener('DOMContentLoaded', function() {
        
         total = Math.round(subtotal - totalDiscount);
        
-        // Update all total displays
         subtotalEl.textContent = `KSh ${subtotal.toFixed(2)}`;
         totalDiscountEl.textContent = `KSh ${totalDiscount.toFixed(2)}`;
         totalEl.textContent = `KSh ${total.toFixed(2)}`;
-       
-        // Update the prominent total display
         totalSaleAmountEl.textContent = `KSh ${total.toFixed(2)}`;
        
-        // Style the total display based on amount
         if (total <= 0) {
             totalSaleAmountEl.classList.add('negative');
         } else {
@@ -2282,7 +2465,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePaymentTotals();
     }
 
-    // Handle price changes - update only that specific item
     cartItemsBody.addEventListener('change', function(e) {
         if (e.target.classList.contains('price-input')) {
             const index = e.target.dataset.index;
@@ -2298,20 +2480,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Handle quantity changes
     cartItemsBody.addEventListener('change', function(e) {
         if (e.target.classList.contains('quantity-input')) {
             const index = e.target.dataset.index;
             let newQuantity = parseFloat(e.target.value);
            
-            // Validate max 5 decimal places
             const decimalPlaces = newQuantity.toString().split('.')[1]?.length || 0;
             if (decimalPlaces > 5) {
                 newQuantity = parseFloat(newQuantity.toFixed(5));
                 e.target.value = newQuantity.toFixed(5);
             }
            
-            // Check if this item requires minimum quantity (if it was added in wholesale mode)
             if (cart[index].sale_type_at_addition === 'wholesale' && cart[index].min_quantity && newQuantity < cart[index].min_quantity) {
                 newQuantity = parseFloat(cart[index].min_quantity.toFixed(5));
                 e.target.value = newQuantity.toFixed(5);
@@ -2327,7 +2506,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Handle item removal
     cartItemsBody.addEventListener('click', function(e) {
         if (e.target.closest('.remove-item')) {
             const index = e.target.closest('.remove-item').dataset.index;
@@ -2336,7 +2514,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Clear cart
     clearCartBtn.addEventListener('click', function() {
         if (cart.length === 0 || confirm('Are you sure you want to clear the current sale?')) {
             cart = [];
@@ -2346,9 +2523,7 @@ document.addEventListener('DOMContentLoaded', function() {
             total = 0;
             updateCart();
             resetPaymentInputs();
-            // Clear pending sale ID when clearing cart
             document.getElementById('pending-sale-id').value = '';
-            // Clear edit mode
             if (isEditing) {
                 document.getElementById('edit-sale-id').value = '';
                 posTitle.textContent = 'Succeed Cereal Hub - Professional POS';
@@ -2359,7 +2534,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Quick payment buttons
     quickAmountBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const amount = parseFloat(this.dataset.amount);
@@ -2368,7 +2542,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Update payment totals when amounts change
     [cashAmount, mpesaAmount, cardAmount, bankAmount].forEach(input => {
         input.addEventListener('input', updatePaymentTotals);
     });
@@ -2382,7 +2555,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const amountPaid = cash + mpesa + card + bank;
         const difference = amountPaid - total;
        
-        // Update change display
         if (difference > 0) {
             changeAmountEl.textContent = `KSh ${difference.toFixed(2)}`;
             changeDisplayEl.classList.remove('negative');
@@ -2394,7 +2566,6 @@ document.addEventListener('DOMContentLoaded', function() {
             changeDisplayEl.classList.remove('negative');
         }
        
-        // Update change label based on situation
         const changeLabel = changeDisplayEl.querySelector('.change-label');
         if (difference > 0) {
             changeLabel.textContent = 'Change Due';
@@ -2416,15 +2587,27 @@ document.addEventListener('DOMContentLoaded', function() {
         changeDisplayEl.classList.remove('negative');
     }
 
-    // Save pending sale
+    // ==================== SAVE PENDING SALE - UPDATED ====================
     savePendingBtn.addEventListener('click', function() {
         if (cart.length === 0) {
             showAlert('Please add items to the cart before saving', 'danger');
             return;
         }
        
+        let customerDisplayName = 'Walk-in Customer';
+        let customerId = customerSelect.value || null;
+       
+        if (customerId) {
+            const selectedOption = customerSelect.options[customerSelect.selectedIndex];
+            customerDisplayName = selectedOption.textContent;
+        } else if (tempCustomerNameValue) {
+            customerDisplayName = `TEMP: ${tempCustomerNameValue}`;
+        }
+       
         const saleDataObj = {
-            customer_id: customerSelect.value || null,
+            customer_id: customerId,
+            customer_name: customerDisplayName,
+            temp_customer_name: tempCustomerNameValue || null,
             sale_type: saleType,
             items: cart.map(item => ({
                 id: item.id,
@@ -2448,7 +2631,6 @@ document.addEventListener('DOMContentLoaded', function() {
             payment_details: {}
         };
        
-        // Get the current pending sale ID if we're editing an existing one
         const pendingSaleId = document.getElementById('pending-sale-id').value;
        
         fetch('{% url "save_pending_sale" %}', {
@@ -2465,13 +2647,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Clear the cart ALWAYS after saving
                 cart = [];
                 updateCart();
                 resetPaymentInputs();
-               
-                // Clear pending sale ID so next save creates a new one
                 document.getElementById('pending-sale-id').value = '';
+               
+                tempCustomerNameValue = '';
+                tempCustomerDisplay.classList.add('hidden');
+                tempCustomerName.value = '';
                
                 showAlert(pendingSaleId ? 'Pending sale updated successfully' : 'Sale saved as pending successfully', 'success');
                 productSearch.focus();
@@ -2485,12 +2668,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Load pending sales list
+    // ==================== LOAD PENDING SALES - UPDATED ====================
     loadPendingBtn.addEventListener('click', function() {
         fetchPendingSales();
     });
 
-    // Function to fetch and display pending sales
     function fetchPendingSales() {
         fetch('{% url "pending_sales_list" %}', {
             headers: {
@@ -2508,6 +2690,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                
                 data.pending_sales.forEach(sale => {
+                    let customerDisplay = sale.customer || 'Walk-in Customer';
+                    if (sale.data && sale.data.temp_customer_name) {
+                        customerDisplay = `🟡 ${sale.data.temp_customer_name} (Temporary)`;
+                    } else if (sale.data && sale.data.customer_name && !sale.customer) {
+                        customerDisplay = sale.data.customer_name;
+                    }
+                   
                     const saleItem = document.createElement('div');
                     saleItem.className = 'pending-sale-item';
                     saleItem.innerHTML = `
@@ -2515,7 +2704,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="pending-sale-date">${new Date(sale.created_at).toLocaleString()}</div>
                             <div class="pending-sale-total">KSh ${parseFloat(sale.total).toFixed(2)}</div>
                         </div>
-                        <div class="pending-sale-customer">${sale.customer || 'Walk-in Customer'}</div>
+                        <div class="pending-sale-customer">
+                            <span class="font-medium">Customer:</span> 
+                            <span class="${sale.data && sale.data.temp_customer_name ? 'text-blue-600 font-semibold' : ''}">
+                                ${customerDisplay}
+                            </span>
+                        </div>
                         <div class="pending-sale-footer">
                             <div>${sale.items_count} items</div>
                             <div class="pending-sale-actions">
@@ -2536,7 +2730,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Event delegation for pending sales actions
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('load-pending-btn') ||
             e.target.closest('.load-pending-btn')) {
@@ -2551,7 +2744,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Load pending sale
+    // ==================== LOAD PENDING SALE - UPDATED ====================
     function loadPendingSale(saleId) {
         fetch(`/pos/load-pending-sale/${saleId}/`, {
             method: 'GET',
@@ -2565,7 +2758,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success && data.sale_data) {
                 cart = [];
                
-                // Set the pending sale ID
                 document.getElementById('pending-sale-id').value = saleId;
                
                 saleType = data.sale_data.sale_type || 'retail';
@@ -2587,6 +2779,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         customerBalanceEl.classList.add('hidden');
                     }
+                   
+                    tempCustomerNameValue = '';
+                    tempCustomerDisplay.classList.add('hidden');
+                    tempCustomerContainer.classList.add('hidden');
+                    tempCustomerName.value = '';
+                   
+                } else if (data.sale_data.temp_customer_name) {
+                    tempCustomerNameValue = data.sale_data.temp_customer_name;
+                    tempCustomerNameDisplay.textContent = tempCustomerNameValue;
+                    tempCustomerDisplay.classList.remove('hidden');
+                    tempCustomerContainer.classList.add('hidden');
+                    customerSelect.value = '';
+                    customerBalanceEl.classList.add('hidden');
                 }
 
                 const items = Array.isArray(data.sale_data.items) ? data.sale_data.items : [];
@@ -2627,7 +2832,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.querySelector('.quantity-input').focus();
                 }
 
-                showAlert('Pending sale loaded successfully', 'success');
+                const customerName = data.sale_data.temp_customer_name || 
+                                   data.sale_data.customer_name || 
+                                   'Walk-in Customer';
+                showAlert(`Pending sale for "${customerName}" loaded successfully`, 'success');
             }
         })
         .catch(error => {
@@ -2636,7 +2844,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Delete pending sale
     function deletePendingSale(saleId) {
         if (!confirm('Are you sure you want to delete this pending sale?')) return;
 
@@ -2653,7 +2860,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const saleItem = document.querySelector(`.pending-sale-item [data-sale-id="${saleId}"]`)?.closest('.pending-sale-item');
                 if (saleItem) saleItem.remove();
                
-                // Also clear the pending sale ID from the form if it was the one we just deleted
                 if (document.getElementById('pending-sale-id').value === saleId) {
                     document.getElementById('pending-sale-id').value = '';
                 }
@@ -2671,7 +2877,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Show receipt
     function showReceipt(receipt) {
         console.log('showReceipt called with receipt:', receipt);
        
@@ -2685,7 +2890,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
            
-            // Store sale ID from multiple possible locations
             if (receipt.sale_id) {
                 currentSaleId = receipt.sale_id;
                 console.log('Sale ID set from receipt.sale_id:', currentSaleId);
@@ -2694,14 +2898,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Sale ID set from window.lastSaleId:', currentSaleId);
             }
            
-            // Also store in global variable as backup
             if (currentSaleId) {
                 window.lastSaleId = currentSaleId;
             }
            
             console.log('Current sale ID for printing:', currentSaleId);
            
-            // Format receipt items
             const itemsHtml = Array.isArray(receipt.items) ? receipt.items.map(item => `
                 <tr>
                     <td>${item.name || ''} ${item.batch_number ? `(${item.batch_number})` : ''} x ${item.quantity || 0}</td>
@@ -2710,7 +2912,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>
             `).join('') : '';
            
-            // Format receipt HTML
             receiptContent.innerHTML = `
                 <div class="receipt">
                     <div class="receipt-header">
@@ -2783,7 +2984,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
            
-            // Show the modal
             receiptModal.style.display = 'flex';
            
         } catch (error) {
@@ -2792,94 +2992,85 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Thermal printer function - opens receipt in new window and auto-prints
-function printThermalReceipt(saleId) {
-    if (!saleId) {
-        showAlert('Sale ID not found. Cannot print.', 'danger');
-        return false;
-    }
-    
-    // Create a hidden iframe for printing (works better for thermal printers)
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    iframe.src = `/pos/sale/${saleId}/thermal-print/`;
-    
-    document.body.appendChild(iframe);
-    
-    iframe.onload = function() {
-        setTimeout(function() {
-            try {
-                iframe.contentWindow.print();
-                showAlert('Thermal receipt sent to printer!', 'success');
-                
-                // Remove iframe after printing
-                setTimeout(function() {
-                    document.body.removeChild(iframe);
-                }, 5000);
-            } catch(e) {
-                console.error('Print error:', e);
-                // Fallback: open in new window
-                window.open(`/pos/sale/${saleId}/thermal-print/`, '_blank');
-                showAlert('Please print manually from the new window', 'warning');
-                document.body.removeChild(iframe);
-            }
-        }, 1000);
-    };
-    
-    iframe.onerror = function() {
-        showAlert('Failed to load receipt for printing', 'danger');
-        document.body.removeChild(iframe);
-    };
-    
-    return true;
-}
-
-// Updated print button handler
-printThermalBtn.addEventListener('click', function() {
-    if (!currentSaleId) {
-        showAlert('Sale ID not found. Sale may not be saved.', 'warning');
-        // Try to extract from receipt
-        const receiptHtml = receiptContent.innerHTML;
-        const match = receiptHtml.match(/Receipt #: (\d+)/);
-        if (match && match[1]) {
-            currentSaleId = match[1];
-        } else {
-            showAlert('Cannot print - sale ID not available', 'danger');
-            return;
+    function printThermalReceipt(saleId) {
+        if (!saleId) {
+            showAlert('Sale ID not found. Cannot print.', 'danger');
+            return false;
         }
+       
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        iframe.src = `/pos/sale/${saleId}/thermal-print/`;
+       
+        document.body.appendChild(iframe);
+       
+        iframe.onload = function() {
+            setTimeout(function() {
+                try {
+                    iframe.contentWindow.print();
+                    showAlert('Thermal receipt sent to printer!', 'success');
+                   
+                    setTimeout(function() {
+                        document.body.removeChild(iframe);
+                    }, 5000);
+                } catch(e) {
+                    console.error('Print error:', e);
+                    window.open(`/pos/sale/${saleId}/thermal-print/`, '_blank');
+                    showAlert('Please print manually from the new window', 'warning');
+                    document.body.removeChild(iframe);
+                }
+            }, 1000);
+        };
+       
+        iframe.onerror = function() {
+            showAlert('Failed to load receipt for printing', 'danger');
+            document.body.removeChild(iframe);
+        };
+       
+        return true;
     }
-    
-    const originalHtml = this.innerHTML;
-    this.innerHTML = '<span class="animate-spin inline-block mr-2">🖨️</span> Printing...';
-    this.disabled = true;
-    
-    const printSuccess = printThermalReceipt(currentSaleId);
-    
-    if (printSuccess) {
-        // Close modal and reset cart after successful print initiation
-        setTimeout(() => {
-            receiptModal.style.display = 'none';
-            
-            // Only reset cart if not in edit mode
-            if (!isEditing && !editSaleIdInput.value) {
-                cart = [];
-                updateCart();
-                resetPaymentInputs();
-                productSearch.focus();
-            }
-        }, 2000);
-    }
-    
-    setTimeout(() => {
-        this.innerHTML = originalHtml;
-        this.disabled = false;
-    }, 3000);
-});
 
-    // Helper function to get CSRF token
+    printThermalBtn.addEventListener('click', function() {
+        if (!currentSaleId) {
+            showAlert('Sale ID not found. Sale may not be saved.', 'warning');
+            const receiptHtml = receiptContent.innerHTML;
+            const match = receiptHtml.match(/Receipt #: (\d+)/);
+            if (match && match[1]) {
+                currentSaleId = match[1];
+            } else {
+                showAlert('Cannot print - sale ID not available', 'danger');
+                return;
+            }
+        }
+       
+        const originalHtml = this.innerHTML;
+        this.innerHTML = '<span class="animate-spin inline-block mr-2">🖨️</span> Printing...';
+        this.disabled = true;
+       
+        const printSuccess = printThermalReceipt(currentSaleId);
+       
+        if (printSuccess) {
+            setTimeout(() => {
+                receiptModal.style.display = 'none';
+               
+                if (!isEditing && !editSaleIdInput.value) {
+                    cart = [];
+                    updateCart();
+                    resetPaymentInputs();
+                    productSearch.focus();
+                }
+            }, 2000);
+        }
+       
+        setTimeout(() => {
+            this.innerHTML = originalHtml;
+            this.disabled = false;
+        }, 3000);
+    });
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -2895,58 +3086,115 @@ printThermalBtn.addEventListener('click', function() {
         return cookieValue;
     }
 
-    // Close modal buttons
     closeModalBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             this.closest('.modal').style.display = 'none';
         });
     });
 
-    // Show alert function
+    // ==================== CENTER ALERT FUNCTION ====================
     function showAlert(message, type) {
+        const existingAlerts = document.querySelectorAll('.pos-alert');
+        existingAlerts.forEach(alert => alert.remove());
+       
         const alertDiv = document.createElement('div');
-        alertDiv.className = `fixed top-4 right-4 px-4 py-3 rounded-md shadow-lg text-white ${
-            type === 'success' ? 'bg-green-500' :
-            type === 'danger' ? 'bg-red-500' :
-            'bg-blue-500'
+        alertDiv.className = 'pos-alert fixed inset-0 flex items-center justify-center';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.animation = 'fadeIn 0.3s ease-out';
+       
+        const overlay = document.createElement('div');
+        overlay.className = 'absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm';
+        overlay.style.position = 'absolute';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.right = '0';
+        overlay.style.bottom = '0';
+        alertDiv.appendChild(overlay);
+       
+        const content = document.createElement('div');
+        content.className = `relative mx-4 p-8 rounded-2xl shadow-2xl max-w-md w-full ${
+            type === 'success' ? 'bg-gradient-to-br from-green-50 to-emerald-100 border-2 border-green-500' :
+            type === 'danger' ? 'bg-gradient-to-br from-red-50 to-rose-100 border-2 border-red-500' :
+            type === 'warning' ? 'bg-gradient-to-br from-amber-50 to-yellow-100 border-2 border-amber-500' :
+            'bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-500'
         }`;
-        alertDiv.innerHTML = `
-            <div class="flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    ${type === 'success' ? `
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    ` : type === 'danger' ? `
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    ` : `
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    `}
-                </svg>
-                <span>${message}</span>
+        content.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.25)';
+        content.style.animation = 'scaleIn 0.3s ease-out';
+       
+        let iconHtml = '';
+        let titleText = '';
+        let iconColor = '';
+       
+        if (type === 'success') {
+            iconHtml = `<svg class="w-14 h-14 mx-auto mb-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>`;
+            titleText = 'Success!';
+            iconColor = 'text-green-600';
+        } else if (type === 'danger') {
+            iconHtml = `<svg class="w-14 h-14 mx-auto mb-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>`;
+            titleText = 'Error!';
+            iconColor = 'text-red-600';
+        } else if (type === 'warning') {
+            iconHtml = `<svg class="w-14 h-14 mx-auto mb-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>`;
+            titleText = 'Warning!';
+            iconColor = 'text-amber-600';
+        } else {
+            iconHtml = `<svg class="w-14 h-14 mx-auto mb-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>`;
+            titleText = 'Info';
+            iconColor = 'text-blue-600';
+        }
+       
+        content.innerHTML = `
+            <div class="text-center">
+                ${iconHtml}
+                <h4 class="text-xl font-bold ${iconColor} mb-1">${titleText}</h4>
+                <p class="text-gray-800 text-base font-medium leading-relaxed">${message}</p>
+                <button class="mt-6 px-8 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors duration-200 shadow-md hover:shadow-lg" 
+                        onclick="this.closest('.pos-alert').remove()">
+                    OK
+                </button>
             </div>
         `;
        
+        alertDiv.appendChild(content);
         document.body.appendChild(alertDiv);
        
         setTimeout(() => {
-            alertDiv.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 300);
-        }, 3000);
+            if (alertDiv.parentNode) {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 300);
+            }
+        }, 5000);
+       
+        alertDiv.addEventListener('click', function(e) {
+            if (e.target === alertDiv || e.target === overlay) {
+                this.remove();
+            }
+        });
     }
 
-    // Close modal when clicking outside
     window.addEventListener('click', function(e) {
         if (e.target.classList.contains('modal')) {
             e.target.style.display = 'none';
         }
     });
 
-    // Focus search input on page load
     productSearch.focus();
 });
 
-// MPesa Payment Functions
+// ==================== MPESA PAYMENT FUNCTIONS ====================
 function showMpesaPaymentModal() {
     const total = parseFloat(document.getElementById('total').textContent.replace('KSh ', ''));
     document.getElementById('mpesa-amount-display').textContent = `Amount: KSh ${total.toFixed(2)}`;
@@ -2973,7 +3221,6 @@ function processMpesaPayment() {
     statusDiv.textContent = 'Sending STK push to your phone...';
     statusDiv.classList.remove('hidden');
    
-    // Simulate payment processing
     setTimeout(() => {
         statusDiv.className = 'text-center p-3 rounded bg-green-100 text-green-700';
         statusDiv.innerHTML = `
@@ -2983,17 +3230,14 @@ function processMpesaPayment() {
             Payment successful!
         `;
        
-        // Automatically complete the sale after successful payment
         setTimeout(() => {
             closeMpesaModal();
             document.getElementById('mpesa-amount').value = total;
-            // Trigger form submission
             document.getElementById('payment-form').dispatchEvent(new Event('submit'));
         }, 1500);
     }, 2000);
 }
 
-// Paystack Payment Function
 function openPaystackCheckout() {
     const total = parseFloat(document.getElementById('total').textContent.replace('KSh ', ''));
     const handler = PaystackPop.setup({
@@ -3003,7 +3247,6 @@ function openPaystackCheckout() {
         currency: 'KES',
         callback: function(response) {
             showAlert('Payment successful!', 'success');
-            // Automatically complete the sale after successful payment
             document.getElementById('mpesa-amount').value = total;
             document.getElementById('payment-form').dispatchEvent(new Event('submit'));
         },
@@ -3014,7 +3257,6 @@ function openPaystackCheckout() {
     handler.openIframe();
 }
 
-// QR Payment Functions
 function closeQRModal() {
     document.getElementById('qr-payment-modal').style.display = 'none';
 }
@@ -3030,7 +3272,6 @@ function pollQRPaymentStatus() {
         Payment confirmed!
     `;
    
-    // Automatically complete the sale after successful payment
     setTimeout(() => {
         closeQRModal();
         const total = parseFloat(document.getElementById('total').textContent.replace('KSh ', ''));
@@ -3039,7 +3280,6 @@ function pollQRPaymentStatus() {
     }, 1500);
 }
 
-// Add event listeners for payment buttons
 document.getElementById('paystack-payment-btn')?.addEventListener('click', openPaystackCheckout);
 document.getElementById('mpesa-payment-btn')?.addEventListener('click', showMpesaPaymentModal);
 </script>

@@ -170,16 +170,30 @@ class PurchaseForm(forms.ModelForm):
         self.fields['supplier'].queryset = Supplier.objects.all().order_by('name')
         self.fields['is_paid'].required = False
 
+from .models import Expense
+
 class ExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
         fields = ['date', 'category', 'description', 'amount']
         widgets = {
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'category': forms.Select(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500'}),
+            'category': forms.Select(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500'}),
+            'description': forms.Textarea(attrs={'rows': 2, 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500', 'placeholder': 'Enter description'}),
+            'amount': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500', 'placeholder': '0.00'}),
         }
+
+
+class ExpenseFormSet(forms.modelformset_factory(
+    Expense,
+    form=ExpenseForm,
+    extra=3,
+    can_delete=True,
+    fields=['date', 'category', 'description', 'amount']
+)):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.queryset = Expense.objects.none()
 
 # Add this to your existing forms.py
 from django.forms import formset_factory, modelformset_factory

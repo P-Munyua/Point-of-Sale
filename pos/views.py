@@ -1064,6 +1064,8 @@ from .models import PendingSale, Sale, SaleItem, Product, Batch, Customer, Compa
 @login_required
 @login_required
 @require_POST
+@login_required
+@require_POST
 def save_pending_sale(request):
     try:
         # Get raw POST data
@@ -1098,7 +1100,8 @@ def save_pending_sale(request):
             try:
                 pending_sale = PendingSale.objects.get(
                     id=pending_sale_id, 
-                    user=request.user
+                    user=request.user,
+                    status='pending'  # Only update pending ones
                 )
                 # Update the existing pending sale
                 pending_sale.customer_id = sale_data.get('customer_id')
@@ -1113,7 +1116,9 @@ def save_pending_sale(request):
                 pending_sale = PendingSale(
                     user=request.user,
                     customer_id=sale_data.get('customer_id'),
-                    data=sale_data
+                    data=sale_data,
+                    status='pending',
+                    created_at=timezone.now()
                 )
                 pending_sale.save()
                 message = 'New pending sale created successfully'
@@ -1122,7 +1127,9 @@ def save_pending_sale(request):
             pending_sale = PendingSale(
                 user=request.user,
                 customer_id=sale_data.get('customer_id'),
-                data=sale_data
+                data=sale_data,
+                status='pending',
+                created_at=timezone.now()
             )
             pending_sale.save()
             message = 'Sale saved as pending successfully'
@@ -1140,6 +1147,9 @@ def save_pending_sale(request):
             'message': f'Invalid JSON data: {str(e)}'
         }, status=400)
     except Exception as e:
+        print(f"Error saving pending sale: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             'success': False,
             'message': str(e)
@@ -1148,7 +1158,7 @@ def save_pending_sale(request):
 
 @login_required
 def pending_sales_list(request):
-    pending_sales = PendingSale.objects.filter(user=request.user).order_by('-created_at')
+    pending_sales = PendingSale.objects.filter(user=request.user, status='pending').order_by('-created_at')
     
     sales_data = []
     for sale in pending_sales:
@@ -1174,9 +1184,10 @@ def pending_sales_list(request):
 
 @login_required
 @login_required
+@login_required
 def load_pending_sale(request, pk):
     try:
-        pending_sale = get_object_or_404(PendingSale, pk=pk, user=request.user)
+        pending_sale = get_object_or_404(PendingSale, pk=pk, user=request.user, status='pending')
         sale_data = pending_sale.data
         
         # Ensure items exists and is a list
@@ -1205,6 +1216,7 @@ def load_pending_sale(request, pk):
             }
         })
     except Exception as e:
+        print(f"Error loading pending sale: {str(e)}")
         return JsonResponse({
             'success': False,
             'message': str(e)
@@ -1347,12 +1359,15 @@ from .models import PendingSale
 
 @login_required
 @require_POST
+@login_required
+@require_POST
 def delete_pending_sale(request, pk):
     try:
-        pending_sale = get_object_or_404(PendingSale, pk=pk, user=request.user)
+        pending_sale = get_object_or_404(PendingSale, pk=pk, user=request.user, status='pending')
         pending_sale.delete()
         return JsonResponse({'success': True, 'message': 'Pending sale deleted successfully'})
     except Exception as e:
+        print(f"Error deleting pending sale: {str(e)}")
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
@@ -6347,7 +6362,7 @@ def expense_list(request):
     # Base queryset
     expenses = Expense.objects.all().order_by('-date')
     
-    # Date filtering - FIXED
+    # Date filtering
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     
@@ -6365,41 +6380,49 @@ def expense_list(request):
         except ValueError:
             pass
     
-    # Category filter - FIXED
+    # Category filter
     category = request.GET.get('category')
     if category:
         expenses = expenses.filter(category=category)
     
-    # Calculate totals - FIXED
-    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    # Search functionality
+    search_query = request.GET.get('search')
+    if search_query:
+        expenses = expenses.filter(
+            Q(description__icontains=search_query) |
+            Q(category__icontains=search_query)
+        )
+    
+    # Calculate totals
+    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.0000')
     
     # Calculate average daily expense
     if start_date and end_date:
         days = (end_date - start_date).days + 1
-        avg_daily_expense = total_expenses / days if days > 0 else Decimal('0.00')
+        avg_daily_expense = total_expenses / days if days > 0 else Decimal('0.0000')
     else:
         # Default to last 30 days
         thirty_days_ago = timezone.now().date() - timedelta(days=30)
         recent_expenses = Expense.objects.filter(date__gte=thirty_days_ago)
-        monthly_total = recent_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-        avg_daily_expense = monthly_total / 30
+        monthly_total = recent_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.0000')
+        avg_daily_expense = monthly_total / 30 if monthly_total > 0 else Decimal('0.0000')
     
     # This month's expenses
     this_month_start = timezone.now().date().replace(day=1)
     monthly_expense = Expense.objects.filter(
         date__gte=this_month_start
-    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    
-    # Export functionality
-    export_format = request.GET.get('export')
-    if export_format == 'csv':
-        return generate_expenses_export(expenses)
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.0000')
     
     # Category breakdown for current filter
     expenses_by_category = expenses.values('category').annotate(
         total=Sum('amount'),
         count=Count('id')
     ).order_by('-total')
+    
+    # Get category display names
+    category_display = dict(Expense.CATEGORIES)
+    for item in expenses_by_category:
+        item['category_display'] = category_display.get(item['category'], item['category'])
     
     # Monthly expenses for chart (last 6 months)
     six_months_ago = timezone.now().date() - timedelta(days=180)
@@ -6411,10 +6434,24 @@ def expense_list(request):
         total=Sum('amount')
     ).order_by('month')
     
+    # Export functionality
+    export_format = request.GET.get('export')
+    if export_format == 'csv':
+        return generate_expenses_export(expenses)
+    
     # Pagination
     paginator = Paginator(expenses, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    
+    # Get category totals for all time
+    category_totals = Expense.objects.values('category').annotate(
+        total=Sum('amount'),
+        count=Count('id')
+    ).order_by('-total')
+    
+    for item in category_totals:
+        item['category_display'] = category_display.get(item['category'], item['category'])
     
     context = {
         'expenses': page_obj,
@@ -6426,7 +6463,10 @@ def expense_list(request):
         'selected_category': category,
         'expenses_by_category': expenses_by_category,
         'monthly_expenses_chart': monthly_expenses_chart,
-        'categories': Expense.CATEGORIES,  # CHANGED FROM CATEGORY_CHOICES
+        'category_totals': category_totals,
+        'categories': Expense.CATEGORIES,
+        'search_query': search_query,
+        'today': timezone.now().date(),
     }
     return render(request, 'pos/expense_list.html', context)
 
@@ -6948,8 +6988,8 @@ def receipt_history(request):
     return render(request, 'pos/receipt_history.html', context)
 
 # Add this to your views.py
-#import win32print
-#import win32ui
+import win32print
+import win32ui
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import Sale, Company
@@ -7400,56 +7440,90 @@ from django.views.decorators.http import require_http_methods
 
 @login_required
 @require_http_methods(["GET", "POST"])  # Allow both GET and POST
+@login_required
+@require_http_methods(["GET", "POST"])
 def search_products(request):
     """Search products for purchase (include all products, even with 0 quantity)"""
     # Get query from either GET or POST
     if request.method == 'POST':
         query = request.POST.get('q', '').strip()
+        category = request.POST.get('category', 'all')
+        barcode_only = request.POST.get('barcode_only', 'false') == 'true'
     else:  # GET
         query = request.GET.get('q', '').strip()
-    
-    # Get category filter if provided
-    if request.method == 'POST':
-        category = request.POST.get('category', 'all')
-    else:
         category = request.GET.get('category', 'all')
+        barcode_only = request.GET.get('barcode_only', 'false') == 'true'
+    
+    results = []
     
     if query:
-        # Base query
-        products = Product.objects.filter(
-            Q(name__icontains=query) |
-            Q(barcode__icontains=query)
-        )
+        # Base query - include ALL products (not just active ones for purchase)
+        products = Product.objects.all()
         
-        # Apply category filter if not 'all'
-        if category and category != 'all':
-            products = products.filter(category_id=category)
+        # If searching by barcode only, exact match first
+        if barcode_only:
+            # Try exact barcode match first
+            exact_match = products.filter(barcode__iexact=query).first()
+            if exact_match:
+                results.append(format_product_for_search(exact_match))
+            else:
+                # Then try partial barcode match
+                products = products.filter(barcode__icontains=query)
+        else:
+            # Search by name or barcode
+            products = products.filter(
+                Q(name__icontains=query) |
+                Q(barcode__icontains=query)
+            )
         
-        products = products.order_by('name')[:10]
-    else:
-        products = Product.objects.none()
-    
-    # Create results including stock info
-    results = []
-    for product in products:
-        # Only include active products for POS
-        if not product.is_active:
-            continue
+        # If not barcode_only or no exact match found, process the results
+        if not barcode_only or not results:
+            # Apply category filter if not 'all'
+            if category and category != 'all':
+                products = products.filter(category_id=category)
             
-        results.append({
-            'id': product.id,
-            'name': product.name,
-            'barcode': product.barcode or '',
-            'quantity': str(product.quantity),  # Current stock
-            'selling_price': str(product.selling_price),
-            'purchase_price': float(product.purchase_price),  # Make sure this is included
-            'wholesale_price': str(product.wholesale_price) if hasattr(product, 'wholesale_price') else '0',
-            'wholesale_min_quantity': str(product.wholesale_min_quantity) if hasattr(product, 'wholesale_min_quantity') else '1',
-            'category_name': product.category.name if product.category else '',
-            'is_active': product.is_active
-        })
+            # Order by relevance - products starting with query first
+            products = products.order_by(
+                Case(
+                    When(name__istartswith=query, then=Value(0)),
+                    When(name__icontains=query, then=Value(1)),
+                    When(barcode__icontains=query, then=Value(2)),
+                    default=Value(3),
+                    output_field=IntegerField()
+                ),
+                'name'
+            )[:20]  # Show up to 20 results for better selection
+            
+            # Format results
+            for product in products:
+                # Skip if already added (for barcode exact match case)
+                if any(r['id'] == product.id for r in results):
+                    continue
+                results.append(format_product_for_search(product))
+    else:
+        # If no query, show recent or popular products (optional)
+        # You can customize this to show recently added or most purchased products
+        products = Product.objects.filter(is_active=True).order_by('-id')[:10]
+        for product in products:
+            results.append(format_product_for_search(product))
     
     return JsonResponse(results, safe=False)
+
+
+def format_product_for_search(product):
+    """Helper function to format product for search results"""
+    return {
+        'id': product.id,
+        'name': product.name,
+        'barcode': product.barcode or '',
+        'quantity': str(product.quantity),
+        'selling_price': str(product.selling_price),
+        'purchase_price': float(product.purchase_price),
+        'wholesale_price': str(product.wholesale_price) if hasattr(product, 'wholesale_price') else '0',
+        'wholesale_min_quantity': str(product.wholesale_min_quantity) if hasattr(product, 'wholesale_min_quantity') else '1',
+        'category_name': product.category.name if product.category else '',
+        'is_active': product.is_active
+    }
 
 @login_required
 @require_POST

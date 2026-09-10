@@ -913,22 +913,46 @@ class StockJournalItem(models.Model):
 
 class Expense(models.Model):
     CATEGORIES = (
-        ('rent', 'Rent'),
-        ('salaries', 'Salaries'),
-        ('utilities', 'Utilities'),
-        ('transport', 'Transport'),
-        ('other', 'Other'),
+        ('breakfast', 'BREAKFAST'),
+        ('lunch', 'LUNCH'),
+        ('rent', 'RENT'),
+        ('token', 'TOKEN'),
+        ('water', 'WATER'),
+        ('airtime', 'AIRTIME'),
+        ('fixes', 'FIXES'),
+        ('transport', 'TRANSPORT'),
+        ('muhindi_mweusi', 'MUHINDI MWEUSI'),
+        ('transactions', 'TRANSACTIONS'),
+        ('packaging', 'PACKAGING'),
+        ('salary', 'SALARY'),
+        ('vat', 'VAT'),
+        ('discounts', 'DISCOUNTS'),
+        ('remuneration', 'REMUNERATION'),
+        ('tithe', 'TITHE'),
+        ('system', 'SYSTEM'),
+        ('wup', 'WUP'),
+        ('succeed', 'SUCCEED'),
+        ('council', 'COUNCIL'),
+        ('soda_glass', 'SODA GLASS'),
+        ('soda_crate', 'SODA CRATE'),
+        ('token_2', 'TOKEN 2'),
+        ('other', 'OTHER'),
     )
     
     date = models.DateField()
-    category = models.CharField(max_length=20, choices=CATEGORIES)
+    category = models.CharField(max_length=50, choices=CATEGORIES)
     description = models.TextField()
     amount = models.DecimalField(max_digits=10, decimal_places=4)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"{self.date} - {self.description} - {self.amount}"
-
+        return f"{self.date} - {self.get_category_display()} - {self.description} - {self.amount}"
+    
+    class Meta:
+        ordering = ['-date']
+        verbose_name = 'Expense'
+        verbose_name_plural = 'Expenses'
 # models.py - Update SupplierPayment model
 class SupplierPayment(models.Model):
     PAYMENT_METHODS = (

@@ -1,74 +1,227 @@
 {% extends 'pos/base.html' %}
+{% load static %}
 
 {% block title %}Add Batch{% endblock %}
 
+{% block extra_css %}
+<style>
+    .search-container {
+        position: relative;
+    }
+    
+    .search-results {
+        position: absolute;
+        width: 100%;
+        max-height: 300px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        margin-top: 0.25rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        z-index: 50;
+        display: none;
+    }
+    
+    .search-result-item {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.15s ease;
+    }
+    
+    .search-result-item:hover {
+        background: #eff6ff;
+    }
+    
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+    
+    .search-result-item .product-name {
+        font-weight: 600;
+        color: #111827;
+    }
+    
+    .search-result-item .product-details {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+    }
+    
+    .search-result-item .product-details span {
+        margin-right: 1rem;
+    }
+    
+    .selected-product-display {
+        background: #f0fdf4;
+        border: 2px solid #86efac;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+    }
+    
+    .selected-product-display .product-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .selected-product-display .product-info .name {
+        font-weight: 600;
+        color: #065f46;
+    }
+    
+    .selected-product-display .product-info .details {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    .selected-product-display .remove-product {
+        color: #ef4444;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        transition: background 0.15s ease;
+    }
+    
+    .selected-product-display .remove-product:hover {
+        background: #fee2e2;
+    }
+    
+    /* Loading spinner */
+    .loading-spinner {
+        display: none;
+        padding: 0.75rem 1rem;
+        text-align: center;
+        color: #6b7280;
+    }
+    
+    .loading-spinner i {
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-2xl mx-auto bg-white rounded-lg shadow overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-200">
-        <h2 class="text-xl font-semibold text-gray-800">
+    <div class="px-6 py-4 border-b border-gray-200 bg-blue-600">
+        <h2 class="text-xl font-semibold text-white">
+            <i class="fas fa-cubes mr-2"></i>
             {% if product %}Add Batch for {{ product.name }}{% else %}Add New Batch{% endif %}
         </h2>
     </div>
     
-    <form method="post" class="px-6 py-4">
+    <form method="post" class="px-6 py-4" id="batch-form">
         {% csrf_token %}
         
         {% if not product %}
         <div class="mb-4">
-            <label for="product" class="block text-sm font-medium text-gray-700 mb-1">Product*</label>
-            <select id="product" name="product" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                <option value="">Select Product</option>
-                {% for p in products %}
-                <option value="{{ p.id }}" {% if p.id == product.id %}selected{% endif %}>{{ p.name }}</option>
-                {% endfor %}
-            </select>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Product <span class="text-red-500">*</span>
+            </label>
+            
+            <!-- Hidden input to store selected product ID -->
+            <input type="hidden" name="product" id="selected-product-id" value="">
+            
+            <!-- Search Input -->
+            <div class="search-container">
+                <input type="text" id="product-search" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="Search products by name or barcode..." 
+                       autocomplete="off">
+                <div class="loading-spinner" id="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i> Searching...
+                </div>
+                <div id="search-results" class="search-results"></div>
+            </div>
+            
+            <!-- Selected Product Display -->
+            <div id="selected-product-display" class="selected-product-display">
+                <div class="product-info">
+                    <span class="name" id="selected-product-name"></span>
+                    <span class="details" id="selected-product-details"></span>
+                </div>
+                <button type="button" class="remove-product" id="remove-selected-product" title="Remove selected product">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            {% if form.product.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ form.product.errors.0 }}</p>
+            {% endif %}
         </div>
         {% else %}
         <input type="hidden" name="product" value="{{ product.id }}">
+        <div class="mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+            <p class="text-sm text-blue-700">
+                <i class="fas fa-box mr-1"></i> 
+                <span class="font-medium">Product:</span> {{ product.name }}
+                <span class="ml-2 text-gray-500">({{ product.barcode|default:"No barcode" }})</span>
+            </p>
+        </div>
         {% endif %}
         
         <div class="mb-4">
-            <label for="batch_number" class="block text-sm font-medium text-gray-700 mb-1">Batch Number*</label>
+            <label for="batch_number" class="block text-sm font-medium text-gray-700 mb-1">
+                Batch Number <span class="text-red-500">*</span>
+            </label>
             <input type="text" id="batch_number" name="batch_number" required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="e.g., BATCH-2024-001">
+            <p class="text-xs text-gray-500 mt-1">Leave empty to auto-generate</p>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-                <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantity*</label>
-                <input type="number" id="quantity" name="quantity" min="1" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">
+                    Quantity <span class="text-red-500">*</span>
+                </label>
+                <input type="number" id="quantity" name="quantity" min="0.00001" step="0.00001" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="0.00000">
+                <p class="text-xs text-gray-500 mt-1">Enter quantity with up to 5 decimal places</p>
             </div>
             
             <div>
-                <label for="purchase_price" class="block text-sm font-medium text-gray-700 mb-1">Purchase Price*</label>
-                <input type="number" id="purchase_price" name="purchase_price" step="0.01" min="0" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <label for="purchase_price" class="block text-sm font-medium text-gray-700 mb-1">
+                    Purchase Price <span class="text-red-500">*</span>
+                </label>
+                <input type="number" id="purchase_price" name="purchase_price" step="0.0001" min="0" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="0.0000">
+                <p class="text-xs text-gray-500 mt-1">Enter price with up to 4 decimal places</p>
             </div>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-                <label for="expiry_date" class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                <label for="expiry_date" class="block text-sm font-medium text-gray-700 mb-1">
+                    Expiry Date
+                </label>
                 <input type="date" id="expiry_date" name="expiry_date"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Optional - leave empty if no expiry</p>
             </div>
             
             <div>
-                <label for="date_received" class="block text-sm font-medium text-gray-700 mb-1">Date Received*</label>
+                <label for="date_received" class="block text-sm font-medium text-gray-700 mb-1">
+                    Date Received <span class="text-red-500">*</span>
+                </label>
                 <input type="date" id="date_received" name="date_received" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
         </div>
         
-        <div class="flex justify-end space-x-3">
+        <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
             <a href="{% if product %}{% url 'product_detail' product.id %}{% else %}{% url 'batch_list' %}{% endif %}" 
-               class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                Cancel
+               class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <i class="fas fa-times mr-1"></i> Cancel
             </a>
-            <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                Save Batch
+            <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <i class="fas fa-save mr-1"></i> Save Batch
             </button>
         </div>
     </form>
@@ -76,9 +229,218 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const productSearch = document.getElementById('product-search');
+    const searchResults = document.getElementById('search-results');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const selectedProductDisplay = document.getElementById('selected-product-display');
+    const selectedProductName = document.getElementById('selected-product-name');
+    const selectedProductDetails = document.getElementById('selected-product-details');
+    const removeSelectedProduct = document.getElementById('remove-selected-product');
+    const selectedProductId = document.getElementById('selected-product-id');
+    const form = document.getElementById('batch-form');
+    let searchTimeout = null;
+    
     // Set default date received to today
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('date_received').value = today;
+    
+    // Product search functionality
+    productSearch.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(searchTimeout);
+        
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            loadingSpinner.style.display = 'none';
+            return;
+        }
+        
+        // Show loading spinner
+        loadingSpinner.style.display = 'block';
+        searchResults.style.display = 'none';
+        
+        searchTimeout = setTimeout(() => {
+            searchProducts(query);
+        }, 300);
+    });
+    
+    // Search products function
+    function searchProducts(query) {
+        const searchUrl = '{% url "search_products" %}';
+        
+        fetch(`${searchUrl}?q=${encodeURIComponent(query)}&_=${Date.now()}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                loadingSpinner.style.display = 'none';
+                searchResults.innerHTML = '';
+                
+                if (data.length === 0) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'search-result-item text-gray-500 text-center py-4';
+                    noResults.innerHTML = `
+                        <i class="fas fa-search text-gray-300 text-2xl block mb-2"></i>
+                        <p>No products found matching "<strong>${escapeHtml(query)}</strong>"</p>
+                        <p class="text-xs text-gray-400 mt-1">Try searching by name or barcode</p>
+                    `;
+                    searchResults.appendChild(noResults);
+                    searchResults.style.display = 'block';
+                    return;
+                }
+                
+                data.forEach(product => {
+                    const div = document.createElement('div');
+                    div.className = 'search-result-item';
+                    div.innerHTML = `
+                        <div class="product-name">${escapeHtml(product.name)}</div>
+                        <div class="product-details">
+                            ${product.barcode ? `<span><i class="fas fa-barcode"></i> ${escapeHtml(product.barcode)}</span>` : ''}
+                            <span><i class="fas fa-warehouse"></i> Stock: ${parseFloat(product.quantity).toFixed(2)}</span>
+                            ${product.category_name ? `<span><i class="fas fa-tag"></i> ${escapeHtml(product.category_name)}</span>` : ''}
+                        </div>
+                        <div class="product-details text-blue-600">
+                            <span>Purchase: KSh ${parseFloat(product.purchase_price).toFixed(4)}</span>
+                            <span>Sell: KSh ${parseFloat(product.selling_price).toFixed(2)}</span>
+                        </div>
+                    `;
+                    div.addEventListener('click', function() {
+                        selectProduct(product);
+                        productSearch.value = '';
+                        searchResults.style.display = 'none';
+                    });
+                    searchResults.appendChild(div);
+                });
+                
+                searchResults.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Product search error:', error);
+                loadingSpinner.style.display = 'none';
+                searchResults.innerHTML = `
+                    <div class="search-result-item text-red-500 text-center py-4">
+                        <i class="fas fa-exclamation-circle text-2xl block mb-2"></i>
+                        <p>Error searching products. Please try again.</p>
+                    </div>
+                `;
+                searchResults.style.display = 'block';
+            });
+    }
+    
+    // Select product function
+    function selectProduct(product) {
+        // Set hidden input value
+        selectedProductId.value = product.id;
+        
+        // Show selected product display
+        selectedProductName.textContent = product.name;
+        selectedProductDetails.innerHTML = `
+            ${product.barcode ? `Barcode: ${escapeHtml(product.barcode)} | ` : ''}
+            Stock: ${parseFloat(product.quantity).toFixed(2)} | 
+            Purchase Price: KSh ${parseFloat(product.purchase_price).toFixed(4)} |
+            Selling Price: KSh ${parseFloat(product.selling_price).toFixed(2)}
+        `;
+        selectedProductDisplay.style.display = 'flex';
+        
+        // Pre-fill purchase price from product
+        if (product.purchase_price) {
+            document.getElementById('purchase_price').value = parseFloat(product.purchase_price).toFixed(4);
+        }
+        
+        // Auto-generate batch number if empty
+        const batchNumberField = document.getElementById('batch_number');
+        if (!batchNumberField.value) {
+            const date = new Date();
+            const dateStr = date.getFullYear() + 
+                          String(date.getMonth() + 1).padStart(2, '0') + 
+                          String(date.getDate()).padStart(2, '0');
+            batchNumberField.value = `BATCH-${dateStr}-${product.id}`;
+        }
+        
+        // Focus on quantity field
+        document.getElementById('quantity').focus();
+    }
+    
+    // Remove selected product
+    removeSelectedProduct.addEventListener('click', function() {
+        selectedProductId.value = '';
+        selectedProductDisplay.style.display = 'none';
+        productSearch.focus();
+    });
+    
+    // Handle Enter key in search
+    productSearch.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const firstResult = searchResults.querySelector('.search-result-item');
+            if (firstResult && !firstResult.classList.contains('text-gray-500')) {
+                firstResult.click();
+            }
+        }
+        if (e.key === 'Escape') {
+            searchResults.style.display = 'none';
+            this.blur();
+        }
+    });
+    
+    // Close search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!productSearch.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
+    
+    // Auto-generate batch number on blur if empty
+    document.getElementById('batch_number').addEventListener('blur', function() {
+        if (!this.value.trim() && selectedProductId.value) {
+            const date = new Date();
+            const dateStr = date.getFullYear() + 
+                          String(date.getMonth() + 1).padStart(2, '0') + 
+                          String(date.getDate()).padStart(2, '0');
+            this.value = `BATCH-${dateStr}-${selectedProductId.value}`;
+        }
+    });
+    
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        if (!selectedProductId.value && !document.querySelector('input[name="product"]:not([type="hidden"])')) {
+            e.preventDefault();
+            alert('Please select a product');
+            productSearch.focus();
+            productSearch.classList.add('border-red-500');
+            return;
+        }
+        
+        // Validate quantity
+        const quantity = parseFloat(document.getElementById('quantity').value);
+        if (isNaN(quantity) || quantity <= 0) {
+            e.preventDefault();
+            alert('Please enter a valid quantity greater than 0');
+            document.getElementById('quantity').focus();
+            return;
+        }
+        
+        // Validate purchase price
+        const purchasePrice = parseFloat(document.getElementById('purchase_price').value);
+        if (isNaN(purchasePrice) || purchasePrice < 0) {
+            e.preventDefault();
+            alert('Please enter a valid purchase price');
+            document.getElementById('purchase_price').focus();
+            return;
+        }
+    });
+    
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 });
 </script>
 {% endblock %}

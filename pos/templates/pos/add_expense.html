@@ -3,77 +3,420 @@
 
 {% block title %}Add Expenses{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Category Badge Styles */
+    .category-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin: 0.1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+    }
+    .category-badge:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .category-badge.selected {
+        border-color: #2563eb;
+        background: #dbeafe !important;
+    }
+
+    /* Table Styles */
+    .expense-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+    }
+    
+    .expense-table thead th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.75rem 1rem;
+        border-bottom: 2px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .expense-table tbody tr {
+        transition: background-color 0.15s ease;
+    }
+    
+    .expense-table tbody tr:hover {
+        background-color: #f1f5f9;
+    }
+    
+    .expense-table tbody td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+    
+    .expense-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Form Input Styles */
+    .expense-input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        background: white;
+    }
+    
+    .expense-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .expense-input:hover {
+        border-color: #94a3b8;
+    }
+    
+    .expense-input.amount-input {
+        text-align: right;
+        font-weight: 500;
+    }
+    
+    .expense-input.amount-input:focus {
+        border-color: #22c55e;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+    }
+    
+    .expense-input.date-input {
+        min-width: 140px;
+    }
+    
+    .expense-input.category-select {
+        min-width: 150px;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-position: right 0.5rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+    }
+    
+    .expense-input.description-textarea {
+        min-height: 50px;
+        resize: vertical;
+        font-family: inherit;
+    }
+
+    /* Remove Button */
+    .remove-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 9999px;
+        color: #ef4444;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .remove-btn:hover {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+    
+    .remove-btn:active {
+        transform: scale(0.95);
+    }
+
+    /* Controls Buttons */
+    .control-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        gap: 0.5rem;
+    }
+    
+    .control-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .control-btn:active {
+        transform: translateY(0);
+    }
+    
+    .control-btn.blue {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+    
+    .control-btn.blue:hover {
+        background: #bfdbfe;
+    }
+    
+    .control-btn.purple {
+        background: #ede9fe;
+        color: #7c3aed;
+    }
+    
+    .control-btn.purple:hover {
+        background: #ddd6fe;
+    }
+    
+    .control-btn.gray {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    
+    .control-btn.gray:hover {
+        background: #e2e8f0;
+    }
+
+    /* Total Display */
+    .total-display {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #16a34a;
+        padding: 0.25rem 0.5rem;
+        background: #f0fdf4;
+        border-radius: 0.5rem;
+        display: inline-block;
+        min-width: 120px;
+        text-align: right;
+    }
+
+    /* Footer Buttons */
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        gap: 0.5rem;
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .action-btn.primary {
+        background: #2563eb;
+        color: white;
+    }
+    
+    .action-btn.primary:hover {
+        background: #1d4ed8;
+    }
+    
+    .action-btn.secondary {
+        background: white;
+        color: #475569;
+        border-color: #e2e8f0;
+    }
+    
+    .action-btn.secondary:hover {
+        background: #f8fafc;
+    }
+    
+    .action-btn.success {
+        background: #16a34a;
+        color: white;
+    }
+    
+    .action-btn.success:hover {
+        background: #15803d;
+    }
+
+    /* Responsive Table Container */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    @media (max-width: 768px) {
+        .expense-table thead th,
+        .expense-table tbody td {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .expense-input {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.5rem;
+        }
+        
+        .category-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.5rem;
+        }
+        
+        .total-display {
+            font-size: 1rem;
+            min-width: 80px;
+        }
+    }
+
+    /* Scrollable categories */
+    .categories-container {
+        max-height: 60px;
+        overflow-y: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        padding: 0.25rem 0;
+    }
+    
+    .categories-container::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .categories-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .categories-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Header -->
-    <div class="mb-6">
-        <h2 class="text-2xl font-bold text-gray-900">
-            <i class="fas fa-plus-circle text-blue-600 mr-2"></i> Add Multiple Expenses
-        </h2>
-        <p class="text-gray-600 mt-1">Add multiple expenses at once. Leave empty rows to skip.</p>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">
+                <i class="fas fa-plus-circle text-blue-600 mr-2"></i> Add Multiple Expenses
+            </h2>
+            <p class="text-gray-600 mt-1">Add multiple expenses at once. Leave empty rows to skip.</p>
+        </div>
+        <a href="{% url 'expense_list' %}" class="mt-3 sm:mt-0 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Expenses
+        </a>
+    </div>
+
+    <!-- Category Quick Select -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6 border border-gray-200">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-medium text-gray-700">
+                <i class="fas fa-tags mr-1"></i> Quick Category Select
+            </h3>
+            <span class="text-xs text-gray-500">Click a category to add it to the current row</span>
+        </div>
+        <div class="categories-container">
+            {% for key, value in categories %}
+            <span class="category-badge px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs cursor-pointer hover:bg-gray-200 transition-colors" 
+                  data-category="{{ key }}" onclick="selectCategory(this)">
+                {{ value }}
+            </span>
+            {% endfor %}
+        </div>
     </div>
 
     <!-- Form -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <form method="post" id="expenseForm" class="p-6">
+    <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+        <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-list mr-2 text-blue-600"></i> Expense Items
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-1">Fill in the details for each expense</p>
+                </div>
+                <div class="mt-2 sm:mt-0 flex items-center gap-2">
+                    <span class="text-sm text-gray-500">Total:</span>
+                    <span class="total-display" id="total-amount">KSh 0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" id="expenseForm" class="p-4 sm:p-6">
             {% csrf_token %}
             {{ formset.management_form }}
             
-            <!-- Common Date Field (Optional) -->
-            <div class="mb-6">
+            <!-- Common Date Field -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-calendar-alt mr-1"></i> Apply Date to All
+                    <i class="fas fa-calendar-alt mr-1 text-blue-600"></i> Apply Date to All
                 </label>
-                <input type="date" id="common-date" class="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                <button type="button" onclick="applyDateToAll()" class="ml-2 px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200">
-                    Apply
-                </button>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                    <input type="date" id="common-date" class="expense-input date-input w-full sm:w-auto">
+                    <button type="button" onclick="applyDateToAll()" class="control-btn blue w-full sm:w-auto">
+                        <i class="fas fa-check"></i> Apply Date
+                    </button>
+                </div>
             </div>
 
             <!-- Expense Items Table -->
-            <div class="overflow-x-auto mb-6">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+            <div class="table-container">
+                <table class="expense-table">
+                    <thead>
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remove</th>
+                            <th class="w-[15%]">Date</th>
+                            <th class="w-[20%]">Category</th>
+                            <th class="w-[35%]">Description</th>
+                            <th class="w-[20%]">Amount</th>
+                            <th class="w-[10%] text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody id="expense-items" class="bg-white divide-y divide-gray-200">
                         {% for form in formset %}
-                        <tr class="expense-row hover:bg-gray-50">
-                            <td class="px-4 py-3">
+                        <tr class="expense-row hover:bg-gray-50 transition-colors">
+                            <td>
                                 {{ form.date }}
                                 {% if form.date.errors %}
                                 <div class="text-red-500 text-xs mt-1">{{ form.date.errors }}</div>
                                 {% endif %}
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 {{ form.category }}
                                 {% if form.category.errors %}
                                 <div class="text-red-500 text-xs mt-1">{{ form.category.errors }}</div>
                                 {% endif %}
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 {{ form.description }}
                                 {% if form.description.errors %}
                                 <div class="text-red-500 text-xs mt-1">{{ form.description.errors }}</div>
                                 {% endif %}
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 {{ form.amount }}
                                 {% if form.amount.errors %}
                                 <div class="text-red-500 text-xs mt-1">{{ form.amount.errors }}</div>
                                 {% endif %}
                             </td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="text-center">
                                 {% if form.instance.pk %}
                                 {{ form.DELETE }}
                                 {% else %}
-                                <button type="button" onclick="removeRow(this)" class="text-red-500 hover:text-red-700">
+                                <button type="button" onclick="removeRow(this)" class="remove-btn" title="Remove row">
                                     <i class="fas fa-times"></i>
                                 </button>
                                 {% endif %}
@@ -85,40 +428,40 @@
                     </tbody>
                     <tfoot>
                         <tr class="bg-gray-50">
-                            <td colspan="3" class="px-4 py-3 text-right font-medium text-gray-700">Total:</td>
+                            <td colspan="3" class="px-4 py-3 text-right font-medium text-gray-700">Grand Total:</td>
                             <td class="px-4 py-3">
-                                <div class="font-bold text-lg text-green-600" id="total-amount">KSh 0.00</div>
+                                <span class="total-display" id="total-amount">KSh 0.00</span>
                             </td>
-                            <td class="px-4 py-3"></td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
 
             <!-- Controls -->
-            <div class="flex flex-wrap gap-3 mb-6">
-                <button type="button" onclick="addRow()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200">
-                    <i class="fas fa-plus mr-1"></i> Add Another Row
+            <div class="flex flex-wrap gap-3 my-6">
+                <button type="button" onclick="addRow()" class="control-btn blue">
+                    <i class="fas fa-plus"></i> Add Row
                 </button>
-                <button type="button" onclick="clearAll()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-                    <i class="fas fa-eraser mr-1"></i> Clear All
+                <button type="button" onclick="duplicateLast()" class="control-btn purple">
+                    <i class="fas fa-copy"></i> Duplicate Last
                 </button>
-                <button type="button" onclick="duplicateLast()" class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200">
-                    <i class="fas fa-copy mr-1"></i> Duplicate Last
+                <button type="button" onclick="clearAll()" class="control-btn gray">
+                    <i class="fas fa-eraser"></i> Clear All
                 </button>
             </div>
 
-            <!-- Buttons -->
-            <div class="flex justify-between pt-6 border-t border-gray-200">
-                <a href="{% url 'expense_list' %}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to List
+            <!-- Form Actions -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-6 border-t border-gray-200 gap-3">
+                <a href="{% url 'expense_list' %}" class="action-btn secondary w-full sm:w-auto justify-center">
+                    <i class="fas fa-arrow-left"></i> Back to List
                 </a>
-                <div class="space-x-3">
-                    <button type="reset" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                        <i class="fas fa-redo mr-1"></i> Reset
+                <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <button type="reset" class="action-btn secondary w-full sm:w-auto justify-center">
+                        <i class="fas fa-redo"></i> Reset
                     </button>
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                        <i class="fas fa-save mr-1"></i> Save All Expenses
+                    <button type="submit" class="action-btn success w-full sm:w-auto justify-center">
+                        <i class="fas fa-save"></i> Save All Expenses
                     </button>
                 </div>
             </div>
@@ -128,36 +471,31 @@
     <!-- Quick Add Template (Hidden) -->
     <div id="empty-row-template" style="display: none;">
         <tr class="expense-row">
-            <td class="px-4 py-3">
+            <td>
                 <input type="date" name="expenseitemform_set-__prefix__-date" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                       class="expense-input date-input">
             </td>
-            <td class="px-4 py-3">
+            <td>
                 <select name="expenseitemform_set-__prefix__-category" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        class="expense-input category-select">
                     <option value="">Select Category</option>
-                    <option value="office">Office Supplies</option>
-                    <option value="utilities">Utilities</option>
-                    <option value="rent">Rent</option>
-                    <option value="salaries">Salaries</option>
-                    <option value="marketing">Marketing</option>
-                    <option value="travel">Travel</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="other">Other</option>
+                    {% for key, value in categories %}
+                    <option value="{{ key }}">{{ value }}</option>
+                    {% endfor %}
                 </select>
             </td>
-            <td class="px-4 py-3">
+            <td>
                 <textarea name="expenseitemform_set-__prefix__-description" rows="2"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Description"></textarea>
+                          class="expense-input description-textarea"
+                          placeholder="Enter description..."></textarea>
             </td>
-            <td class="px-4 py-3">
+            <td>
                 <input type="number" name="expenseitemform_set-__prefix__-amount" step="0.01" min="0"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 amount-input"
+                       class="expense-input amount-input"
                        placeholder="0.00" oninput="calculateTotal()">
             </td>
-            <td class="px-4 py-3 text-center">
-                <button type="button" onclick="removeRow(this)" class="text-red-500 hover:text-red-700">
+            <td class="text-center">
+                <button type="button" onclick="removeRow(this)" class="remove-btn" title="Remove row">
                     <i class="fas fa-times"></i>
                 </button>
             </td>
@@ -165,11 +503,45 @@
         </tr>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
+<!-- Quick Add Template (Hidden) -->
+<div id="empty-row-template" style="display: none;">
+    <tr class="expense-row">
+        <td>
+            <input type="date" name="expenseitemform_set-__prefix__-date" 
+                   class="expense-input date-input">
+        </td>
+        <td>
+            <select name="expenseitemform_set-__prefix__-category" 
+                    class="expense-input category-select">
+                <option value="">Select Category</option>
+                {% for key, value in categories %}
+                <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <textarea name="expenseitemform_set-__prefix__-description" rows="2"
+                      class="expense-input description-textarea"
+                      placeholder="Enter description..."></textarea>
+        </td>
+        <td>
+            <input type="number" name="expenseitemform_set-__prefix__-amount" step="0.01" min="0"
+                   class="expense-input amount-input"
+                   placeholder="0.00" oninput="calculateTotal()">
+        </td>
+        <td class="text-center">
+            <button type="button" onclick="removeRow(this)" class="remove-btn" title="Remove row">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+        <input type="hidden" name="expenseitemform_set-__prefix__-id">
+    </tr>
+</div>
+
 <script>
-let formIndex = {{ formset.initial_form_count|default:3 }};
+// ===== FORM INDEX MANAGEMENT =====
+let formIndex = {{ formset.initial_form_count|default:0 }};
 
 function addRow() {
     const template = document.getElementById('empty-row-template').innerHTML;
@@ -178,7 +550,6 @@ function addRow() {
     const tbody = document.getElementById('expense-items');
     tbody.insertAdjacentHTML('beforeend', newRow);
     
-    // Update management form count
     const totalForms = document.getElementById('id_expenseitemform_set-TOTAL_FORMS');
     totalForms.value = ++formIndex;
     
@@ -189,24 +560,47 @@ function addRow() {
     }
     
     calculateTotal();
+    
+    // Focus on category select
+    const newSelect = tbody.lastElementChild.querySelector('select[name*="category"]');
+    if (newSelect) {
+        setTimeout(() => newSelect.focus(), 100);
+    }
 }
 
 function removeRow(button) {
     const row = button.closest('tr');
-    row.remove();
-    calculateTotal();
-    updateFormIndexes();
+    row.style.transition = 'all 0.3s ease';
+    row.style.opacity = '0';
+    row.style.transform = 'translateX(-20px)';
+    
+    setTimeout(() => {
+        row.remove();
+        calculateTotal();
+        updateFormIndexes();
+    }, 300);
 }
 
 function clearAll() {
+    const rows = document.querySelectorAll('#expense-items tr.expense-row');
+    if (rows.length === 0) return;
+    
     if (confirm('Are you sure you want to clear all expense items?')) {
-        const rows = document.querySelectorAll('#expense-items tr.expense-row');
-        rows.forEach(row => row.remove());
-        document.getElementById('total-amount').textContent = 'KSh 0.00';
-        
-        // Reset form index
-        formIndex = 0;
-        document.getElementById('id_expenseitemform_set-TOTAL_FORMS').value = 0;
+        rows.forEach((row, index) => {
+            setTimeout(() => {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(-20px)';
+                setTimeout(() => {
+                    row.remove();
+                    if (index === rows.length - 1) {
+                        document.getElementById('total-amount').textContent = 'KSh 0.00';
+                        formIndex = 0;
+                        document.getElementById('id_expenseitemform_set-TOTAL_FORMS').value = 0;
+                    }
+                }, 300);
+            }, index * 50);
+        });
     }
 }
 
@@ -228,6 +622,10 @@ function duplicateLast() {
     const descInput = clone.querySelector('textarea');
     if (descInput) descInput.value = '';
     
+    // Clear date
+    const dateInput = clone.querySelector('input[type="date"]');
+    if (dateInput) dateInput.value = '';
+    
     // Update name attributes
     const inputs = clone.querySelectorAll('input, select, textarea');
     inputs.forEach(input => {
@@ -241,7 +639,6 @@ function duplicateLast() {
     const tbody = document.getElementById('expense-items');
     tbody.appendChild(clone);
     
-    // Update management form count
     document.getElementById('id_expenseitemform_set-TOTAL_FORMS').value = ++formIndex;
     
     calculateTotal();
@@ -249,7 +646,10 @@ function duplicateLast() {
 
 function applyDateToAll() {
     const commonDate = document.getElementById('common-date').value;
-    if (!commonDate) return;
+    if (!commonDate) {
+        alert('Please select a date first');
+        return;
+    }
     
     const dateInputs = document.querySelectorAll('#expense-items input[type="date"]');
     dateInputs.forEach(input => {
@@ -257,17 +657,67 @@ function applyDateToAll() {
     });
 }
 
+function selectCategory(element) {
+    const rows = document.querySelectorAll('#expense-items tr.expense-row');
+    let targetRow = null;
+    
+    // Find the first row with empty category or empty description
+    for (const row of rows) {
+        const select = row.querySelector('select[name*="category"]');
+        const desc = row.querySelector('textarea');
+        if (select && !select.value) {
+            targetRow = row;
+            break;
+        }
+    }
+    
+    // If no empty row found, add a new one
+    if (!targetRow) {
+        addRow();
+        const newRows = document.querySelectorAll('#expense-items tr.expense-row');
+        targetRow = newRows[newRows.length - 1];
+    }
+    
+    // Set the category
+    const select = targetRow.querySelector('select[name*="category"]');
+    if (select) {
+        select.value = element.dataset.category;
+        select.dispatchEvent(new Event('change'));
+        select.style.borderColor = '#22c55e';
+        setTimeout(() => {
+            select.style.borderColor = '';
+        }, 1500);
+    }
+    
+    // Highlight the selected category
+    document.querySelectorAll('.category-badge').forEach(b => b.classList.remove('selected'));
+    element.classList.add('selected');
+    
+    // Focus on description field
+    const textarea = targetRow.querySelector('textarea');
+    if (textarea) {
+        setTimeout(() => textarea.focus(), 100);
+    }
+}
+
 function calculateTotal() {
     let total = 0;
     const amountInputs = document.querySelectorAll('.amount-input');
+    let hasValues = false;
     
     amountInputs.forEach(input => {
         const value = parseFloat(input.value) || 0;
+        if (value > 0) hasValues = true;
         total += value;
     });
     
-    document.getElementById('total-amount').textContent = 
-        `KSh ${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    const totalDisplay = document.getElementById('total-amount');
+    totalDisplay.textContent = `KSh ${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    
+    // Update all total displays (there are two)
+    document.querySelectorAll('#total-amount').forEach(el => {
+        el.textContent = `KSh ${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    });
 }
 
 function updateFormIndexes() {
@@ -290,10 +740,13 @@ function updateFormIndexes() {
     document.getElementById('id_expenseitemform_set-TOTAL_FORMS').value = index;
 }
 
-// Initialize
+// ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function() {
     // Set today's date as default for common date field
-    document.getElementById('common-date').valueAsDate = new Date();
+    const commonDate = document.getElementById('common-date');
+    if (commonDate) {
+        commonDate.valueAsDate = new Date();
+    }
     
     // Calculate initial total
     calculateTotal();
@@ -304,6 +757,20 @@ document.addEventListener('DOMContentLoaded', function() {
             calculateTotal();
         }
     });
+    
+    // Add keyboard shortcut for adding row (Ctrl+Enter)
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            addRow();
+        }
+    });
+    
+    // Auto-focus on first empty category
+    const firstSelect = document.querySelector('#expense-items select[name*="category"]');
+    if (firstSelect && !firstSelect.value) {
+        setTimeout(() => firstSelect.focus(), 500);
+    }
 });
 </script>
 {% endblock %}
